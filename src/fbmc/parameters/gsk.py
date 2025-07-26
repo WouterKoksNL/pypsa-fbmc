@@ -695,3 +695,131 @@ def gsk_current_generation(generators: pd.DataFrame, generators_t_p: pd.DataFram
         gsk_matrices[snapshot] = gsk_matrix
 
     return gsk_matrices
+
+
+
+
+def calc_merit_order_based_gsk(network: pypsa.Network,
+                     standard_deviation: int | float | dict | pd.Series
+                     ) -> dict[pd.Index, pd.DataFrame]:
+    """Calculate the GSK based on the merit order of generators in each zone. 
+
+    Args:
+        network (pypsa.Network): _description_
+        standard_deviation (int | float | dict | pd.Series): _description_
+
+    Returns:
+        dict[pd.Index, pd.DataFrame]: GSKs for each snapshot.
+    """
+    gen_zone_map = network.generators.bus.map(network.buses['zone_name'])
+    reference_generation_zones = get_net_positions(network.buses, network.buses_t, network.buses.zone_name.unique())
+    # reference_generation_zones = network.generators_t.p.T.groupby(gen_zone_map).sum().T
+    
+    if isinstance(standard_deviation, (int | float)):
+        standard_deviation = pd.Series(standard_deviation, index=reference_generation_zones.columns)
+    isk_dict = {}
+    for snapshot in network.snapshots:
+        isk_dict_snapshot = {}
+        for zone, gens in network.generators.groupby(gen_zone_map):
+            p_max_sorted_cs, sorted_inds = calc_p_max_sorted_cs(network, gens.index, snapshot)
+            gen_weights = assign_merit_order_weights(p_max_sorted_cs, sorted_inds, mean=reference_generation_zones.loc[snapshot, zone], std=standard_deviation.loc[zone], method='neutral') 
+
+            isk_dict_snapshot[zone] = normalize_gsk_zone(gen_weights, network.generators.bus)
+
+        all_zones_gsk = concat_isk(isk_dict_snapshot)
+        isk_dict[snapshot] = all_zones_gsk.reindex(index=network.buses['zone_name'].unique(), columns=network.buses.index, fill_value=0)
+
+    return isk_dict
+
+def calc_pos_neg_gsk(
+        network, 
+        standard_deviation: int | float | dict | pd.Series
+        ) -> tuple[dict[pd.Index, pd.DataFrame], dict[pd.Index, pd.DataFrame]]:
+
+    zones = network.buses['zone_name'].unique()
+
+    gen_zone_map = network.generators.bus.map(network.buses['zone_name'])
+    reference_np_zones = network.generators_t.p.T.groupby(gen_zone_map).sum().T
+    pos_isk = {}
+    neg_isk = {}
+    
+    if isinstance(standard_deviation, (int | float)):
+        standard_deviation = pd.Series(standard_deviation, index=zones)
+    for snapshot in network.snapshots:
+        pos_isk_dict = {}
+        neg_isk_dict = {}
+        for zone, gens in network.generators.groupby(gen_zone_map):
+            p_max_sorted_cs, sorted_inds = calc_p_max_sorted_cs(network, gens.index, snapshot)
+            gen_weights_pos = assign_merit_order_weights(p_max_sorted_cs, sorted_inds, mean=reference_np_zones.loc[snapshot, zone], std=standard_deviation[zone], method='positive') 
+            gen_weights_neg = assign_merit_order_weights(p_max_sorted_cs, sorted_inds, mean=reference_np_zones.loc[snapshot, zone], std=standard_deviation[zone], method='negative') 
+
+            pos_isk_dict[zone] = normalize_gsk_zone(gen_weights_pos, network.generators.bus)
+            neg_isk_dict[zone] = normalize_gsk_zone(gen_weights_neg, network.generators.bus)
+
+        pos_isk[snapshot] = concat_isk(pos_isk_dict).reindex(columns=network.buses.index, index=network.buses['zone_name'].unique(), fill_value=0)
+        neg_isk[snapshot] = concat_isk(neg_isk_dict).reindex(columns=network.buses.index, index=network.buses['zone_name'].unique(), fill_value=0)
+    return pos_isk, neg_isk
+
+
+def calc_p_max_sorted_cs(network, generator_inds, snapshot):
+    """Calculate the cumulative generation capacity of generators in the merit order.
+    
+    Args:
+        network (pypsa.Network): _description_
+        generator_inds (pd.Index): Generator indices to select. 
+        snapshot: single snapshot to consider. 
+
+    Returns:
+        tuple: A tuple containing:
+            - p_max_sorted_cs (np.array): Cumulative sum of maximum generation capacities sorted by marginal cost. The first entry is zero. 
+            - sorted_inds (pd.Index): Indices of the generators sorted by marginal cost. 
+    """
+    mc = network.get_switchable_as_dense('Generator', 'marginal_cost').loc[snapshot, generator_inds]
+    p_max = network.get_switchable_as_dense('Generator', 'p_max_pu').loc[snapshot, generator_inds] * network.generators.loc[generator_inds, 'p_nom']
+    sorted_inds = mc.sort_values().index
+    p_max_sorted_cs_ser = p_max.loc[sorted_inds].cumsum()
+    # add a zero at the start to represent the cumulative sum before the first generator
+    p_max_sorted_cs = np.concat(([0], p_max_sorted_cs_ser.values))
+    return p_max_sorted_cs, sorted_inds
+
+
+
+def assign_merit_order_weights(p_max_sorted_cs, sorted_inds, mean, std, method='neutral'):
+    """Assign GSK weights based on the generators' position in the merit order curve. 
+    More weight is assigned to generators close to the expected market clearing dispatch ('mean').
+
+
+    Args:
+        p_max_sorted_cs (np.array): Cumulative generator capacities sorted by marginal cost. Length G+1, where G is the number of generators. 1st entry is zero.
+        sorted_inds (pd.Index): Generator indices sorted by marginal cost. Length G.
+        mean (float): Expected market clearing dispatch value.
+        std (float): Standard deviation of the dispatch.
+        method (str, optional): Type of weighing function to apply.
+        Options: 'neutral', 'positive', 'negative'. 
+        'neutral' indicates multiplication with standard normal, 
+        'positive' indicates multiplication with a positive half-normal distribution,
+        'negative' indicates multiplication with half-normal distribution of negative values.
+        Defaults to 'neutral'.
+
+    Returns:
+        _type_: _description_
+    """
+    if len(sorted_inds) == 1:
+        return pd.Series([1], index=sorted_inds)
+    elif method == 'neutral':
+        generator_weight = norm.cdf(p_max_sorted_cs[1:], loc=mean, scale=std) - norm.cdf(p_max_sorted_cs[:-1], loc=mean, scale=std)
+    elif method == 'positive':
+        generator_weight = halfnorm.cdf(p_max_sorted_cs[1:], loc=mean, scale=std) - halfnorm.cdf(p_max_sorted_cs[:-1], loc=mean, scale=std)
+    elif method == 'negative':
+        generator_weight = halfnorm.cdf(-p_max_sorted_cs[1:], loc=-mean, scale=std) - halfnorm.cdf(-p_max_sorted_cs[:-1], loc=-mean, scale=std)
+
+    return pd.Series(generator_weight, index=sorted_inds)
+
+def normalize_gsk_zone(generator_weights, gen_bus):
+    """Normalize generator weights to create GSK for a specific zone."""
+    gsk = generator_weights.groupby(gen_bus).sum()
+    gsk = gsk / gsk.sum()  # Normalize to ensure they sum to 1
+    return gsk
+
+def concat_isk(isk_dict):
+    return pd.DataFrame(isk_dict).T.fillna(0)
