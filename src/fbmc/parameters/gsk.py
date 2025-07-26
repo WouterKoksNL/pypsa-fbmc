@@ -477,10 +477,10 @@ def _check_gsk_convergence(
 def gsk_adjustable_cap(
         generators: pd.DataFrame, 
         buses: pd.DataFrame, 
-        adjustable_carriers: list[str] = ['hydropower']
+        adjustable_carriers: None | tuple[str] = None,
         ) -> pd.DataFrame:
     """
-    Calculate the Grid Supply Contribution (GSK) based on adjustable energy capacity.
+    Calculate the Generation Shift Key (GSK) based on adjustable energy capacity.
     
     This method assigns GSK values proportional to adjustable generation capacity at each node,
     assuming adjustable plants are the main flexible resources that respond to changes
@@ -511,6 +511,9 @@ def gsk_adjustable_cap(
     BUS_COLUMN = 'bus'
     P_NOM_COLUMN = 'p_nom'
     
+    if adjustable_carriers is None:
+        adjustable_carriers = generators['carrier'].unique().tolist()
+
     # Filter generators for adjustable carriers and remove up and down regulators
     adjustable_generators = generators[generators['carrier'].isin(adjustable_carriers)]
     adjustable_generators = adjustable_generators[~(adjustable_generators.index.str.endswith('--rd_up') | adjustable_generators.index.str.endswith('--rd_dn'))]
