@@ -1,6 +1,8 @@
 import pandas as pd
 import pypsa
 
+from .helpers import get_net_positions
+
 
 def calculate_flow_reliability_margin(line_capacities: pd.Series, reliability_margin_factor: float = 0.1) -> pd.Series:
     """Calculate Flow Reliability Margin (FRM) for transmission lines.
@@ -29,55 +31,6 @@ def get_base_flows(basecase: pypsa.Network) -> pd.DataFrame:
         basecase.lines_t.p0.T
     ])
 
-# def calculate_ram(network: pypsa.Network,
-#                  zonal_ptdf: pd.DataFrame,
-#                  min_ram: float = 0.0,
-#                  reliability_margin_factor: float = 0.1,
-#                  add_zptdf_np_term: bool = True,
-#                  ) -> pd.DataFrame:
-#     """
-#     Calculate the Remaining Available Margin (RAM) for a given power network.
-    
-#     Args:
-#         network: PyPSA network containing the initial state
-#         zonal_ptdf: The zonal Power Transfer Distribution Factors matrix
-#         min_ram: Minimum RAM value as fraction of capacity (default 0.0)
-#         reliability_margin_factor: Safety factor for reliability margin (default 0.1)
-    
-#     Returns:
-#         DataFrame containing RAM values for each branch
-#     """
-#     if network.transformers.index.isin(network.lines.index).any():
-#         raise ValueError("Transformers and lines cannot have the same names")
-#     if not network.links.empty:
-#         raise Warning("Links are not fully supported.")
-#     # Get base state
-#     base_flows = get_base_flows(network)
-#     branch_capacity = network.branches().s_nom
-#     branch_capacity.index = branch_capacity.index.droplevel(0) # Drop MultiIndex
-    
-#     # Calculate components
-#     frm = calculate_flow_reliability_margin(branch_capacity, 
-#                                           reliability_margin_factor=reliability_margin_factor)
-#     net_positions = get_net_positions(network.buses, network.buses_t, zonal_ptdf.columns)
-
-#     # Calculate final RAM values
-#     partial_ram = branch_capacity - frm
-#     partial_ram = partial_ram.loc[zonal_ptdf.index]
-
-
-#     ram = (partial_ram - base_flows.loc[zonal_ptdf.index].T).T
-
-#     # Optionally add the zonal PTDF term
-#     if add_zptdf_np_term:
-#         zptdf_term = zonal_ptdf @ net_positions.T  # matrix multiplication with pandas
-#         ram = ram.add(zptdf_term)
-
-
-#     if min_ram > 0:
-#         ram = ram.clip(lower=min_ram*branch_capacity)
-#     return ram * 10 + 1000
-
 
 def calculate_ram(network: pypsa.Network,
                   zonal_ptdf,
@@ -87,6 +40,7 @@ def calculate_ram(network: pypsa.Network,
                   ) -> pd.DataFrame:
     """
     Calculate the Remaining Available Margin (RAM) for a given power network.
+    Optional: Add a zonal PTDF term to the RAM calculation: zPTDF * net_positions
 
     Args:
         network: PyPSA network containing the initial state
@@ -101,6 +55,7 @@ def calculate_ram(network: pypsa.Network,
         raise ValueError("Transformers and lines cannot have the same names")
     if not network.links.empty:
         raise Warning("Links are not fully supported.")
+
     # Get base state
     base_flows = get_base_flows(network)  # shape: (branches, snapshots)
     branch_capacity = network.branches().s_nom
