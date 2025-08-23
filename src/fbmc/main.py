@@ -5,7 +5,6 @@ Created on Mon Mar 17 13:01:07 2025
 @author: ameldekok
 """
 
-from matplotlib.pylab import solve
 import pypsa
 
 from . import network_conversion
