@@ -27,7 +27,6 @@ def get_base_flows(basecase: pypsa.Network) -> pd.DataFrame:
     Assumes there are no transformers, links or lines with the same name."""
     return pd.concat([
         basecase.transformers_t.p0.T, 
-        basecase.links_t.p0.T, 
         basecase.lines_t.p0.T
     ])
 
