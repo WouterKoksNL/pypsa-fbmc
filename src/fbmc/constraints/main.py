@@ -34,7 +34,7 @@ def create_zonal_generation(network: pypsa.Network):
     return network
 
 def add_fbmc_constraints(network: pypsa.Network, 
-                         zPTDF_df: Union[pd.DataFrame, Dict[pd.Timestamp, pd.DataFrame]],
+                         zPTDF_df: pd.DataFrame | Dict[pd.Timestamp, pd.DataFrame],
                          RAM_df: pd.DataFrame
                          ) -> pypsa.Network:
     """
