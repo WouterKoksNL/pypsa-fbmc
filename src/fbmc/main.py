@@ -33,7 +33,7 @@ def setup_fbmc_model(basecase_nodal_network: pypsa.Network, target_zonal_network
         The target zonal network with added FBMC constraints.
     """
     # Calculate parameters
-    ram_cnes, z_ptdf_cnes = calculate_fbmc_parameters(basecase_nodal_network, config=config)
+    ram_cnes, z_ptdf_cnes, gsk = calculate_fbmc_parameters(basecase_nodal_network, config=config)
     
     # Add constraints
     target_zonal_network = create_zonal_generation(target_zonal_network)

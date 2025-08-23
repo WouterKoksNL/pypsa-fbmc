@@ -6,17 +6,15 @@ from .ptdf import calculate_zonal_ptdf, get_network_ptdf
 
 from ..config import FBMCConfig
 import pandas as pd
-
-
-from typing import Tuple, Dict
-
+import numpy as np
 
 
 def calculate_fbmc_parameters(
         basecase: pypsa.Network,
         config: FBMCConfig = FBMCConfig(),
         gsk = None,
-        ) -> Tuple[pd.DataFrame, Dict[pd.Timestamp, pd.DataFrame]]:
+        add_zptdf_np_term: bool = True,
+        ) -> tuple[pd.DataFrame, dict[pd.Timestamp, pd.DataFrame], (dict | pd.DataFrame)]:
     """
     Calculate the Flow-Based Market Coupling (FBMC) parameters for a given power network basecase.
 
@@ -79,4 +77,4 @@ def calculate_fbmc_parameters(
         ram_cnes = filter_on_cne(ram, cnes)
         z_ptdf_cnes = filter_on_cne(z_ptdf, cnes)
 
-    return ram_cnes, z_ptdf_cnes
+    return ram_cnes, z_ptdf_cnes, gsk
