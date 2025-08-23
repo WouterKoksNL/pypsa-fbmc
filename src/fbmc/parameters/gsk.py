@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pypsa
+from scipy.stats import norm, halfnorm
 
 from ..config import FBMCConfig, GSKMethod
 from .helpers import (
@@ -49,7 +50,8 @@ def calculate_gsk(network: pypsa.Network,
 
     # Select method based on config
     if config.gsk_method == GSKMethod.ADJUSTABLE_CAP:
-        return gsk_adjustable_cap(network.generators, network.buses)
+        gsk = gsk_adjustable_cap(network.generators, network.buses, adjustable_carriers=config.adjustable_carriers)
+        return {snap: gsk.copy() for snap in network.snapshots}
     elif config.gsk_method == GSKMethod.ITERATIVE_UNCERTAINTY:
         return gsk_iterative_uncertainty(
             network,
@@ -632,8 +634,7 @@ def gsk_current_generation(generators: pd.DataFrame, generators_t_p: pd.DataFram
     if 'bus' not in generators.columns:
          raise ValueError("Generators DataFrame must include 'bus' column.")
          
-    if 'zone_name' not in buses.columns:
-        raise ValueError("Buses DataFrame must include 'zone_name' column.")
+
 
     # Map generators to zones and buses
     try:
@@ -704,9 +705,11 @@ def gsk_current_generation(generators: pd.DataFrame, generators_t_p: pd.DataFram
 
 
 def calc_merit_order_based_gsk(network: pypsa.Network,
-                     standard_deviation: int | float | dict | pd.Series
+                     standard_deviation: int | float | dict | pd.Series,
+
                      ) -> dict[pd.Index, pd.DataFrame]:
     """Calculate the GSK based on the merit order of generators in each zone. 
+    !! DOES NOT INCLUDE STORAGE !!
 
     Args:
         network (pypsa.Network): nodal network. buses must have 'zone_name' attribute.
@@ -716,8 +719,10 @@ def calc_merit_order_based_gsk(network: pypsa.Network,
         dict[pd.Index, pd.DataFrame]: GSKs for each snapshot.
     """
     gen_zone_map = network.generators.bus.map(network.buses['zone_name'])
-    reference_generation_zones = get_net_positions(network.buses, network.buses_t, network.buses.zone_name.unique())
-    # reference_generation_zones = network.generators_t.p.T.groupby(gen_zone_map).sum().T
+
+    # reference_net_positions_zones = get_net_positions(network.buses, network.buses_t, network.buses.zone_name.unique())
+
+    reference_generation_zones = network.generators_t.p.T.groupby(gen_zone_map).sum().T
     
     if isinstance(standard_deviation, (int | float)):
         standard_deviation = pd.Series(standard_deviation, index=reference_generation_zones.columns)
