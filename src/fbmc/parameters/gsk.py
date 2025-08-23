@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import pypsa
-from typing import List, Dict, Tuple, Union, Optional
 
 from ..config import FBMCConfig, GSKMethod
 from .helpers import (
@@ -14,7 +13,7 @@ from .helpers import (
 )
 
 def calculate_gsk(network: pypsa.Network, 
-                  config: FBMCConfig = FBMCConfig()) -> Union[pd.DataFrame, Dict[pd.Timestamp, pd.DataFrame]]:
+                  config: FBMCConfig = FBMCConfig()) -> pd.DataFrame | dict[pd.Timestamp, pd.DataFrame]:
     """
     Calculate the Generator Shift Key (GSK) of every node in the network.
     
@@ -80,11 +79,11 @@ def calculate_gsk(network: pypsa.Network,
 
 def gsk_iterative_uncertainty(
     network: pypsa.Network,
-    uncertain_carriers: List[str] = ['offshore-wind', 'onshore-wind'],
+    uncertain_carriers: list[str] = ['offshore-wind', 'onshore-wind'],
     num_iterations: int = 10,
     gen_variation_std_dev: float = 0.1,
     load_variation_std_dev: float = 0.1
-) -> Dict[pd.Timestamp, pd.DataFrame]:
+) -> dict[pd.Timestamp, pd.DataFrame]:
     """
     Calculate GSK using Monte Carlo simulation with uncertainty in generation and load.
     
@@ -109,8 +108,8 @@ def gsk_iterative_uncertainty(
         
     Returns
     -------
-    Dict[pd.Timestamp, pd.DataFrame]
-        Dictionary of DataFrames containing GSK values for each bus and zone, one per snapshot
+    dict[pd.Timestamp, pd.DataFrame]
+        dictionary of DataFrames containing GSK values for each bus and zone, one per snapshot
     """
     # Validate inputs
     if num_iterations < 1:
@@ -153,11 +152,11 @@ def gsk_iterative_uncertainty(
 
 def gsk_iterative_merit_order(
     network: pypsa.Network,
-    uncertain_carriers: List[str] = ['offshore-wind', 'onshore-wind'],
+    uncertain_carriers: list[str] = ['offshore-wind', 'onshore-wind'],
     num_iterations: int = 10,
     gen_variation_std_dev: float = 0.1,
     load_variation_std_dev: float = 0.1
-) -> Dict[pd.Timestamp, pd.DataFrame]:
+) -> dict[pd.Timestamp, pd.DataFrame]:
     """
     Calculate GSK using Monte Carlo simulation with uncertainty in generation and load.
     
@@ -240,13 +239,13 @@ def gsk_iterative_merit_order(
 def gsk_iterative_fbmc(
     network: pypsa.Network,
     config: FBMCConfig = FBMCConfig(),
-    uncertain_carriers: List[str] = ['offshore-wind', 'onshore-wind'],
+    uncertain_carriers: list[str] = ['offshore-wind', 'onshore-wind'],
     num_iterations: int = 100,
     max_gsk_iterations: int = 5,
     gen_variation_std_dev: float = 0.1,
     load_variation_std_dev: float = 0.1,
     initial_gsk_method: str = "CURRENT_GENERATION"
-) -> Dict[pd.Timestamp, pd.DataFrame]:
+) -> dict[pd.Timestamp, pd.DataFrame]:
     """
     Calculate GSK using an iterative FBMC approach for multiple iterations.
     
@@ -279,8 +278,8 @@ def gsk_iterative_fbmc(
         
     Returns
     -------
-    Dict[pd.Timestamp, pd.DataFrame]
-        Dictionary of DataFrames containing GSK values for each bus and zone, one per snapshot
+    dict[pd.Timestamp, pd.DataFrame]
+        dictionary of DataFrames containing GSK values for each bus and zone, one per snapshot
     """
     # Validate inputs
     if num_iterations < 1:
@@ -341,7 +340,7 @@ def gsk_iterative_fbmc(
     # Return final GSK
     return current_gsk
 
-def _get_initial_gsk(network: pypsa.Network, method: str) -> Dict[pd.Timestamp, pd.DataFrame]:
+def _get_initial_gsk(network: pypsa.Network, method: str) -> dict[pd.Timestamp, pd.DataFrame]:
     """Get initial GSK using specified method."""
 
     print(f"Calculating initial GSK using {method} method")
@@ -356,9 +355,9 @@ def _get_initial_gsk(network: pypsa.Network, method: str) -> Dict[pd.Timestamp, 
 
 def _run_fbmc_with_gsk(
     perturbed_network: pypsa.Network, 
-    current_gsk: Dict[pd.Timestamp, pd.DataFrame],
+    current_gsk: dict[pd.Timestamp, pd.DataFrame],
     config: FBMCConfig
-) -> Dict:
+) -> dict:
     """
     Run FBMC with the current GSK and return generation allocation.
     
@@ -373,7 +372,7 @@ def _run_fbmc_with_gsk(
     ----------
     perturbed_network : pypsa.Network
         The perturbed network with variations in generation/load
-    current_gsk : Dict[pd.Timestamp, pd.DataFrame]
+    current_gsk : dict[pd.Timestamp, pd.DataFrame]
         The current GSK to use for FBMC calculation
     config : FBMCConfig
         Configuration for the FBMC calculation
@@ -449,7 +448,7 @@ def _run_fbmc_with_gsk(
 
 def _calculate_fbmc_gen_difference(
     original_network: pypsa.Network,
-    fbmc_results: Dict
+    fbmc_results: dict
 ) -> np.ndarray:
     """Calculate generation differences between original and FBMC results."""
     # Extract generation from FBMC results
@@ -461,8 +460,8 @@ def _calculate_fbmc_gen_difference(
     return difference
 
 def _check_gsk_convergence(
-    new_gsk: Dict[pd.Timestamp, pd.DataFrame],
-    current_gsk: Dict[pd.Timestamp, pd.DataFrame],
+    new_gsk: dict[pd.Timestamp, pd.DataFrame],
+    current_gsk: dict[pd.Timestamp, pd.DataFrame],
     tolerance: float = 0.01
 ) -> bool:
     """Check if GSK has converged by comparing new and current values."""
@@ -599,7 +598,7 @@ def gsk_adjustable_cap(
     return gsk_matrix
 
 
-def gsk_current_generation(generators: pd.DataFrame, generators_t_p: pd.DataFrame, buses: pd.DataFrame) -> Dict[pd.Timestamp, pd.DataFrame]:
+def gsk_current_generation(generators: pd.DataFrame, generators_t_p: pd.DataFrame, buses: pd.DataFrame) -> dict[pd.Timestamp, pd.DataFrame]:
     """
     Calculate the GSK based on current generation values for each snapshot.
 
@@ -615,7 +614,7 @@ def gsk_current_generation(generators: pd.DataFrame, generators_t_p: pd.DataFram
 
     Returns
     -------
-    Dict[pd.Timestamp, pd.DataFrame]
+    dict[pd.Timestamp, pd.DataFrame]
         A dictionary where keys are snapshots and values are DataFrames 
         containing the GSKs (Index: zones, Columns: buses).
         
@@ -710,7 +709,7 @@ def calc_merit_order_based_gsk(network: pypsa.Network,
     """Calculate the GSK based on the merit order of generators in each zone. 
 
     Args:
-        network (pypsa.Network): _description_
+        network (pypsa.Network): nodal network. buses must have 'zone_name' attribute.
         standard_deviation (int | float | dict | pd.Series): _description_
 
     Returns:
