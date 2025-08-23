@@ -130,7 +130,8 @@ def construct_cne_constraint(zPTDF: xr.DataArray, total_zonal_generation: lp.Var
     internal_zonal_loads = zonal_loads.sel(Zone=zones)
     
     # Calculate net position (generation minus load)
-    net_position = internal_zonal_gen - internal_zonal_loads
+    net_position = (internal_zonal_gen - internal_zonal_loads)
+    print('use function instead')
     
     # Handle snapshot-dependent and static zPTDFs differently
     if snapshot_dependent:
@@ -140,30 +141,33 @@ def construct_cne_constraint(zPTDF: xr.DataArray, total_zonal_generation: lp.Var
         # Make sure snapshots are aligned
         snapshots = [snap for snap in zPTDF.coords['snapshot'].values if snap in RAM.coords['snapshot'].values]
         
-        # Calculate the LHS for each CNE
-        for cne in zPTDF.CNE.values:
-            # For each snapshot and CNE, calculate the flow
-            flow_terms = []
-            for snap in snapshots:
-                # Get zPTDF for this snapshot and CNE
-                ptdf_slice = zPTDF.sel(snapshot=snap, CNE=cne)
+        # # # # Calculate the LHS for each CNE
+        # for cne in zPTDF.CNE.values:
+        #     # For each snapshot and CNE, calculate the flow
+        #     flow_terms = []
+        #     for snap in snapshots:
+        #         # Get zPTDF for this snapshot and CNE
+        #         ptdf_slice = zPTDF.sel(snapshot=snap, CNE=cne)
                 
-                # Get net position for this snapshot
-                net_pos_slice = net_position.sel(snapshot=snap)
+        #         # Get net position for this snapshot
+        #         net_pos_slice = net_position.sel(snapshot=snap)
                 
-                # Calculate flow term
-                term = (ptdf_slice * net_pos_slice).sum(dim="Zone")
-                flow_terms.append(term)
+        #         # Calculate flow term
+        #         term = (ptdf_slice * net_pos_slice).sum(dim="Zone")
+        #         flow_terms.append(term)
             
-            # Combine flow terms for all snapshots for this CNE
-            cne_term = lp.merge(flow_terms, dim="snapshot")
-            cne_lhs_list.append(cne_term)
+        #     # Combine flow terms for all snapshots for this CNE
+        #     cne_term = lp.merge(flow_terms, dim="snapshot")
+        #     cne_lhs_list.append(cne_term)
         
-        # Combine all CNE terms
-        cne_lhs = lp.merge(cne_lhs_list, dim="CNE")
+        # # Combine all CNE terms
+        # cne_lhs = lp.merge(cne_lhs_list, dim="CNE")
         
+
+        cne_lhs = (zPTDF * net_position).sum(dim="Zone")
+        # output dim: [snapshot, CNE]
         # Get corresponding RAM values
-        ram_subset = RAM.sel(CNE=zPTDF.CNE.values, snapshot=snapshots)
+        ram_subset = RAM.sel(CNE=zPTDF.CNE, snapshot=snapshots).T
         
         # Create the constraint
         cne_constraint = cne_lhs <= ram_subset
@@ -173,6 +177,8 @@ def construct_cne_constraint(zPTDF: xr.DataArray, total_zonal_generation: lp.Var
         for cne in zPTDF.CNE.values:
             term = (zPTDF.sel(CNE=cne) * net_position).sum(dim="Zone")
             cne_lhs_list.append(term)
+
+        
         
         cne_lhs = lp.merge(cne_lhs_list, dim="CNE")
         cne_constraint = cne_lhs <= RAM
