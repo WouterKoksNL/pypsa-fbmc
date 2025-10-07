@@ -96,7 +96,7 @@ def get_zonal_loads(load_zone_mask, loads_t_pset):
 
 # ---- Constraint Construction ----
 
-def construct_cne_constraint(zPTDF: xr.DataArray, total_zonal_generation: lp.Variable, zonal_loads: xr.DataArray, RAM: xr.DataArray):
+def construct_cne_constraint(zPTDF: xr.DataArray, net_positions: lp.LinearExpression, RAM: xr.DataArray):
     """
     Create the constraint restricting the flow on CNEs by the Remaining Available Margin (RAM).
     
@@ -123,15 +123,9 @@ def construct_cne_constraint(zPTDF: xr.DataArray, total_zonal_generation: lp.Var
     snapshot_dependent = "snapshot" in zPTDF.dims
     
     # Get zones that are in both zPTDF and total_zonal_generation
-    zones = [zone for zone in zPTDF.coords['Zone'].values if zone in total_zonal_generation.indexes['Zone']]
-    
-    # Get the generation and load for these zones
-    internal_zonal_gen = total_zonal_generation.sel(Zone=zones)
-    internal_zonal_loads = zonal_loads.sel(Zone=zones)
-    
-    # Calculate net position (generation minus load)
-    net_position = (internal_zonal_gen - internal_zonal_loads)
-    print('use function instead')
+    zones = [zone for zone in zPTDF.coords['Zone'].values if zone in net_positions.indexes['Zone']]
+    net_positions = net_positions.sel(Zone=zones)
+    # internal_zonal_loads = zonal_loads.sel(Zone=zones)
     
     # Handle snapshot-dependent and static zPTDFs differently
     if snapshot_dependent:
@@ -141,30 +135,7 @@ def construct_cne_constraint(zPTDF: xr.DataArray, total_zonal_generation: lp.Var
         # Make sure snapshots are aligned
         snapshots = [snap for snap in zPTDF.coords['snapshot'].values if snap in RAM.coords['snapshot'].values]
         
-        # # # # Calculate the LHS for each CNE
-        # for cne in zPTDF.CNE.values:
-        #     # For each snapshot and CNE, calculate the flow
-        #     flow_terms = []
-        #     for snap in snapshots:
-        #         # Get zPTDF for this snapshot and CNE
-        #         ptdf_slice = zPTDF.sel(snapshot=snap, CNE=cne)
-                
-        #         # Get net position for this snapshot
-        #         net_pos_slice = net_position.sel(snapshot=snap)
-                
-        #         # Calculate flow term
-        #         term = (ptdf_slice * net_pos_slice).sum(dim="Zone")
-        #         flow_terms.append(term)
-            
-        #     # Combine flow terms for all snapshots for this CNE
-        #     cne_term = lp.merge(flow_terms, dim="snapshot")
-        #     cne_lhs_list.append(cne_term)
-        
-        # # Combine all CNE terms
-        # cne_lhs = lp.merge(cne_lhs_list, dim="CNE")
-        
-
-        cne_lhs = (zPTDF * net_position).sum(dim="Zone")
+        cne_lhs = (zPTDF * net_positions).sum(dim="Zone")
         # output dim: [snapshot, CNE]
         # Get corresponding RAM values
         ram_subset = RAM.sel(CNE=zPTDF.CNE, snapshot=snapshots).T
@@ -185,14 +156,10 @@ def construct_cne_constraint(zPTDF: xr.DataArray, total_zonal_generation: lp.Var
     
     return cne_constraint
 
-def construct_zonal_balance_constraint(total_zonal_generation: lp.Variable, zonal_loads: xr.DataArray):
+def construct_zonal_balance_constraint(net_positions: lp.LinearExpression):
     """
     Get the zonal balance constraint.
     """
-    assert total_zonal_generation.indexes["Zone"].equals(zonal_loads.indexes["Zone"]), "Zone mismatch in zonal_gen and zonal_loads!"
 
-    total_gen = total_zonal_generation.sum(dim="Zone")
-    total_loads = zonal_loads.sum(dim="Zone")
-
-    return total_gen == total_loads
+    return net_positions.sum(dim="Zone") == 0
 

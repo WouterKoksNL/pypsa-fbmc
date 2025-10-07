@@ -8,7 +8,8 @@ import pandas as pd
 
 from .redispatch import add_gen_up_and_down_regulators, update_objective_function
 from .fbmc_constraints import construct_cne_constraint, construct_zonal_balance_constraint, convert_RAM_to_xarray, convert_zPTDF_to_xarray, create_load_zone_mapping, create_load_zone_mask, get_zonal_loads
-from .zonal_generation import construct_zonal_generation_constraint, create_generator_zone_mapping, create_signed_generator_mask, add_zonal_generation_variable
+from .zonal_generation import construct_zonal_generation_constraint, define_nodal_balance_constraints, create_generator_zone_mapping, create_signed_generator_mask, add_zonal_generation_variable
+
 
 def create_zonal_generation(network: pypsa.Network):
     """
@@ -25,11 +26,15 @@ def create_zonal_generation(network: pypsa.Network):
     signed_mask = create_signed_generator_mask(generator_zone_mapping, zones, generator_sign)
 
     # Add the zonal generation constraint
-    zonal_generation_constraint = construct_zonal_generation_constraint(
-        total_zonal_generation = zonal_generation_var, 
-        generators = network.model.variables["Generator-p"],
-        signed_mask = signed_mask)
-    network.model.add_constraints(zonal_generation_constraint, name="Zone-p_definition")
+    if False:
+        zonal_generation_constraint = construct_zonal_generation_constraint(
+            total_zonal_generation = zonal_generation_var, 
+            generators = network.model.variables["Generator-p"],
+            signed_mask = signed_mask)
+        network.model.add_constraints(zonal_generation_constraint, name="Zone-p_definition")
+    else: 
+        zone_p_defining_constraint = define_nodal_balance_constraints(network, network.snapshots, network.buses.index)
+        # network.model.add_constraints(zone_p_defining_constraint, name="Zone-p_definition")
 
     return network
 
@@ -60,7 +65,7 @@ def add_fbmc_constraints(network: pypsa.Network,
     RAM_xr = convert_RAM_to_xarray(RAM_df)
 
     # Retrieve the zonal generation variable
-    zonal_generation = network.model.variables["Zone-p"]
+    net_positions = network.model.variables["Zone-p"]
 
     # zonal loads
     load_zone_mapping = create_load_zone_mapping(network.loads)
@@ -69,11 +74,11 @@ def add_fbmc_constraints(network: pypsa.Network,
     zonal_loads = get_zonal_loads(load_zone_mask, network.get_switchable_as_dense("Load", "p_set"))
 
     # Restrict the load on CNEs by the Remaining Available Margin (RAM)
-    cne_constraint = construct_cne_constraint(zPTDF_xr, zonal_generation, zonal_loads, RAM_xr)
+    cne_constraint = construct_cne_constraint(zPTDF_xr, net_positions, RAM_xr)
     network.model.add_constraints(cne_constraint, name="CNE-RAM")
 
     # Ensure the Net Position of all zones adds up to 0
-    zonal_balance_constraint = construct_zonal_balance_constraint(zonal_generation, zonal_loads)
+    zonal_balance_constraint = construct_zonal_balance_constraint(net_positions)
     network.model.add_constraints(zonal_balance_constraint, name="Zonal_balance")
 
     return network

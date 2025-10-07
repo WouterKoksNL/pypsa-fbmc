@@ -77,9 +77,11 @@ def calculate_ram(network: pypsa.Network,
             
             zptdf_df = zonal_ptdf[snapshot]
             partial_ram = branch_capacity - frm
-            partial_ram = partial_ram.loc[zptdf_df.index]
+            # partial_ram = partial_ram.loc[zptdf_df.index]
+            zones = zptdf_df.columns
+            net_positions_base_case = get_net_positions(network, zones).loc[snapshot]
 
-            net_positions = get_net_positions(network.buses, network.buses_t, zptdf_df.columns).loc[snapshot]
+            ram = (partial_ram.loc[zptdf_df.index] - base_flows.loc[snapshot, zptdf_df.index])
 
             ram = (partial_ram - base_flows.loc[zptdf_df.index, snapshot])
             
