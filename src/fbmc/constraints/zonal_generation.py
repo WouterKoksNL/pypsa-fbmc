@@ -100,7 +100,7 @@ def define_net_positions_constraint(
         if expr.size:
             exprs.append(expr.groupby(cbuses).sum())
 
-    nodal_production = merge(exprs, join="outer").reindex(Bus=buses)
+    zonal_production = merge(exprs, join="outer").reindex(Bus=buses)
     active = n.loads.query("active").index
     fixed_load = (
         (-as_dense(n, "Load", "p_set", sns, active) * n.loads.sign[active])
@@ -130,6 +130,5 @@ def define_net_positions_constraint(
             mask = mask.rename(Bus=f"Bus{suffix}")
     zonal_production = zonal_production.rename({"Bus": "Zone"})
     fixed_load = fixed_load.rename({"Bus": "Zone"})
-    n.model.add_constraints(n.model.variables['Zone-p'] - (lhs - fixed_load), "=", 0, name=f"Zone{suffix}-definition", mask=mask)
     n.model.add_constraints(n.model.variables['Zone-p'] - (zonal_production - fixed_load), "=", 0, name=f"Zone{suffix}-definition", mask=mask)
 
