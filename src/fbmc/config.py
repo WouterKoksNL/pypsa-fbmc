@@ -38,3 +38,10 @@ class FBMCConfig:
     # Iterative GSK parameters
     max_gsk_iterations: int = 5
     initial_gsk_method: str = GSKMethod.CURRENT_GENERATION
+
+    pos_neg_method: bool = False
+    gsk_std_dev: float = 5
+    run_redispatch: bool = False
+
+    add_security_constraints: bool = False
+
