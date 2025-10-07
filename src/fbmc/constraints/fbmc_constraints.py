@@ -146,7 +146,7 @@ def construct_cne_constraint(zPTDF: xr.DataArray, net_positions: lp.LinearExpres
         # For static zPTDF (original implementation)
         cne_lhs_list = []
         for cne in zPTDF.CNE.values:
-            term = (zPTDF.sel(CNE=cne) * net_position).sum(dim="Zone")
+            term = (zPTDF.sel(CNE=cne) * net_positions).sum(dim="Zone")
             cne_lhs_list.append(term)
 
         
