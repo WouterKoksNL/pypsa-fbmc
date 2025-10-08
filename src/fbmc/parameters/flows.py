@@ -22,19 +22,24 @@ def calculate_flow_reliability_margin(line_capacities: pd.Series, reliability_ma
 
     return line_capacities * reliability_margin_factor
 
-def get_base_flows(basecase: pypsa.Network) -> pd.DataFrame:
+
+def get_base_flows(sub_network: pypsa.SubNetwork) -> pd.DataFrame:
     """Get the base case power flows from transformers, links and lines.
     Assumes there are no transformers, links or lines with the same name."""
     return pd.concat([
-        basecase.transformers_t.p0.T, 
         basecase.lines_t.p0.T
     ])
+        sub_network.pnl('lines')['p0'].T
+    ]).T
 
 
-def calculate_ram(network: pypsa.Network,
-                  zonal_ptdf,
+def calculate_branch_capacity(sub_network: pd.DataFrame) -> pd.Series:
+    return sub_network.branches().s_nom.droplevel(0)
+
+
                   min_ram: float = 0.0,
                   reliability_margin_factor: float = 0.1,
+                  net_positions_base_case: None | pd.DataFrame = None,
                   add_zptdf_np_term: bool = True,
                   ) -> pd.DataFrame:
     """
@@ -43,7 +48,6 @@ def calculate_ram(network: pypsa.Network,
 
     Args:
         network: PyPSA network containing the initial state
-        zonal_ptdf: Either a static pd.DataFrame or a dict {snapshot: pd.DataFrame}
         min_ram: Minimum RAM value as fraction of capacity (default 0.0)
         reliability_margin_factor: Safety factor for reliability margin (default 0.1)
 
@@ -51,65 +55,47 @@ def calculate_ram(network: pypsa.Network,
         DataFrame (snapshots x branches) of RAM values
     """
     if network.transformers.index.isin(network.lines.index).any():
+    if sub_network.transformers_i().isin(sub_network.lines_i()).any():
         raise ValueError("Transformers and lines cannot have the same names")
     if not network.links.empty:
-        raise Warning("Links are not fully supported.")
 
     # Get base state
     base_flows = get_base_flows(network)  # shape: (branches, snapshots)
     branch_capacity = network.branches().s_nom
     branch_capacity.index = branch_capacity.index.droplevel(0)  # Drop MultiIndex
 
-    # Calculate flow reliability margin
-    frm = calculate_flow_reliability_margin(branch_capacity, 
-                                            reliability_margin_factor=reliability_margin_factor)
+    base_flows = get_base_flows(sub_network)  # shape: (snapshots, branches)
+    if net_positions_base_case is None:
+        zones = zonal_ptdf_dict[list(zonal_ptdf_dict.keys())[0]].index
+        net_positions_base_case = pd.DataFrame(0., index=sub_network.snapshots, columns=zones)
 
-    # Prepare output container
-    snapshots = network.snapshots
-
-    if isinstance(zonal_ptdf, dict):
-        # Time-dependent zonal PTDF case
-        ram_dict = {}
-
-        for snapshot in snapshots:
-            if snapshot not in zonal_ptdf:
-                raise ValueError(f"Snapshot {snapshot} missing from zonal_ptdf dict.")
             
-            zptdf_df = zonal_ptdf[snapshot]
-            partial_ram = branch_capacity - frm
-            # partial_ram = partial_ram.loc[zptdf_df.index]
-            zones = zptdf_df.columns
-            net_positions_base_case = get_net_positions(network, zones).loc[snapshot]
 
-            ram = (partial_ram.loc[zptdf_df.index] - base_flows.loc[snapshot, zptdf_df.index])
+    ram_dict = {}
 
             ram = (partial_ram - base_flows.loc[zptdf_df.index, snapshot])
-            
-            if add_zptdf_np_term:
                 zptdf_term = zptdf_df @ net_positions.T  # shape: (branches,)
-                ram = ram + zptdf_term
+    for snapshot in sub_network.snapshots:
+        if snapshot not in zonal_ptdf_dict:
+            raise ValueError(f"Snapshot {snapshot} missing from zonal_ptdf dict.")
+        
+        zptdf_df = zonal_ptdf_dict[snapshot]
+        net_positions_base_case_t = net_positions_base_case.loc[snapshot]
+        branch_capacity = calculate_branch_capacity(sub_network)
 
-            if min_ram > 0:
-                ram = ram.clip(lower=min_ram * branch_capacity)
+        # Calculate flow reliability margin
+        frm = calculate_flow_reliability_margin(branch_capacity, 
 
-            ram_dict[snapshot] = ram
-
-        ram_df = pd.DataFrame(ram_dict) # shape: (branches, snapshots)
-
-    else:
-        # Static zonal PTDF case
         partial_ram = branch_capacity - frm
         partial_ram = partial_ram.loc[zonal_ptdf.index]
 
-        net_positions = get_net_positions(network.buses, network.buses_t, zonal_ptdf.columns)
-
-        ram_df = (partial_ram - base_flows.loc[zonal_ptdf.index].T).T  # shape: (snapshots, branches)
+        ram = (partial_ram.loc[zptdf_df.index] - base_flows.loc[snapshot, zptdf_df.index])
 
         if add_zptdf_np_term:
-            zptdf_term = zonal_ptdf @ net_positions.T  # shape: (branches, snapshots)
-            ram_df = ram_df.add(zptdf_term.T)
 
         if min_ram > 0:
-            ram_df = ram_df.clip(lower=min_ram * branch_capacity)
+            ram = ram.clip(lower=min_ram * branch_capacity)
+    ram_df = pd.DataFrame(ram_dict) # shape: (branches, snapshots)
+    ram_df.index.name = "CNE"
 
     return ram_df

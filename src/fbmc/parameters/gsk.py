@@ -13,8 +13,8 @@ from .helpers import (
     silence_output
 )
 
-def calculate_gsk(network: pypsa.Network, 
-                  config: FBMCConfig = FBMCConfig()) -> pd.DataFrame | dict[pd.Timestamp, pd.DataFrame]:
+def calculate_gsk(nodal_net: pypsa.Network, 
+                  config: FBMCConfig = FBMCConfig()) -> dict[pd.Timestamp, pd.DataFrame]:
     """
     Calculate the Generator Shift Key (GSK) of every node in the network.
     
@@ -31,7 +31,7 @@ def calculate_gsk(network: pypsa.Network,
     
     Returns
     -------
-    pd.DataFrame or Dict[pd.Timestamp, pd.DataFrame]
+    pd.DataFrame or dict[pd.Timestamp, pd.DataFrame]
         - For static GSK methods: A DataFrame containing the GSKs for each bus-zone pair.
           Index: zones, Columns: buses, Values: share of zone's change allocated to bus
         - For dynamic GSK methods: A dictionary mapping timestamps to GSK DataFrames.
@@ -42,29 +42,29 @@ def calculate_gsk(network: pypsa.Network,
         If an unknown GSK method is specified or if required network components are missing.
     """
     # Validate network has required components
-    if len(network.generators) == 0:
+    if len(nodal_net.generators) == 0:
         raise ValueError("Network contains no generators. Cannot calculate GSK.")
     
-    if 'zone_name' not in network.buses.columns:
+    if 'zone_name' not in nodal_net.buses.columns:
         raise ValueError("Buses in network must have 'zone_name' attribute for GSK calculation.")
 
     # Select method based on config
     if config.gsk_method == GSKMethod.ADJUSTABLE_CAP:
-        gsk = gsk_adjustable_cap(network.generators, network.buses, adjustable_carriers=config.adjustable_carriers)
-        return {snap: gsk.copy() for snap in network.snapshots}
+        gsk = gsk_adjustable_cap(nodal_net.generators, nodal_net.buses, adjustable_carriers=config.adjustable_carriers)
+        gsk = {snap: gsk.copy() for snap in nodal_net.snapshots}
     elif config.gsk_method == GSKMethod.ITERATIVE_UNCERTAINTY:
-        return gsk_iterative_uncertainty(
-            network,
+        gsk = gsk_iterative_uncertainty(
+            nodal_net,
             uncertain_carriers=config.uncertain_carriers,
             num_iterations=config.num_scenarios,
             gen_variation_std_dev=config.gen_variation_std_dev,
             load_variation_std_dev=config.load_variation_std_dev,
         )
     elif config.gsk_method == GSKMethod.CURRENT_GENERATION:
-        return gsk_current_generation(network.generators, network.generators_t.p, network.buses)
+        gsk = gsk_current_generation(nodal_net.generators, nodal_net.generators_t.p, nodal_net.buses)
     elif config.gsk_method == GSKMethod.ITERATIVE_FBMC:
-        return gsk_iterative_fbmc(
-            network,
+        gsk = gsk_iterative_fbmc(
+            nodal_net,
             config=config,
             uncertain_carriers=config.uncertain_carriers,
             num_iterations=config.num_scenarios,
@@ -74,10 +74,26 @@ def calculate_gsk(network: pypsa.Network,
             initial_gsk_method=config.initial_gsk_method,
         )
     elif config.gsk_method == GSKMethod.MERIT_ORDER:
-        return calc_merit_order_based_gsk(network, standard_deviation=config.gsk_std_dev)
+        gsk = calc_merit_order_based_gsk(nodal_net, standard_deviation=config.gsk_std_dev)
     else:
         raise ValueError(f"Unknown method: {config.gsk_method}. Supported methods are: 'MERIT_ORDER','ADJUSTABLE_CAP', 'ITERATIVE_UNCERTAINTY', 'CURRENT_GENERATION', 'ITERATIVE_FBMC'.")
     
+    if type(gsk) is pd.DataFrame:
+        gsk = {snapshot: gsk for snapshot in nodal_net.snapshots}
+    for snapshot in nodal_net.snapshots:
+        assert bool((
+            np.isclose(
+            np.diag(
+                gsk[snapshot]
+                .T
+                .groupby(nodal_net.buses.zone_name)
+                .sum()
+                .reindex(index=nodal_net.buses.zone_name.unique())
+                .values
+                ),
+            1.0
+            )).all()), f"GSK matrix should be normalized to 1 per zone, and should not have non-zeros for buses outside the zone. For snapshot {snapshot}, GSK matrix diagonal is {np.diag(gsk[snapshot].T.groupby(nodal_net.buses.zone_name).sum().reindex(index=nodal_net.buses.zone_name.unique()).values)}"
+    return gsk 
 
 def gsk_iterative_uncertainty(
     network: pypsa.Network,
@@ -100,7 +116,7 @@ def gsk_iterative_uncertainty(
     network : pypsa.Network
         The network to calculate GSKs for
     uncertain_carriers : list
-        List of generation technologies with uncertainty (e.g. wind, solar)
+        list of generation technologies with uncertainty (e.g. wind, solar)
     num_iterations : int
         Number of Monte Carlo iterations (higher = more stable results)
     gen_variation_std_dev : float
@@ -173,7 +189,7 @@ def gsk_iterative_merit_order(
     network : pypsa.Network
         The network to calculate GSKs for
     uncertain_carriers : list
-        List of generation technologies with uncertainty (e.g. wind, solar)
+        list of generation technologies with uncertainty (e.g. wind, solar)
     num_iterations : int
         Number of Monte Carlo iterations (higher = more stable results)
     gen_variation_std_dev : float
@@ -183,8 +199,8 @@ def gsk_iterative_merit_order(
         
     Returns
     -------
-    Dict[pd.Timestamp, pd.DataFrame]
-        Dictionary of DataFrames containing GSK values for each bus and zone, one per snapshot
+    dict[pd.Timestamp, pd.DataFrame]
+        dictionary of DataFrames containing GSK values for each bus and zone, one per snapshot
     """
     # Validate inputs
     if num_iterations < 1:
@@ -266,7 +282,7 @@ def gsk_iterative_fbmc(
     config : FBMCConfig
         Configuration object with FBMC parameters
     uncertain_carriers : list
-        List of generation technologies with uncertainty (e.g. wind, solar)
+        list of generation technologies with uncertainty (e.g. wind, solar)
     num_iterations : int
         Number of Monte Carlo iterations per GSK iteration
     max_gsk_iterations : int
@@ -381,8 +397,8 @@ def _run_fbmc_with_gsk(
         
     Returns
     -------
-    Dict
-        Dictionary containing optimization results, including generation allocation
+    dict
+        dictionary containing optimization results, including generation allocation
     """
     from ..parameters.main import calculate_fbmc_parameters
     from ..constraints import create_zonal_generation, add_fbmc_constraints, remove_original_constraints
@@ -731,7 +747,7 @@ def calc_merit_order_based_gsk(network: pypsa.Network,
         isk_dict_snapshot = {}
         for zone, gens in network.generators.groupby(gen_zone_map):
             p_max_sorted_cs, sorted_inds = calc_p_max_sorted_cs(network, gens.index, snapshot)
-            gen_weights = assign_merit_order_weights(p_max_sorted_cs, sorted_inds, mean=reference_generation_zones.loc[snapshot, zone], std=standard_deviation.loc[zone], method='neutral') 
+            gen_weights = assign_merit_order_weights(p_max_sorted_cs, sorted_inds, mean=reference_generation_zones.loc[snapshot, zone], std=standard_deviation.loc[zone], method='positive') 
 
             isk_dict_snapshot[zone] = normalize_gsk_zone(gen_weights, network.generators.bus)
 
@@ -821,8 +837,10 @@ def assign_merit_order_weights(p_max_sorted_cs, sorted_inds, mean, std, method='
         generator_weight = halfnorm.cdf(p_max_sorted_cs[1:], loc=mean, scale=std) - halfnorm.cdf(p_max_sorted_cs[:-1], loc=mean, scale=std)
     elif method == 'negative':
         generator_weight = halfnorm.cdf(-p_max_sorted_cs[1:], loc=-mean, scale=std) - halfnorm.cdf(-p_max_sorted_cs[:-1], loc=-mean, scale=std)
-
-    return pd.Series(generator_weight, index=sorted_inds)
+    weight = pd.Series(generator_weight, index=sorted_inds)
+    if weight.sum() == 0:
+        raise ValueError("All generators have zero weight.")
+    return weight
 
 def normalize_gsk_zone(generator_weights, gen_bus):
     """Normalize generator weights to create GSK for a specific zone."""

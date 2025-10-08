@@ -9,11 +9,11 @@ import pypsa
 
 from . import network_conversion
 from .constraints.main import add_redispatch_constraints
-from .parameters import calculate_fbmc_parameters
+from .parameters import calculate_fbmc_parameters, calculate_gsk
 from .constraints import create_zonal_generation, add_fbmc_constraints, remove_original_constraints
 from .config import FBMCConfig
 
-def setup_fbmc_model(basecase_nodal_network: pypsa.Network, target_zonal_network: pypsa.Network, config: FBMCConfig = FBMCConfig()) -> pypsa.Network:
+def setup_fbmc_model(basecase_nodal_network: pypsa.Network, target_zonal_network: pypsa.Network, config: FBMCConfig = FBMCConfig(), gsk=None) -> pypsa.Network:
     """
     Set up the FBMC model by calculating parameters and adding constraints.
     
@@ -32,7 +32,12 @@ def setup_fbmc_model(basecase_nodal_network: pypsa.Network, target_zonal_network
         The target zonal network with added FBMC constraints.
     """
     # Calculate parameters
-    ram_cnes, z_ptdf_cnes, gsk = calculate_fbmc_parameters(basecase_nodal_network, config=config)
+    if gsk is None:
+        gsk = calculate_gsk(basecase_nodal_network, config)
+
+    basecase_nodal_network.determine_network_topology()
+    sub_network = basecase_nodal_network.sub_networks.loc['0'].obj
+    ram_cnes, z_ptdf_cnes = calculate_fbmc_parameters(sub_network, gsk, config=config)
     
     # Add constraints
     target_zonal_network = create_zonal_generation(target_zonal_network)

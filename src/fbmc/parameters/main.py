@@ -1,18 +1,20 @@
 import pypsa
-from .cne import determine_cnes, filter_on_cne
-from .flows import calculate_ram
-from .gsk import calculate_gsk
-from .ptdf import calculate_zonal_ptdf, get_network_ptdf
-
-from ..config import FBMCConfig
 import pandas as pd
 import numpy as np
 
 
+from .cne import determine_cnes, filter_on_cne
+from .flows import calculate_ram, get_base_flows
+from .gsk import calculate_gsk
+from .ptdf import calculate_zonal_ptdf, get_subnetwork_ptdf
+from ..config import FBMCConfig
+from .net_positions import calc_net_positions_sub_network
+
+
 def calculate_fbmc_parameters(
-        basecase: pypsa.Network,
+        sub_network: pypsa.SubNetwork,
+        gsk: dict,
         config: FBMCConfig = FBMCConfig(),
-        gsk = None,
         add_zptdf_np_term: bool = True,
         ) -> tuple[pd.DataFrame, dict[pd.Timestamp, pd.DataFrame], (dict | pd.DataFrame)]:
     """
@@ -37,44 +39,34 @@ def calculate_fbmc_parameters(
     """
 
     # Calculate the FBMC parameters
-    max_absolute_flow = basecase.lines_t.p0.abs().max()
-    line_capacity = basecase.lines.s_nom
+    max_absolute_flow = get_base_flows(sub_network).abs().max()
+    line_capacity = sub_network.branches().s_nom.droplevel(0)
+    if isinstance(gsk, pd.DataFrame):
+        gsk = {snapshot: gsk.copy() for snapshot in sub_network.snapshots}
 
     cnes = determine_cnes(
         max_absolute_flow,
         line_capacity,
         line_usage_threshold = config.line_usage_threshold
         )
-    if gsk is None:
-        gsk = calculate_gsk(basecase, config)
-        
-    ptdf, _ = get_network_ptdf(basecase)
-    
-    # Handle both static and snapshot-based GSKs
-    if isinstance(gsk, dict):  # Snapshot-based GSKs
-        z_ptdf = {}
-        for snapshot, gsk_snapshot in gsk.items():
-            z_ptdf[snapshot] = calculate_zonal_ptdf(ptdf, gsk_snapshot)
-            
-        # Calculate RAM - this remains the same as it's already snapshot-based
-        ram = calculate_ram(basecase,
-                          zonal_ptdf = z_ptdf[basecase.snapshots[0]],  # Use first snapshot's PTDF for RAM calculation
-                          min_ram = config.min_ram, 
-                          reliability_margin_factor = config.reliability_margin_factor)
-        
-        # Filter on CNEs for each snapshot
-        ram_cnes = filter_on_cne(ram, cnes)
-        z_ptdf_cnes = {snapshot: filter_on_cne(z_ptdf_snapshot, cnes) 
-                       for snapshot, z_ptdf_snapshot in z_ptdf.items()}
-    else:  # Static GSK
-        z_ptdf = calculate_zonal_ptdf(ptdf, gsk)
-        
-        ram = calculate_ram(basecase,
-                          zonal_ptdf = z_ptdf, 
-                          min_ram = config.min_ram, 
-                          reliability_margin_factor = config.reliability_margin_factor)
-        
-        ram_cnes = filter_on_cne(ram, cnes)
-        z_ptdf_cnes = filter_on_cne(z_ptdf, cnes)
 
-    return ram_cnes, z_ptdf_cnes, gsk
+    z_ptdf = {}
+    for snapshot, gsk_snapshot in gsk.items():
+        z_ptdf[snapshot] = calculate_zonal_ptdf(ptdf, gsk_snapshot)
+
+
+    # Calculate RAM - this remains the same as it's already snapshot-based
+    net_positions_base_case = calc_net_positions_sub_network(sub_network)
+    ram = calculate_ram(sub_network,
+                    zonal_ptdf_dict = z_ptdf, 
+                    min_ram = config.min_ram, 
+                    reliability_margin_factor = config.reliability_margin_factor,
+                    net_positions_base_case=net_positions_base_case,
+                    add_zptdf_np_term=add_zptdf_np_term)
+
+    # Filter on CNEs for each snapshot
+    ram_cnes = filter_on_cne(ram, cnes)
+    z_ptdf_cnes = {snapshot: filter_on_cne(z_ptdf_snapshot, cnes) 
+                    for snapshot, z_ptdf_snapshot in z_ptdf.items()}
+    
+    return ram_cnes, z_ptdf_cnes

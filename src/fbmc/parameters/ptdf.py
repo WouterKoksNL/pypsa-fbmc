@@ -1,28 +1,20 @@
-from typing import Tuple
 import numpy as np
 import pandas as pd
 import pypsa
 
 
-def get_network_ptdf(basecase: pypsa.Network) -> Tuple[pd.DataFrame, pypsa.SubNetwork]:
+def get_subnetwork_ptdf(sub_network: pypsa.SubNetwork) -> tuple[pd.DataFrame, pypsa.SubNetwork]:
     """
     Extract PTDF matrix from the network model.
     Returns PTDF matrix and associated sub_network.
     """
-    basecase.determine_network_topology()
-    sub_network = basecase.sub_networks.loc['0'].obj
     sub_network.calculate_PTDF()
-    
     ptdf = pd.DataFrame(
         sub_network.PTDF,
-        index=sub_network.branches().index.droplevel(0), # Drop MultiIndex
+        index=sub_network.branches().index.droplevel(0), # Drop MultiIndex. The branches include lines and transformers
         columns=sub_network.buses_o # Ordered list of buses used in all PF and PTDF calculations (slack first, then PV, then PQ)
     )
-
-    # Reindex PTDF to match the order of buses in the basecase
-    ptdf_readable = ptdf.reindex(columns=basecase.buses.index) 
-    
-    return ptdf_readable, sub_network
+    return ptdf
 
 def calculate_zonal_ptdf(ptdf: pd.DataFrame, gsk: pd.DataFrame) -> pd.DataFrame:
     """

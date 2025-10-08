@@ -20,7 +20,7 @@ def create_zonal_generation(network: pypsa.Network):
     snapshots = network.snapshots.to_list()
     add_net_position_variable(network, zones, snapshots)
     define_net_positions_constraint(network, network.snapshots, network.buses.index)
-    return network
+    return 
 
 def add_fbmc_constraints(network: pypsa.Network, 
                          zPTDF_df: pd.DataFrame | Dict[pd.Timestamp, pd.DataFrame],
@@ -38,11 +38,6 @@ def add_fbmc_constraints(network: pypsa.Network,
         or a dictionary of DataFrames with snapshots as keys (snapshot-based GSKs).
     RAM_df : pd.DataFrame
         DataFrame containing RAM values.
-    
-    Returns
-    -------
-    pypsa.Network
-        The network with added FBMC constraints.
     """
     # xarray conversion
     zPTDF_xr = convert_zPTDF_to_xarray(zPTDF_df)
@@ -57,8 +52,6 @@ def add_fbmc_constraints(network: pypsa.Network,
     # Ensure the Net Position of all zones adds up to 0
     zonal_balance_constraint = construct_zonal_balance_constraint(network.model.variables["Zone-p"])
     network.model.add_constraints(zonal_balance_constraint, name="Zonal_balance")
-
-    return network
 
 
 def remove_original_constraints(network):
