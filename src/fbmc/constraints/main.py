@@ -44,8 +44,6 @@ def add_fbmc_constraints(network: pypsa.Network,
         DataFrame containing RAM values.
     """
     # xarray conversion
-    zPTDF_xr = convert_zPTDF_to_xarray(zPTDF_df)
-    RAM_xr = convert_RAM_to_xarray(RAM_df)
 
 
 
@@ -58,8 +56,10 @@ def add_fbmc_constraints(network: pypsa.Network,
     network.model.add_constraints(lower_cne_constraint, name=f"CNEC-lower-RAM-subnet-{sub_network_name}")
 
     # Ensure the Net Position of all zones adds up to 0
-    zonal_balance_constraint = construct_zonal_balance_constraint(network.model.variables["Zone-p"])
-    network.model.add_constraints(zonal_balance_constraint, name="Zonal_balance")
+    zones = sub_network.buses().zone_name.unique()
+
+    zonal_balance_constraint = construct_zonal_balance_constraint(network.model.variables["Zone-p"].sel(Zone=zones))
+    network.model.add_constraints(zonal_balance_constraint, name=f"Zonal_balance-subnet-{sub_network_name}")
 
 
 def remove_original_constraints(network):
