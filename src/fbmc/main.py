@@ -86,7 +86,12 @@ def run_redispatch(nodal_network: pypsa.Network, zonal_network: pypsa.Network) -
     
     return rd_nodal_network
 
-def run_fbmc(nodal_network: pypsa.Network, zonal_network: pypsa.Network, config: FBMCConfig = FBMCConfig()) -> pypsa.Network:
+def run_fbmc(
+        nodal_network: pypsa.Network, 
+        zonal_network: pypsa.Network, 
+        config: FBMCConfig = FBMCConfig(), 
+        gsk: None | pd.DataFrame | dict[pd.Timestamp, pd.DataFrame] = None
+        ) -> tuple[pypsa.Network, pypsa.Network | None]:
     """
     Run the FBMC process on the given networks.
 

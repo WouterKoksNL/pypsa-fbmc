@@ -114,12 +114,38 @@ def main(pos_neg_method, gsk_method, snapshot_length=3):
         z_da = pypsa.Network("C:/Users/wouterko/GitHub/pypsa-eur-market-zonal-optimization/networks/zonal_network.nc", ignore_standard_types=False)
         z_da.set_snapshots(z_da.snapshots[:3])
         # z_da = nodal_to_zonal(n_rd, zone_column='zone_name')
-        def assign_carriers(net):
-            net.generators.loc[:, 'carrier'] = net.generators.index.str.split(' ').str[2]
-        assign_carriers(z_da)
-        assign_carriers(n_rd)
-        n_rd.remove('Link', n_rd.links.index)
-        z_da.remove('Link', z_da.links.index)
+
+        # n_rd.remove('Link', n_rd.links.index)
+    elif True:
+        
+        nodal_net = pypsa.Network()
+        nodal_net.set_snapshots(['1', '2'])
+        nodal_net.add('Bus', ['A1', 'B1', 'B2'])
+        nodal_net.buses.loc[:, 'zone_name'] = ['A', 'B', 'B']
+        nodal_net.add('Line', 'A1-B1', bus0='B1', bus1='A1', x=1, s_nom=10)
+        nodal_net.add('Line', 'A2-B1', bus0='B2', bus1='A1', x=1, s_nom=10)
+        nodal_net.add('Line', 'A1-A2', bus0='B1', bus1='B2', x=1, s_nom=10)
+        
+        nodal_net.add('Generator', 'gen_A1', bus='A1', p_nom=12, marginal_cost=400, carrier="Wind")
+        nodal_net.add('Generator', 'gen_B1', bus='B1', p_nom=12, marginal_cost=100, carrier="CCGT")
+        nodal_net.add('Generator', 'gen_B2', bus='B2', p_nom=12, marginal_cost=200, carrier="Oil")
+        nodal_net.add('Load', 'load_A1', bus='A1', p_set=[15, 15])
+
+        zonal_net = nodal_to_zonal(nodal_net)
+        zonal_net.remove('Link', zonal_net.links.index)
+        # nodal_net.optimize(solver_name='gurobi')
+
+        z_da = zonal_net
+        n_rd = nodal_net
+
+        gsk = pd.DataFrame(0., index=zonal_net.buses.index, columns=nodal_net.buses.index)
+        gsk.loc['A', 'A1'] = 1.0
+        gsk.loc['B', 'B1'] = 0.8
+        gsk.loc['B', 'B2'] = 0.2
+        gsk.columns.name = "Bus"
+        gsk.index.name = "Zone"
+        gsk_dict = {snapshot: gsk.copy()
+            for snapshot in zonal_net.snapshots}
     else:
         n_rd = pypsa.Network()
         n_rd.set_snapshots(['now'])
@@ -143,6 +169,10 @@ def main(pos_neg_method, gsk_method, snapshot_length=3):
     config.pos_neg_method = pos_neg_method
     config.gsk_method = gsk_method
     config.reliability_margin_factor = 0.0
+    pre_process(n_rd)
+    z_da.remove('Link', z_da.links.index[z_da.links.p_nom < 1e-5])
+    z_da.loads_t.p_set = z_da.loads_t.p_set * (18/15)
+    z_da, _, z_ptdf, ram = run_fbmc(n_rd, z_da, config=config, gsk=gsk_dict)
 
 
     z_da, _ = run_fbmc(n_rd, z_da, config=config)
