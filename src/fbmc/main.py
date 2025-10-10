@@ -9,7 +9,7 @@ import pypsa
 
 from . import network_conversion
 from .constraints.main import add_redispatch_constraints
-from .parameters import calculate_fbmc_parameters, calculate_gsk
+from .parameters import calculate_fbmc_parameters, calculate_gsk, convert_zPTDF_to_xarray, convert_RAM_to_xarray
 from .constraints import create_zonal_generation, add_fbmc_constraints, remove_original_constraints
 from .config import FBMCConfig
 
@@ -34,17 +34,29 @@ def setup_fbmc_model(basecase_nodal_network: pypsa.Network, target_zonal_network
     # Calculate parameters
     if gsk is None:
         gsk = calculate_gsk(basecase_nodal_network, config)
-
-    basecase_nodal_network.determine_network_topology()
-    sub_network = basecase_nodal_network.sub_networks.loc['0'].obj
-    ram_cnes, z_ptdf_cnes = calculate_fbmc_parameters(sub_network, gsk, config=config)
     
-    # Add constraints
-    target_zonal_network = create_zonal_generation(target_zonal_network)
-    target_zonal_network = add_fbmc_constraints(target_zonal_network, z_ptdf_cnes, ram_cnes)
+    if target_zonal_network.model is None:
+        target_zonal_network.optimize.create_model()
     remove_original_constraints(target_zonal_network)
+    create_zonal_generation(target_zonal_network)
+    basecase_nodal_network.determine_network_topology()
+    z_ptdf_dict = {}
+    ram_dict = {}
+    for sub_network_name, sub_network_data in basecase_nodal_network.sub_networks.iterrows():
+        sub_network = sub_network_data.obj
+        # sub_network = basecase_nodal_network.sub_networks.loc['0'].obj
+        upper_ram, lower_ram, z_ptdf = calculate_fbmc_parameters(sub_network, gsk, config=config)
+        z_ptdf_xr = convert_zPTDF_to_xarray(z_ptdf)
+        upper_ram_xr = convert_RAM_to_xarray(upper_ram)
+        lower_ram_xr = convert_RAM_to_xarray(lower_ram)
 
-    return target_zonal_network
+        z_ptdf_dict[sub_network_name] = z_ptdf_xr
+        ram_dict[sub_network_name] = upper_ram_xr
+        add_fbmc_constraints(target_zonal_network, sub_network_name, sub_network, z_ptdf_xr, upper_ram_xr, lower_ram_xr)
+
+        if config.add_security_constraints:
+            add_security_constraints(basecase_nodal_network, target_zonal_network, snapshots=target_zonal_network.snapshots, gsk=gsk, branch_outages=basecase_nodal_network.lines.index)
+    return target_zonal_network, z_ptdf_dict, ram_dict
 
 def run_redispatch(nodal_network: pypsa.Network, zonal_network: pypsa.Network) -> pypsa.Network:
     """

@@ -3,13 +3,12 @@ import linopy as lp
 import pandas as pd
 
 from .fbmc_constraints import (
-    convert_zPTDF_to_xarray,
-    convert_RAM_to_xarray,
     create_load_zone_mapping,
     construct_zonal_balance_constraint,
     create_load_zone_mask,
     get_zonal_loads
 )
+from src.fbmc.parameters import convert_zPTDF_to_xarray, convert_RAM_to_xarray
 
 
 

@@ -99,3 +99,15 @@ def calculate_branch_capacity(sub_network: pd.DataFrame) -> pd.Series:
     ram_df.index.name = "CNE"
 
     return ram_df
+
+
+
+def convert_RAM_to_xarray(RAM_df: pd.DataFrame) -> xr.DataArray:
+    """
+    Convert a DataFrame containing RAM values to a DataArray.
+    """
+    return xr.DataArray(
+        RAM_df,
+        dims=["CNE", "snapshot"],
+        coords={"CNE": RAM_df.index, "snapshot": RAM_df.columns}
+    )

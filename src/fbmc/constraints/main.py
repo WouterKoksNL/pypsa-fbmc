@@ -5,9 +5,10 @@ Add the FBMC constraints to the network
 import pypsa
 from typing import Union, Dict
 import pandas as pd
+import xarray as xr
 
 from .redispatch import add_gen_up_and_down_regulators, update_objective_function
-from .fbmc_constraints import construct_cne_constraint, construct_zonal_balance_constraint, convert_RAM_to_xarray, convert_zPTDF_to_xarray
+from .fbmc_constraints import construct_cne_constraint, construct_zonal_balance_constraint
 from .zonal_generation import define_net_positions_constraint, add_net_position_variable
 
 
@@ -23,8 +24,11 @@ def create_zonal_generation(network: pypsa.Network):
     return 
 
 def add_fbmc_constraints(network: pypsa.Network, 
-                         zPTDF_df: pd.DataFrame | Dict[pd.Timestamp, pd.DataFrame],
-                         RAM_df: pd.DataFrame
+                         sub_network_name: str,
+                         sub_network: pypsa.SubNetwork,
+                         zPTDF_xr: xr.DataArray,
+                         upper_RAM_xr: xr.DataArray,
+                         lower_RAM_xr: xr.DataArray,
                          ) -> pypsa.Network:
     """
     Main function to add FBMC constraints to the network.

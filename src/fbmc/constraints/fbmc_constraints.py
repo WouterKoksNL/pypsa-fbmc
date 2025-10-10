@@ -5,62 +5,7 @@ import numpy as np
 
 # ---- Data Transformations ----
 
-def convert_zPTDF_to_xarray(zPTDF_data) -> xr.DataArray:
-    """
-    Convert zPTDF data to an xarray DataArray.
-    
-    Parameters
-    ----------
-    zPTDF_data : pd.DataFrame or dict of pd.DataFrame
-        Either a single DataFrame containing zPTDF values for all snapshots,
-        or a dictionary of DataFrames with snapshots as keys.
-        
-    Returns
-    -------
-    xr.DataArray
-        For snapshot-dependent zPTDF: A 3D DataArray with dimensions [snapshot, CNE, Zone]
-        For static zPTDF: A 2D DataArray with dimensions [CNE, Zone]
-    """
-    if isinstance(zPTDF_data, dict):
-        # For snapshot-dependent zPTDF (dictionary of DataFrames)
-        snapshots = list(zPTDF_data.keys())
-        cnes = zPTDF_data[snapshots[0]].index
-        zones = zPTDF_data[snapshots[0]].columns
-        
-        # Create a 3D array to hold all zPTDF values
-        data_array = np.zeros((len(snapshots), len(cnes), len(zones)))
-        
-        # Fill the array with values from each snapshot
-        for i, snapshot in enumerate(snapshots):
-            data_array[i, :, :] = zPTDF_data[snapshot].values
-        
-        # Convert to xarray DataArray with proper dimensions and coordinates
-        return xr.DataArray(
-            data_array,
-            dims=["snapshot", "CNE", "Zone"],
-            coords={
-                "snapshot": snapshots,
-                "CNE": cnes,
-                "Zone": zones
-            }
-        )
-    else:
-        # For static zPTDF (single DataFrame)
-        return xr.DataArray(
-            zPTDF_data,
-            dims=["CNE", "Zone"],
-            coords={"CNE": zPTDF_data.index, "Zone": zPTDF_data.columns}
-        )
 
-def convert_RAM_to_xarray(RAM_df: pd.DataFrame) -> xr.DataArray:
-    """
-    Convert a DataFrame containing RAM values to a DataArray.
-    """
-    return xr.DataArray(
-        RAM_df,
-        dims=["CNE", "snapshot"],
-        coords={"CNE": RAM_df.index, "snapshot": RAM_df.columns}
-    )
 
 # ---- Load Mapping ----
 
