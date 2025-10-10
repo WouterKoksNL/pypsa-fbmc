@@ -6,6 +6,7 @@ from src.fbmc.config import FBMCConfig, GSKMethod
 from src.fbmc.pos_neg_method import setup_pos_neg_fbmc_model
 from src.fbmc.main import run_fbmc 
 from src.fbmc.network_conversion import nodal_to_zonal
+from src.fbmc.market_prices import calculate_zonal_prices
 
 
 
@@ -164,6 +165,8 @@ def main(pos_neg_method, gsk_method, snapshot_length=3):
     # z_da.optimize(solver_name='gurobi', solver_options=solver_parameters)
 
 
+    zonal_prices = calculate_zonal_prices(z_da.buses.index, z_da.snapshots, z_ptdf, z_da.model)
+    z_da.buses_t.marginal_price = zonal_prices
     return z_da.model.objective.value, None
 
 
