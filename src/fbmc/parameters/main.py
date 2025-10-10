@@ -39,16 +39,11 @@ def calculate_fbmc_parameters(
     """
 
     # Calculate the FBMC parameters
-    max_absolute_flow = get_base_flows(sub_network).abs().max()
-    line_capacity = sub_network.branches().s_nom.droplevel(0)
+
     if isinstance(gsk, pd.DataFrame):
         gsk = {snapshot: gsk.copy() for snapshot in sub_network.snapshots}
 
-    cnes = determine_cnes(
-        max_absolute_flow,
-        line_capacity,
-        line_usage_threshold = config.line_usage_threshold
-        )
+    ptdf = get_subnetwork_ptdf(sub_network)
 
     z_ptdf = {}
     for snapshot, gsk_snapshot in gsk.items():
@@ -57,16 +52,21 @@ def calculate_fbmc_parameters(
 
     # Calculate RAM - this remains the same as it's already snapshot-based
     net_positions_base_case = calc_net_positions_sub_network(sub_network)
-    ram = calculate_ram(sub_network,
+    upper_ram = calculate_ram(sub_network,
                     zonal_ptdf_dict = z_ptdf, 
                     min_ram = config.min_ram, 
                     reliability_margin_factor = config.reliability_margin_factor,
                     net_positions_base_case=net_positions_base_case,
                     add_zptdf_np_term=add_zptdf_np_term)
+    lower_ram =  -1 *calculate_ram(sub_network,
+                    zonal_ptdf_dict = z_ptdf, 
+                    min_ram = config.min_ram, 
+                    reliability_margin_factor = config.reliability_margin_factor,
+                    net_positions_base_case=net_positions_base_case,
+                    add_zptdf_np_term=add_zptdf_np_term,
+                    flow_sign=1)
+    upper_ram, z_ptdf = cne_router(sub_network, upper_ram, z_ptdf, config)
+    lower_ram, _ = cne_router(sub_network, lower_ram, z_ptdf, config)
+    return upper_ram, lower_ram, z_ptdf
 
-    # Filter on CNEs for each snapshot
-    ram_cnes = filter_on_cne(ram, cnes)
-    z_ptdf_cnes = {snapshot: filter_on_cne(z_ptdf_snapshot, cnes) 
-                    for snapshot, z_ptdf_snapshot in z_ptdf.items()}
     
-    return ram_cnes, z_ptdf_cnes

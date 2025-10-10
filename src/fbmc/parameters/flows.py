@@ -73,8 +73,6 @@ def calculate_branch_capacity(sub_network: pd.DataFrame) -> pd.Series:
 
     ram_dict = {}
 
-            ram = (partial_ram - base_flows.loc[zptdf_df.index, snapshot])
-                zptdf_term = zptdf_df @ net_positions.T  # shape: (branches,)
     for snapshot in sub_network.snapshots:
         if snapshot not in zonal_ptdf_dict:
             raise ValueError(f"Snapshot {snapshot} missing from zonal_ptdf dict.")
@@ -87,14 +85,16 @@ def calculate_branch_capacity(sub_network: pd.DataFrame) -> pd.Series:
         frm = calculate_flow_reliability_margin(branch_capacity, 
 
         partial_ram = branch_capacity - frm
-        partial_ram = partial_ram.loc[zonal_ptdf.index]
-
-        ram = (partial_ram.loc[zptdf_df.index] - base_flows.loc[snapshot, zptdf_df.index])
-
+        
+        reference_flow = base_flows.loc[snapshot, zptdf_df.index] 
         if add_zptdf_np_term:
+            reference_flow -= zptdf_df @ net_positions_base_case_t.T
 
+        ram = partial_ram.loc[zptdf_df.index] + flow_sign * reference_flow
         if min_ram > 0:
             ram = ram.clip(lower=min_ram * branch_capacity)
+
+        ram_dict[snapshot] = ram
     ram_df = pd.DataFrame(ram_dict) # shape: (branches, snapshots)
     ram_df.index.name = "CNE"
 

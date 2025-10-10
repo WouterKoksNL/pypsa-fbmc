@@ -1,9 +1,30 @@
 
 
 import pandas as pd
+from .flows import get_base_flows
 
 
-def determine_cnes(max_absolute_flow, line_capacity, line_usage_threshold) -> list:
+def cne_router(sub_network, ram, z_ptdf, config):
+    if config.cne_setting == 'all':
+        return ram, z_ptdf
+    elif config.cne_setting == 'manual':
+        cnes = config.cne_list
+    elif config.cne_setting == 'utilization_threshold':
+        max_absolute_flow = get_base_flows(sub_network).abs().max()
+        line_capacity = sub_network.branches().s_nom.droplevel(0)
+        cnes = _determine_cnes_threshold(
+            max_absolute_flow,
+            line_capacity,
+            line_usage_threshold = config.line_usage_threshold
+            )
+    else:
+        raise ValueError(f'cnec_setting {config.cnec_setting} not recognized. Choices are "all", "manual" or "utilization_threshold".')
+    ram = filter_on_cne(ram, cnes)
+    z_ptdf = {snapshot: filter_on_cne(z_ptdf_snapshot, cnes) 
+                    for snapshot, z_ptdf_snapshot in z_ptdf.items()}
+    return ram, z_ptdf
+
+def _determine_cnes_threshold(max_absolute_flow, line_capacity, line_usage_threshold) -> list:
     """
     Determine Critical Network Elements (CNEs) based on line usage.
     This function identifies the lines in the network that are considered 

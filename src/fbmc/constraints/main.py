@@ -50,8 +50,12 @@ def add_fbmc_constraints(network: pypsa.Network,
 
 
     # Restrict the load on CNEs by the Remaining Available Margin (RAM)
-    cne_constraint = construct_cne_constraint(zPTDF_xr, network.model.variables["Zone-p"], RAM_xr)
-    network.model.add_constraints(cne_constraint, name="CNE-RAM")
+    upper_cne_constraint = construct_cne_constraint(zPTDF_xr, network.model.variables["Zone-p"], upper_RAM_xr, upper_bool=True)
+    network.model.add_constraints(upper_cne_constraint, name=f"CNEC-upper-RAM-subnet-{sub_network_name}")
+
+    # Restrict the load on CNEs by the Remaining Available Margin (RAM)
+    lower_cne_constraint = construct_cne_constraint(zPTDF_xr, network.model.variables["Zone-p"], lower_RAM_xr, upper_bool=False)
+    network.model.add_constraints(lower_cne_constraint, name=f"CNEC-lower-RAM-subnet-{sub_network_name}")
 
     # Ensure the Net Position of all zones adds up to 0
     zonal_balance_constraint = construct_zonal_balance_constraint(network.model.variables["Zone-p"])
