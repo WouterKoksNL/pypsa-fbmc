@@ -16,7 +16,10 @@ class FBMCConfig:
     """Configuration parameters for FBMC calculations."""
     reliability_margin_factor: float = 0.1
     min_ram: float = 0.0
+
+    cne_setting: str = "all"
     line_usage_threshold: float = 0.2
+    cne_list: list[str] = None
 
     # GSK Method options:
     # "ADJUSTABLE_CAP" - Share of Adjustable Capacity
