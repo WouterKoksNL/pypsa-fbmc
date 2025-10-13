@@ -88,9 +88,7 @@ def add_security_constraints(
                                columns=zones,
                                )
 
-        sub_network.calculate_PTDF()
-        PTDF = pd.DataFrame(sub_network.PTDF, index=branches_i, columns=sub_network.buses().index)
-
+        PTDF = get_subnetwork_ptdf(sub_network)
             # Create all (line, outage) pairs excluding self-contingencies
 
         # pairs = list(product(cnes, branch_outages))
@@ -98,8 +96,8 @@ def add_security_constraints(
 
         # BODF.loc[branch, outage].T * PTDF.loc[branch, sub_network.buses().index]
         nPTDF_security = (
-            PTDF.loc[cnecs.get_level_values('branch'), sub_network.buses().index] + 
-            BODF.loc[cnecs.get_level_values('branch'), cnecs.get_level_values('outage')] @ PTDF.loc[cnecs.get_level_values('outage'), sub_network.buses().index]
+            PTDF.loc[cnecs.get_level_values('branch'), sub_network.buses_o] + 
+            BODF.loc[cnecs.get_level_values('branch'), cnecs.get_level_values('outage')] @ PTDF.loc[cnecs.get_level_values('outage'), sub_network.buses_o]
         )  # dims (CNEC x bus)
         nPTDF_security.index = cnecs
         
