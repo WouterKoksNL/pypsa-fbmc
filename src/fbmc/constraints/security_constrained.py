@@ -5,6 +5,8 @@ import xarray as xr
 from typing import Sequence, Any
 import numpy as np
 
+from src.fbmc.parameters.ptdf import get_subnetwork_ptdf, get_subnetwork_bodf, calculate_zonal_ptdf
+from src.fbmc.parameters.flows import calculate_ram
 # from ..network_conversion import nodal_to_zonal
 # from network_conversion import nodal_to_zonal
 
@@ -76,10 +78,7 @@ def add_security_constraints(
         if outages.empty:
             continue
 
-        sub_network.calculate_BODF()
-        BODF = pd.DataFrame(sub_network.BODF, index=branches_i, columns=branches_i)[
-            outages
-        ]
+        BODF = get_subnetwork_bodf(sub_network)
 
         if gsk is None:
             bus_inds = sub_network.buses().index

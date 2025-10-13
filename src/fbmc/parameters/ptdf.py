@@ -16,6 +16,17 @@ def get_subnetwork_ptdf(sub_network: pypsa.SubNetwork) -> tuple[pd.DataFrame, py
     )
     return ptdf
 
+
+def get_subnetwork_bodf(sub_network: pypsa.SubNetwork) -> pd.DataFrame:
+    sub_network.calculate_BODF()
+    bodf = pd.DataFrame(
+        sub_network.BODF,
+        index=sub_network.branches().index.droplevel(0), # Drop MultiIndex. The branches include lines and transformers
+        columns=sub_network.branches().index.droplevel(0) # Ordered list of buses used in all PF and PTDF calculations (slack first, then PV, then PQ)
+    )
+    return bodf 
+
+
 def calculate_zonal_ptdf(ptdf: pd.DataFrame, gsk: pd.DataFrame) -> pd.DataFrame:
     """
     Transform nodal PTDF to zonal PTDF using Generation Shift Keys (GSK).
