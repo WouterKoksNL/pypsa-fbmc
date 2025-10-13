@@ -27,8 +27,7 @@ def get_base_flows(sub_network: pypsa.SubNetwork) -> pd.DataFrame:
     """Get the base case power flows from transformers, links and lines.
     Assumes there are no transformers, links or lines with the same name."""
     return pd.concat([
-        basecase.lines_t.p0.T
-    ])
+        sub_network.pnl('transformers')['p0'].T, 
         sub_network.pnl('lines')['p0'].T
     ]).T
 
