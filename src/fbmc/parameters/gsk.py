@@ -10,7 +10,7 @@ from .helpers import (
     introduce_variation_to_network,
     calculate_generation_difference,
     process_generation_difference,
-    silence_output
+    silence_output,
 )
 
 def calculate_gsk(nodal_net: pypsa.Network, 
@@ -167,6 +167,10 @@ def gsk_iterative_uncertainty(
         
     # Process results and calculate GSK
     return process_generation_difference(gen_difference, network)
+
+
+
+
 
 def gsk_iterative_merit_order(
     network: pypsa.Network,
@@ -612,7 +616,7 @@ def gsk_adjustable_cap(
         raise ValueError("GSK calculation error: The sum of GSKs in every zone should be 1.")
     
     gsk_matrix.reindex(index=buses['zone_name'].unique(), columns=buses.index, fill_value=0)
-
+    gsk_matrix.index.name = "Zone"
     return gsk_matrix
 
 
@@ -734,6 +738,7 @@ def calc_merit_order_based_gsk(network: pypsa.Network,
     Returns:
         dict[pd.Index, pd.DataFrame]: GSKs for each snapshot.
     """
+
     gen_zone_map = network.generators.bus.map(network.buses['zone_name'])
 
     # reference_net_positions_zones = get_net_positions(network.buses, network.buses_t, network.buses.zone_name.unique())

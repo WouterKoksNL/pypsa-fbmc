@@ -5,6 +5,7 @@ from .main import (
     add_fbmc_constraints,
     remove_original_constraints,
 )
+from .pos_neg_constraints import add_pos_neg_fbmc_constraints
 
 __all__ = [
     'create_zonal_generation',

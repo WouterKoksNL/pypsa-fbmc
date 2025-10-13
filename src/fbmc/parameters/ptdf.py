@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
 import pypsa
+import xarray as xr
 
 
-def get_subnetwork_ptdf(sub_network: pypsa.SubNetwork) -> tuple[pd.DataFrame, pypsa.SubNetwork]:
+def get_subnetwork_ptdf(sub_network: pypsa.SubNetwork) -> pd.DataFrame:
     """
     Extract PTDF matrix from the network model.
     Returns PTDF matrix and associated sub_network.
@@ -38,10 +39,10 @@ def calculate_zonal_ptdf(ptdf: pd.DataFrame, gsk: pd.DataFrame) -> pd.DataFrame:
     
     # Get the GSK for the nodes in the PTDF
     gsk_filtered = gsk.loc[:, ptdf.columns]
-    
+    gsk_filtered = gsk_filtered.loc[gsk_filtered.sum(axis=1) > 1e-6]  # Remove zones with no GSK in this subnetwork
     # Calculate the zPTDF by multiplying the PTDF with the GSK
     z_ptdf_array = np.dot(ptdf.values, gsk_filtered.T)
-    
+
     # To dataframe; index = branches, columns = zones
     z_ptdf = pd.DataFrame(z_ptdf_array, index=ptdf.index, columns=gsk_filtered.index)
     
@@ -81,10 +82,10 @@ def convert_zPTDF_to_xarray(zPTDF_data) -> xr.DataArray:
         # Convert to xarray DataArray with proper dimensions and coordinates
         return xr.DataArray(
             data_array,
-            dims=["snapshot", "CNE", "Zone"],
+            dims=["snapshot", "cnec", "Zone"],
             coords={
                 "snapshot": snapshots,
-                "CNE": cnes,
+                "cnec": cnes,
                 "Zone": zones
             }
         )
@@ -92,6 +93,6 @@ def convert_zPTDF_to_xarray(zPTDF_data) -> xr.DataArray:
         # For static zPTDF (single DataFrame)
         return xr.DataArray(
             zPTDF_data,
-            dims=["CNE", "Zone"],
-            coords={"CNE": zPTDF_data.index, "Zone": zPTDF_data.columns}
+            dims=["cnec", "Zone"],
+            coords={"cnec": zPTDF_data.index, "Zone": zPTDF_data.columns}
         )

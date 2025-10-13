@@ -21,6 +21,7 @@ def create_zonal_generation(network: pypsa.Network):
     snapshots = network.snapshots.to_list()
     add_net_position_variable(network, zones, snapshots)
     define_net_positions_constraint(network, network.snapshots, network.buses.index)
+
     return 
 
 def add_fbmc_constraints(network: pypsa.Network, 
@@ -61,6 +62,7 @@ def add_fbmc_constraints(network: pypsa.Network,
     zonal_balance_constraint = construct_zonal_balance_constraint(network.model.variables["Zone-p"].sel(Zone=zones))
     network.model.add_constraints(zonal_balance_constraint, name=f"Zonal_balance-subnet-{sub_network_name}")
 
+    
 
 def remove_original_constraints(network):
     """"

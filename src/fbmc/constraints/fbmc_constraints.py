@@ -43,26 +43,26 @@ def get_zonal_loads(load_zone_mask, loads_t_pset):
 
 def construct_cne_constraint(zPTDF: xr.DataArray, net_positions: lp.LinearExpression, RAM: xr.DataArray, upper_bool: True):
     """
-    Create the constraint restricting the flow on CNEs by the Remaining Available Margin (RAM).
+    Create the constraint restricting the flow on cnecs by the Remaining Available Margin (RAM).
     
     This function handles both snapshot-dependent and static zPTDFs.
     
     Parameters
     ----------
     zPTDF : xr.DataArray
-        Either a 2D DataArray with dimensions [CNE, Zone] for static zPTDF,
-        or a 3D DataArray with dimensions [snapshot, CNE, Zone] for snapshot-dependent zPTDF.
+        Either a 2D DataArray with dimensions [cnec, Zone] for static zPTDF,
+        or a 3D DataArray with dimensions [snapshot, cnec, Zone] for snapshot-dependent zPTDF.
     total_zonal_generation : lp.Variable
         Linopy variable for zonal generation with dimensions [Zone, snapshot].
     zonal_loads : xr.DataArray
         DataArray with zonal loads with dimensions [Zone, snapshot].
     RAM : xr.DataArray
-        DataArray with RAM values with dimensions [CNE, snapshot].
+        DataArray with RAM values with dimensions [cnec, snapshot].
         
     Returns
     -------
     lp.Constraint
-        Constraint ensuring flows on CNEs are within the RAM.
+        Constraint ensuring flows on cnecs are within the RAM.
     """
     # Check if zPTDF is snapshot-dependent
     snapshot_dependent = "snapshot" in zPTDF.dims
@@ -80,9 +80,9 @@ def construct_cne_constraint(zPTDF: xr.DataArray, net_positions: lp.LinearExpres
         snapshots = [snap for snap in zPTDF.coords['snapshot'].values if snap in RAM.coords['snapshot'].values]
         
         cne_lhs = (zPTDF * net_positions).sum(dim="Zone")
-        # output dim: [snapshot, CNE]
+        # output dim: [snapshot, cnec]
         # Get corresponding RAM values
-        ram_subset = RAM.sel(CNE=zPTDF.CNE, snapshot=snapshots).T
+        ram_subset = RAM.sel(cnec=zPTDF.cnec, snapshot=snapshots).T
         
         # Create the constraint.
         if upper_bool:
@@ -92,12 +92,12 @@ def construct_cne_constraint(zPTDF: xr.DataArray, net_positions: lp.LinearExpres
     else:
         # For static zPTDF (original implementation)
         cne_lhs_list = []
-        for cne in zPTDF.CNE.values:
-            term = (zPTDF.sel(CNE=cne) * net_positions).sum(dim="Zone")
+        for cne in zPTDF.cnec.values:
+            term = (zPTDF.sel(cnec=cne) * net_positions).sum(dim="Zone")
             cne_lhs_list.append(term)
 
         
-        cne_lhs = lp.merge(cne_lhs_list, dim="CNE")
+        cne_lhs = lp.merge(cne_lhs_list, dim="cnec")
         cne_constraint = cne_lhs <= RAM
     
     return cne_constraint

@@ -10,7 +10,10 @@ from src.fbmc.market_prices import calculate_zonal_prices
 
 
 
-
+def pre_process(net: pypsa.Network):
+    net.remove('Line', net.lines.index[net.lines.s_nom < 1e-5])
+    net.remove('Transformer', net.transformers.index[net.transformers.s_nom < 1e-5])
+    net.remove('Link', net.links.index[net.links.p_nom < 1e-5])
 
 def main(pos_neg_method, gsk_method, snapshot_length=3):
     if False:
@@ -102,17 +105,20 @@ def main(pos_neg_method, gsk_method, snapshot_length=3):
         z_da.remove('Link', z_da.links.index)
         z_da.add('Link', 'NO1_NO2', bus0='NO1', bus1='NO2', p_min_pu=-1, p_nom=300)
         # z_da.loads_t.p_set = z_da.loads_t.p_set * 0.7
-    elif True:
+    elif False:
     # snapshots are wrongly aligned!
-        n_rd = pypsa.Network("C:/Users/wouterko/GitHub/pypsa-eur-market-zonal-optimization/networks/nodal_network.nc", ignore_standard_types=False)
-        n_rd.remove('Line', n_rd.lines.index[n_rd.lines.s_nom < 1e-5])
-        n_rd.set_snapshots(n_rd.snapshots[:3])
+        case_name = "pypsa-eur_central_northern"
+        n_rd = pypsa.Network(f"input_networks/{case_name}/nodal.nc", ignore_standard_types=False)
+
+        n_rd.set_snapshots(n_rd.snapshots[:24*3])
         bus_zone_map = pd.read_csv("C:/Users/wouterko/GitHub/pypsa-eur-market-zonal-optimization/bus_zone_map.csv", index_col=0)
         # pypsa.components.component_attrs['Bus'].loc['zone_name', ['type', 'unit', 'default']] = ['str', '', '']
         n_rd.buses['zone_name'] = bus_zone_map.reindex(n_rd.buses.index)
-        
-        z_da = pypsa.Network("C:/Users/wouterko/GitHub/pypsa-eur-market-zonal-optimization/networks/zonal_network.nc", ignore_standard_types=False)
-        z_da.set_snapshots(z_da.snapshots[:3])
+    
+        # z_da = pypsa.Network(f"input_networks/{case_name}/zonal.nc", ignore_standard_types=False)
+        z_da = pypsa.Network(f"input_networks/{case_name}/daily_zonal_network_day0.nc")
+        z_da.set_snapshots(z_da.snapshots[:24*3])
+        z_da.storage_units.loc[:, 'cyclic_state_of_charge'] = True
         # z_da = nodal_to_zonal(n_rd, zone_column='zone_name')
 
         # n_rd.remove('Link', n_rd.links.index)
@@ -162,9 +168,12 @@ def main(pos_neg_method, gsk_method, snapshot_length=3):
         n_rd.add('Load', 'Load_3', bus='Bus_3', p_set=1)
         z_da = nodal_to_zonal(n_rd, zone_column='zone_name')
         # z_da.loads.p_set *= 1.5
-
-    z_da.optimize(solver_name='gurobi')
+    # n_rd.lines.loc[:, 's_nom'] *= 0.3
+    # z_da.optimize(solver_name='gurobi')
     n_rd.optimize(solver_name='gurobi')
+    # n_rd.lines_t.p0 = pd.DataFrame(0., index=n_rd.snapshots, columns=n_rd.lines.index)
+    # n_rd.lines_t.p1 = pd.DataFrame(0., index=n_rd.snapshots, columns=n_rd.lines.index)
+    # n_rd.buses_t.p = pd.DataFrame(0., index=n_rd.snapshots, columns=n_rd.buses.index)
     config = FBMCConfig()
     config.pos_neg_method = pos_neg_method
     config.gsk_method = gsk_method
@@ -174,10 +183,7 @@ def main(pos_neg_method, gsk_method, snapshot_length=3):
     z_da.loads_t.p_set = z_da.loads_t.p_set * (18/15)
     z_da, _, z_ptdf, ram = run_fbmc(n_rd, z_da, config=config, gsk=gsk_dict)
 
-
-    z_da, _ = run_fbmc(n_rd, z_da, config=config)
-
-    
+        
 
     # print(z_da.model)
     # z_da.model.objective.value = ((z_da.get_switchable_as_dense('Generator', 'marginal_cost').values * z_da.model.variables['Generator-p']).sum('snapshot').sum()
@@ -193,10 +199,10 @@ def main(pos_neg_method, gsk_method, snapshot_length=3):
     # z_da.model.constraints['Delta_Net_Position'].rhs = np.abs(z_da.model.constraints['Delta_Net_Position'].rhs)
     # z_da.model.constraints['Zone-p_definition'].rhs = np.abs(z_da.model.constraints['Zone-p_definition'].rhs)
     # z_da.optimize(solver_name='gurobi', solver_options=solver_parameters)
-
-
     zonal_prices = calculate_zonal_prices(z_da.buses.index, z_da.snapshots, z_ptdf, z_da.model)
     z_da.buses_t.marginal_price = zonal_prices
+    z_da.export_to_netcdf('output_networks/zonal_no_links.nc')
+    breakpoint()
     return z_da.model.objective.value, None
 
 

@@ -108,9 +108,10 @@ def define_net_positions_constraint(
         .sum()
         .T.reindex(columns=buses, fill_value=0)
     )
+
     # the name for multi-index is getting lost by groupby before pandas 1.4.0
     # TODO remove once we bump the required pandas version to >= 1.4.0
-    fixed_load.index.name = "snapshot"
+
 
     empty_nodal_balance = (zonal_production.vars == -1).all("_term")
     fixed_load = DataArray(fixed_load)
@@ -129,6 +130,7 @@ def define_net_positions_constraint(
         if mask is not None:
             mask = mask.rename(Bus=f"Bus{suffix}")
     zonal_production = zonal_production.rename({"Bus": "Zone"})
-    fixed_load = fixed_load.rename({"Bus": "Zone"})
+
+    # fixed_load = fixed_load.rename({"Bus": "Zone"})
     n.model.add_constraints(n.model.variables['Zone-p'] - (zonal_production - fixed_load), "=", 0, name=f"Zone{suffix}-definition", mask=mask)
 

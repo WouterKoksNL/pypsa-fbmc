@@ -1,7 +1,6 @@
 import pandas as pd
 import pypsa
-
-from .helpers import get_net_positions
+import xarray as xr
 
 
 def calculate_flow_reliability_margin(line_capacities: pd.Series, reliability_margin_factor: float = 0.1) -> pd.Series:
@@ -35,40 +34,39 @@ def get_base_flows(sub_network: pypsa.SubNetwork) -> pd.DataFrame:
 def calculate_branch_capacity(sub_network: pd.DataFrame) -> pd.Series:
     return sub_network.branches().s_nom.droplevel(0)
 
-
+    
+def calculate_ram(sub_network: pypsa.SubNetwork,
+                  zonal_ptdf_dict,
+                  base_flows: pd.DataFrame,
                   min_ram: float = 0.0,
                   reliability_margin_factor: float = 0.1,
                   net_positions_base_case: None | pd.DataFrame = None,
                   add_zptdf_np_term: bool = True,
+                  flow_direction: int = 1,
                   ) -> pd.DataFrame:
     """
     Calculate the Remaining Available Margin (RAM) for a given power network.
-    Optional: Add a zonal PTDF term to the RAM calculation: zPTDF * net_positions
+    Optional: Add a zonal PTDF term to the RAM calculation: zPTDF * net_positions.
 
     Args:
         network: PyPSA network containing the initial state
+        zonal_ptdf_dict: dict {snapshot: pd.DataFrame[zones, CNECs]}
         min_ram: Minimum RAM value as fraction of capacity (default 0.0)
         reliability_margin_factor: Safety factor for reliability margin (default 0.1)
 
     Returns:
-        DataFrame (snapshots x branches) of RAM values
+        DataFrame (branches x snapshots) of RAM values
     """
-    if network.transformers.index.isin(network.lines.index).any():
     if sub_network.transformers_i().isin(sub_network.lines_i()).any():
         raise ValueError("Transformers and lines cannot have the same names")
-    if not network.links.empty:
 
-    # Get base state
-    base_flows = get_base_flows(network)  # shape: (branches, snapshots)
-    branch_capacity = network.branches().s_nom
-    branch_capacity.index = branch_capacity.index.droplevel(0)  # Drop MultiIndex
-
-    base_flows = get_base_flows(sub_network)  # shape: (snapshots, branches)
+    example_zptdf = list(zonal_ptdf_dict.values())[0]
     if net_positions_base_case is None:
-        zones = zonal_ptdf_dict[list(zonal_ptdf_dict.keys())[0]].index
+        zones = example_zptdf.columns
         net_positions_base_case = pd.DataFrame(0., index=sub_network.snapshots, columns=zones)
 
-            
+    cnec = example_zptdf.index   # need to make the rest of the code to be able to handle full CNEC description. 
+    # ideally, we have a CNEC labelling representing tuples of (line, outage, direction)
 
     ram_dict = {}
 
@@ -82,20 +80,21 @@ def calculate_branch_capacity(sub_network: pd.DataFrame) -> pd.Series:
 
         # Calculate flow reliability margin
         frm = calculate_flow_reliability_margin(branch_capacity, 
+                                                reliability_margin_factor=reliability_margin_factor)
 
         partial_ram = branch_capacity - frm
         
-        reference_flow = base_flows.loc[snapshot, zptdf_df.index] 
+        reference_flow = base_flows.loc[snapshot, cnec] 
         if add_zptdf_np_term:
             reference_flow -= zptdf_df @ net_positions_base_case_t.T
 
-        ram = partial_ram.loc[zptdf_df.index] + flow_sign * reference_flow
+        ram = partial_ram.loc[cnec] - flow_direction * reference_flow
         if min_ram > 0:
             ram = ram.clip(lower=min_ram * branch_capacity)
 
         ram_dict[snapshot] = ram
     ram_df = pd.DataFrame(ram_dict) # shape: (branches, snapshots)
-    ram_df.index.name = "CNE"
+    ram_df.index.name = "cnec"
 
     return ram_df
 
@@ -107,6 +106,6 @@ def convert_RAM_to_xarray(RAM_df: pd.DataFrame) -> xr.DataArray:
     """
     return xr.DataArray(
         RAM_df,
-        dims=["CNE", "snapshot"],
-        coords={"CNE": RAM_df.index, "snapshot": RAM_df.columns}
+        dims=["cnec", "snapshot"],
+        coords={"cnec": RAM_df.index, "snapshot": RAM_df.columns}
     )

@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 
 
-from .cne import determine_cnes, filter_on_cne
-from .flows import calculate_ram, get_base_flows
+from .cne import cne_router
+from .flows import get_base_flows, calculate_ram
 from .gsk import calculate_gsk
 from .ptdf import calculate_zonal_ptdf, get_subnetwork_ptdf
 from ..config import FBMCConfig
@@ -52,19 +52,23 @@ def calculate_fbmc_parameters(
 
     # Calculate RAM - this remains the same as it's already snapshot-based
     net_positions_base_case = calc_net_positions_sub_network(sub_network)
+    base_flows = get_base_flows(sub_network)  # shape: (snapshots, branches)
     upper_ram = calculate_ram(sub_network,
                     zonal_ptdf_dict = z_ptdf, 
-                    min_ram = config.min_ram, 
-                    reliability_margin_factor = config.reliability_margin_factor,
-                    net_positions_base_case=net_positions_base_case,
-                    add_zptdf_np_term=add_zptdf_np_term)
-    lower_ram =  -1 *calculate_ram(sub_network,
-                    zonal_ptdf_dict = z_ptdf, 
+                    base_flows = base_flows,
                     min_ram = config.min_ram, 
                     reliability_margin_factor = config.reliability_margin_factor,
                     net_positions_base_case=net_positions_base_case,
                     add_zptdf_np_term=add_zptdf_np_term,
-                    flow_sign=1)
+                    flow_direction=1)
+    lower_ram =  -1 * calculate_ram(sub_network,
+                    zonal_ptdf_dict = z_ptdf, 
+                    base_flows = base_flows,
+                    min_ram = config.min_ram, 
+                    reliability_margin_factor = config.reliability_margin_factor,
+                    net_positions_base_case=net_positions_base_case,
+                    add_zptdf_np_term=add_zptdf_np_term,
+                    flow_direction=-1)
     upper_ram, z_ptdf = cne_router(sub_network, upper_ram, z_ptdf, config)
     lower_ram, _ = cne_router(sub_network, lower_ram, z_ptdf, config)
     return upper_ram, lower_ram, z_ptdf

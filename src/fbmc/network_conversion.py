@@ -206,7 +206,7 @@ def zonal_to_nodal(
         raise ValueError("Zonal network solution must contain 'Generator-p' results")
     
     # Create a copy of the nodal network
-    nodal_network.model.solver_model = None  # Clear any existing solver model
+
     result_network = nodal_network.copy(snapshots=zonal_network.snapshots)
 
     # Optimise the nodal network such that it has a linopy model and a solution
@@ -235,6 +235,6 @@ def zonal_to_nodal(
         for load_id in result_network.loads.index:
             if load_id in zonal_network.loads.index:
                 result_network.loads_t.p.at[snapshot, load_id] = zonal_network.loads_t.p.at[snapshot, load_id]
-                result_network.loads_t.p_set.at[snapshot, load_id] = zonal_network.loads_t.p_set.at[snapshot, load_id]
+                result_network.loads_t.p_set.at[snapshot, load_id] = zonal_network.loads_t.p.at[snapshot, load_id]
 
     return result_network

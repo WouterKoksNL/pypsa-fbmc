@@ -6,12 +6,15 @@ Created on Mon Mar 17 13:01:07 2025
 """
 
 import pypsa
+import pandas as pd
 
 from . import network_conversion
 from .constraints.main import add_redispatch_constraints
 from .parameters import calculate_fbmc_parameters, calculate_gsk, convert_zPTDF_to_xarray, convert_RAM_to_xarray
 from .constraints import create_zonal_generation, add_fbmc_constraints, remove_original_constraints
 from .config import FBMCConfig
+from .pos_neg_method import setup_pos_neg_fbmc_model
+from .constraints.security_constrained import add_security_constraints
 
 def setup_fbmc_model(basecase_nodal_network: pypsa.Network, target_zonal_network: pypsa.Network, config: FBMCConfig = FBMCConfig(), gsk=None) -> pypsa.Network:
     """
@@ -45,7 +48,11 @@ def setup_fbmc_model(basecase_nodal_network: pypsa.Network, target_zonal_network
     for sub_network_name, sub_network_data in basecase_nodal_network.sub_networks.iterrows():
         sub_network = sub_network_data.obj
         # sub_network = basecase_nodal_network.sub_networks.loc['0'].obj
-        upper_ram, lower_ram, z_ptdf = calculate_fbmc_parameters(sub_network, gsk, config=config)
+        if config.add_security_constraints:
+            upper_ram, lower_ram, z_ptdf = add_security_constraints(sub_network, gsk, config=config)
+        else:
+            upper_ram, lower_ram, z_ptdf = calculate_fbmc_parameters(sub_network, gsk, config=config)
+        
         z_ptdf_xr = convert_zPTDF_to_xarray(z_ptdf)
         upper_ram_xr = convert_RAM_to_xarray(upper_ram)
         lower_ram_xr = convert_RAM_to_xarray(lower_ram)
@@ -54,8 +61,8 @@ def setup_fbmc_model(basecase_nodal_network: pypsa.Network, target_zonal_network
         ram_dict[sub_network_name] = upper_ram_xr
         add_fbmc_constraints(target_zonal_network, sub_network_name, sub_network, z_ptdf_xr, upper_ram_xr, lower_ram_xr)
 
-        if config.add_security_constraints:
-            add_security_constraints(basecase_nodal_network, target_zonal_network, snapshots=target_zonal_network.snapshots, gsk=gsk, branch_outages=basecase_nodal_network.lines.index)
+        # if config.add_security_constraints:
+        #     add_security_constraints(sub)
     return target_zonal_network, z_ptdf_dict, ram_dict
 
 def run_redispatch(nodal_network: pypsa.Network, zonal_network: pypsa.Network) -> pypsa.Network:
@@ -109,27 +116,38 @@ def run_fbmc(
     pypsa.Network
         The updated zonal network after FBMC.
     """
-    
+
     # Set up the model
-    zonal_network = setup_fbmc_model(nodal_network, zonal_network, config=config)
+    if config.pos_neg_method:
+        zonal_network = setup_pos_neg_fbmc_model(nodal_network, zonal_network, config=config)
+    else:
+        zonal_network, z_ptdf_dict, ram_dict = setup_fbmc_model(nodal_network, zonal_network, config=config, gsk=gsk)
+
 
     # Run the optimization and save the results to the nodal network
     zonal_network.model.solve(solver_name="gurobi")
-    nodal_network = network_conversion.zonal_to_nodal(zonal_network, nodal_network)
+    
+    if not config.run_redispatch:
+        return zonal_network, None, z_ptdf_dict, ram_dict
+    else:
+        del(nodal_network.model)
+        nodal_network = network_conversion.zonal_to_nodal(zonal_network, nodal_network)
 
-    # Add the redispatch constraints to the nodal network and run the optimization
-    nodal_network = add_redispatch_constraints(nodal_network)
-    nodal_network.model.solve(solver_name="gurobi")
+        # Add the redispatch constraints to the nodal network and run the optimization
+        nodal_network = add_redispatch_constraints(nodal_network)
+        nodal_network.model.solve(solver_name="gurobi")
 
-    return nodal_network
+        return zonal_network, nodal_network, z_ptdf_dict, ram_dict
 
-if __name__ == '__main__':
-    n_rd = pypsa.Network()
-    z_da = pypsa.Network()
-    # Get the networks from files:
-    folder = "C:/Users/ameld/thesis_local/PowerVision/output_networks/FBMC"
-    n_rd.import_from_netcdf(f"{folder}/nodal.nc")
-    z_da.import_from_netcdf(f"{folder}/zonal.nc")
+# if __name__ == '__main__':
+    # n_rd = pypsa.Network()
+    # z_da = pypsa.Network()
+    # # Get the networks from files:
+    # folder = "C:/Users/ameld/thesis_local/PowerVision/output_networks/FBMC"
+    # n_rd.import_from_netcdf(f"{folder}/nodal.nc")
+    # z_da.import_from_netcdf(f"{folder}/zonal.nc")
     # Calculate the FBMC parameters:
-    fbmc_parameters = calculate_fbmc_parameters(n_rd)
-    print(fbmc_parameters)
+    # fbmc_parameters = calculate_fbmc_parameters(n_rd)
+    # print(fbmc_parameters)
+
+    # run_fbmc(nodal_network=n_rd, zonal_network=z_da)

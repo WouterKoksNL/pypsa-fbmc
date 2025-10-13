@@ -29,14 +29,16 @@ class FBMCConfig:
     
     # use the GSKMethod class 
     gsk_method: str = GSKMethod.ADJUSTABLE_CAP
+
+    adjustable_carriers: tuple[str] = ("CCGT", 'coal', 'lignite', 'OCGT', 'oil')
     # gsk_method: str = "ADJUSTABLE_CAP"
     # gsk_method = GSKMethod(gsk_method)
     
     # Uncertainty-based GSK parameters
     uncertain_carriers: tuple[str] = ("offshore-wind", "onshore-wind")
     num_scenarios: int = 100
-    gen_variation_std_dev: float = 0.1
-    load_variation_std_dev: float = 0.1
+    gen_variation_std_dev: float = 0.5
+    load_variation_std_dev: float = 0.5
 
     # Iterative GSK parameters
     max_gsk_iterations: int = 5
@@ -46,5 +48,5 @@ class FBMCConfig:
     gsk_std_dev: float = 5
     run_redispatch: bool = False
 
-    add_security_constraints: bool = False
+    add_security_constraints: bool = True
 
