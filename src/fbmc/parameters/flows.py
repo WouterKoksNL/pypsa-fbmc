@@ -22,13 +22,7 @@ def calculate_flow_reliability_margin(line_capacities: pd.Series, reliability_ma
     return line_capacities * reliability_margin_factor
 
 
-def get_base_flows(sub_network: pypsa.SubNetwork) -> pd.DataFrame:
-    """Get the base case power flows from transformers, links and lines.
-    Assumes there are no transformers, links or lines with the same name."""
-    return pd.concat([
-        sub_network.pnl('transformers')['p0'].T, 
-        sub_network.pnl('lines')['p0'].T
-    ]).T
+
 
 
 def calculate_branch_capacity(sub_network: pd.DataFrame) -> pd.Series:
