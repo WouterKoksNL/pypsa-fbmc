@@ -6,8 +6,6 @@ import pandas as pd
 import pypsa
 from typing import Optional
 
-from src.fbmc.parameters.helpers import silence_output
-
 
 def nodal_to_zonal(
     nodal_network: pypsa.Network,
@@ -210,8 +208,8 @@ def zonal_to_nodal(
     result_network = nodal_network.copy(snapshots=zonal_network.snapshots)
 
     # Optimise the nodal network such that it has a linopy model and a solution
-    with silence_output():
-        result_network.optimize(solver_name="gurobi")
+
+    result_network.optimize(solver_name="gurobi")
 
     # Get the generator production from the FBMC market clearing
     # Handle xarray DataArray format in model.solution
