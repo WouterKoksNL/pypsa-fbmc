@@ -43,7 +43,7 @@ def add_net_position_variable(network: pypsa.Network, zones: list, snapshots: li
 
 
 def define_net_positions_constraint(
-    n: pypsa.Network,
+    zonal_net: pypsa.Network,
     sns: pd.Index,
     buses: Sequence | None = None,
     suffix: str = "",
@@ -53,26 +53,22 @@ def define_net_positions_constraint(
     The NPs contain the effect of Generators, Loads, StorageUnits, Links.
     Links are included to model transport by HVDC lines following Standard Hybrid Coupling
     """
-    m = n.model
+    m = zonal_net.model
     if buses is None:
-        buses = n.buses.index
+        buses = zonal_net.buses.index
 
     args = [
         ["Generator", "p", "bus", 1],
         ["Store", "p", "bus", 1],
         ["StorageUnit", "p_dispatch", "bus", 1],
         ["StorageUnit", "p_store", "bus", -1],
-        # ["Line", "s", "bus0", -1],
-        # ["Line", "s", "bus1", 1],
-        # ["Transformer", "s", "bus0", -1],
-        # ["Transformer", "s", "bus1", 1],
         ["Link", "p", "bus0", -1],
-        ["Link", "p", "bus1", as_dense(n, "Link", "efficiency", sns)],
+        ["Link", "p", "bus1", as_dense(zonal_net, "Link", "efficiency", sns)],
     ]
 
-    if not n.links.empty:
-        for i in n.components.links.additional_ports:
-            eff = as_dense(n, "Link", f"efficiency{i}", sns)
+    if not zonal_net.links.empty:
+        for i in zonal_net.components.links.additional_ports:
+            eff = as_dense(zonal_net, "Link", f"efficiency{i}", sns)
             args.append(["Link", "p", f"bus{i}", eff])
 
 
@@ -81,18 +77,18 @@ def define_net_positions_constraint(
     for arg in args:
         c, attr, column, sign = arg
 
-        if n.static(c).empty:
+        if zonal_net.static(c).empty:
             continue
 
-        if "sign" in n.static(c):
+        if "sign" in zonal_net.static(c):
             # additional sign necessary for branches in reverse direction
-            sign = sign * n.static(c).sign
+            sign = sign * zonal_net.static(c).sign
 
         expr = DataArray(sign) * m[f"{c}-{attr}"]
-        cbuses = n.static(c)[column][lambda ds: ds.isin(buses)].rename("Bus")
+        cbuses = zonal_net.static(c)[column][lambda ds: ds.isin(buses)].rename("Bus")
 
         #  drop non-existent multiport buses which are ''
-        if column in ["bus" + i for i in n.c.links.additional_ports]:
+        if column in ["bus" + i for i in zonal_net.c.links.additional_ports]:
             cbuses = cbuses[cbuses != ""]
 
         expr = expr.sel({c: cbuses.index})
@@ -101,10 +97,10 @@ def define_net_positions_constraint(
             exprs.append(expr.groupby(cbuses).sum())
 
     zonal_production = merge(exprs, join="outer").reindex(Bus=buses)
-    active = n.loads.query("active").index
+    active = zonal_net.loads.query("active").index
     fixed_load = (
-        (-as_dense(n, "Load", "p_set", sns, active) * n.loads.sign[active])
-        .T.groupby(n.loads.bus[active])
+        (-as_dense(zonal_net, "Load", "p_set", sns, active) * zonal_net.loads.sign[active])
+        .T.groupby(zonal_net.loads.bus[active])
         .sum()
         .T.reindex(columns=buses, fill_value=0)
     )
@@ -130,7 +126,7 @@ def define_net_positions_constraint(
         if mask is not None:
             mask = mask.rename(Bus=f"Bus{suffix}")
     zonal_production = zonal_production.rename({"Bus": "Zone"})
-
+    breakpoint()
     # fixed_load = fixed_load.rename({"Bus": "Zone"})
-    n.model.add_constraints(n.model.variables['Zone-p'] - (zonal_production - fixed_load), "=", 0, name=f"Zone{suffix}-definition", mask=mask)
+    zonal_net.model.add_constraints(zonal_net.model.variables['Zone-p'] - (zonal_production - fixed_load), "=", 0, name=f"Zone{suffix}-definition", mask=mask)
 
