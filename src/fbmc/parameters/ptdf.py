@@ -41,24 +41,26 @@ def get_subnetwork_bodf(sub_network: pypsa.SubNetwork, cnecs: pd.MultiIndex) -> 
     return bodf
 
 
-def calculate_zonal_ptdf(ptdf: pd.DataFrame, gsk: pd.DataFrame) -> pd.DataFrame:
+def calculate_zonal_ptdf(
+        ptdf: pd.DataFrame, 
+        gsk: pd.DataFrame, 
+        cnecs: pd.Index | pd.MultiIndex,
+        ) -> pd.DataFrame:
     """
     Transform nodal PTDF to zonal PTDF using Generation Shift Keys (GSK).
+    PTDF shape: (branches, buses)
+    GSK shape: (zones, buses)
+    CNECs shape: (branches) for N-0 CNECs, or (branches, outaged_branches) for N-1 CNECs
+    zPTDF shape: (branches, zones), filtered on CNECs
     """
     if not set(ptdf.columns).issubset(set(gsk.columns)):
         raise ValueError("PTDF columns must match GSK bus names") #PTDF is based on subnetwork, GSK is based on full network
-        
-    #TODO: Check if the signs of the CNE are correct - if not, multiply by -1
-    
-    # Get the GSK for the nodes in the PTDF
-    gsk_filtered = gsk.loc[:, ptdf.columns]
-    gsk_filtered = gsk_filtered.loc[gsk_filtered.sum(axis=1) > 1e-6]  # Remove zones with no GSK in this subnetwork
-    # Calculate the zPTDF by multiplying the PTDF with the GSK
-    z_ptdf_array = np.dot(ptdf.values, gsk_filtered.T)
 
-    # To dataframe; index = branches, columns = zones
-    z_ptdf = pd.DataFrame(z_ptdf_array, index=ptdf.index, columns=gsk_filtered.index)
-    
+    gsk_filtered = gsk.loc[:, ptdf.columns]
+    gsk_filtered = gsk_filtered.loc[gsk_filtered.sum(axis=1) > 1e-6]  # Remove zones with zero GSK in this subnetwork
+
+    z_ptdf = (gsk_filtered @ ptdf.T).T  # shape: (branches, zones)
+    z_ptdf.index = cnecs
     return z_ptdf
 
 
