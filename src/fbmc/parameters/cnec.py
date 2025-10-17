@@ -1,28 +1,45 @@
 
 
 import pandas as pd
-from .flows import get_base_flows
+import numpy as np
+import networkx as nx
+
+from .base_case import get_base_flows
+from src.fbmc.config import FBMCConfig
 
 
-def cne_router(sub_network, ram, z_ptdf, config):
+
+def cnec_router(
+        sub_network, 
+        config: FBMCConfig
+        ) -> pd.Index | pd.MultiIndex:
+    bridge_branches = find_network_bridges(sub_network)
+    
     if config.cne_setting == 'all':
-        return ram, z_ptdf
+        cnes = sub_network.branches().index.droplevel(0).tolist()  # All lines and transformers
+        outages = list(set(cnes) - set(bridge_branches))  # Remove bridges from CNEs
+        cnecs = [(cne, outage) for cne in cnes for outage in outages if cne != outage]
     elif config.cne_setting == 'manual':
-        cnes = config.cne_list
+        # cnes = config.cne_list
+        raise NotImplementedError('Manual CNE selection not implemented yet.')
     elif config.cne_setting == 'utilization_threshold':
-        max_absolute_flow = get_base_flows(sub_network).abs().max()
+        max_absolute_flow = get_base_flows(sub_network, config.use_zero_base_flows_flag).abs().max()
         line_capacity = sub_network.branches().s_nom.droplevel(0)
         cnes = _determine_cnes_threshold(
             max_absolute_flow,
             line_capacity,
             line_usage_threshold = config.line_usage_threshold
             )
+        
     else:
         raise ValueError(f'cnec_setting {config.cnec_setting} not recognized. Choices are "all", "manual" or "utilization_threshold".')
-    ram = filter_on_cne(ram, cnes)
-    z_ptdf = {snapshot: filter_on_cne(z_ptdf_snapshot, cnes) 
-                    for snapshot, z_ptdf_snapshot in z_ptdf.items()}
-    return ram, z_ptdf
+    
+    if config.add_security_constraints:
+        cnecs = pd.MultiIndex.from_tuples(cnecs, names=['branch', 'outage'])
+        return cnecs
+    else:
+        cnes = pd.Index(cnes, name='cnec')
+        return cnes
 
 def _determine_cnes_threshold(max_absolute_flow, line_capacity, line_usage_threshold) -> list:
     """
@@ -85,3 +102,33 @@ def filter_on_cne(ptdf_parameter: pd.DataFrame, cne_lines: list) -> pd.DataFrame
     cne_filtered_parameter = ptdf_parameter[ptdf_parameter.index.isin(cne_lines)]
 
     return cne_filtered_parameter
+
+
+def find_network_bridges(sub_network) -> pd.Index:
+    """
+    Identify bridges in the network. A bridge is a line or transformer that, if removed, would increase the number of connected components in the network.
+    These cannot be included as outages considered for CNECs since their outage would disconnect the network (BODF value of NaN).
+
+    Parameters
+    ----------
+    sub_network : pypsa.SubNetwork
+        The sub-network containing the branches and buses.
+
+    Returns
+    -------
+    pd.Index
+        Index of bridges in the network.
+    """
+
+    G = sub_network.graph()
+    bridges = list(nx.bridges(G))
+    # find all components connecting the bus0 and bus1 pairs of the bridges
+    bus0 = sub_network.branches().bus0
+    bus1 = sub_network.branches().bus1
+    
+    bridge_branches = []
+    for u, v in bridges:
+        mask = ((bus0 == u) & (bus1 == v)) | ((bus0 == v) & (bus1 == u))
+        bridge_branches.extend(sub_network.branches().index[mask].droplevel(0).tolist())
+
+    return bridge_branches
