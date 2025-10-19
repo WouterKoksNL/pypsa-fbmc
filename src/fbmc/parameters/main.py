@@ -1,69 +1,77 @@
 import pypsa
 import pandas as pd
-import numpy as np
-
+from dataclasses import dataclass
+from typing import Any
 
 from .cnec import cnec_router
 from .flows import calculate_ram
-from .gsk import calculate_gsk
 from .ptdf import calculate_zonal_ptdf, get_subnetwork_ptdf
 from ..config import FBMCConfig
 from .base_case import calc_base_net_positions, get_base_flows
+from .security_constrained import apply_security_param_changes
+
+
+def get_base_parameters(sub_network: pypsa.SubNetwork, config: FBMCConfig):
+    nodal_ptdf = get_subnetwork_ptdf(sub_network)
+    net_positions_base_case = calc_base_net_positions(sub_network, config.use_zero_base_flows_flag)
+    base_flows = get_base_flows(sub_network, config.use_zero_base_flows_flag)  # shape: (snapshots, branches)
+    return nodal_ptdf, net_positions_base_case, base_flows
+
+
+@dataclass
+class FBMCParameters:
+    upper_ram_dict: dict[Any, pd.DataFrame]
+    lower_ram_dict: dict[Any, pd.DataFrame]
+    z_ptdf_dict: dict[Any, pd.DataFrame]
+    cnecs: pd.Series | pd.MultiIndex
 
 
 def calculate_fbmc_parameters(
-        sub_network: pypsa.SubNetwork,
-        gsk: dict[pd.Timestamp, pd.DataFrame] | pd.DataFrame,
-        config: FBMCConfig = FBMCConfig(),
-        ) -> tuple[pd.DataFrame, dict[pd.Timestamp, pd.DataFrame], (dict | pd.DataFrame)]:
+    sub_network: pypsa.SubNetwork,
+    gsk: dict[Any, pd.DataFrame], 
+    config: FBMCConfig = FBMCConfig(),
+) -> FBMCParameters:
+    """Add security constraints to zonal network.
+
+    This ensures that no branch is overloaded even given the branch outages.
+
+    Parameters
+    ----------
+    sub_network : pypsa.SubNetwork
+        The sub-network to calculate security constrainted parameters for. 
+    gsk : dict
+        Generation shift key mapping for each snapshot. Must contain at least the buses and zones in the subnetwork. 
+    config : FBMCConfig
+        Configuration object for FBMC parameters.
+    Returns
+    -------
+    FBMCParameters
+        Dataclass containing upper and lower RAM, zPTDF and CNECs.
     """
-    Calculate the Flow-Based Market Coupling (FBMC) parameters for a given power network basecase.
+    nodal_ptdf, net_positions_base_case, base_flows = get_base_parameters(sub_network, config)
 
-    Parameters:
-        basecase (pypsa.Network): The power network basecase object containing network data such as lines, generators, and buses.
-        config (FBMCConfig): Configuration object containing parameters for FBMC calculations. Defaults to FBMCConfig().
+    cnecs = cnec_router(sub_network, config)
 
-    Returns:
-        Tuple[pd.DataFrame, Dict[pd.Timestamp, pd.DataFrame]]: 
-            - ram_cnes: A DataFrame containing the Remaining Available Margin (RAM) filtered on Critical Network Elements (CNEs).
-            - z_ptdf_cnes: A dictionary of DataFrames containing the zonal Power Transfer Distribution Factors (PTDF) filtered on CNEs,
-              with one DataFrame per snapshot if using snapshot-based GSKs.
+    if config.add_security_constraints:
+        nodal_ptdf, base_flows = apply_security_param_changes(sub_network, cnecs, nodal_ptdf, base_flows)
 
-    Notes:
-        - The function calculates the maximum absolute flow on lines, determines the CNEs, computes the Generation Shift Key (GSK),
-          and calculates the PTDF and zonal PTDF.
-        - The RAM is computed using a reliability margin factor and a minimum RAM threshold.
-        - Both RAM and zonal PTDF are filtered based on the identified CNEs.
-        - When using ITERATIVE_UNCERTAINTY GSK method, the zonal PTDF will vary by snapshot.
-    """
+    z_ptdf_dict = {
+        snapshot: calculate_zonal_ptdf(nodal_ptdf, gsk_snapshot, cnecs)
+        for snapshot, gsk_snapshot in gsk.items()
+    }
 
-    # Calculate the FBMC parameters
+    upper_ram, lower_ram = calculate_ram(
+        sub_network, 
+        z_ptdf_dict, 
+        base_flows, 
+        reliability_margin_factor=config.reliability_margin_factor, 
+        net_positions_base_case=net_positions_base_case
+        )
 
-    if isinstance(gsk, pd.DataFrame):
-        gsk = {snapshot: gsk.copy() for snapshot in sub_network.snapshots}
-
-    cnes = cnec_router(sub_network, config)
-
-    ptdf = get_subnetwork_ptdf(sub_network)
-
-    z_ptdf = {}
-    for snapshot, gsk_snapshot in gsk.items():
-        z_ptdf[snapshot] = calculate_zonal_ptdf(ptdf, gsk_snapshot, cnes)
-
-                    reliability_margin_factor = config.reliability_margin_factor,
-                    net_positions_base_case=net_positions_base_case,
-                    add_zptdf_np_term=add_zptdf_np_term,
-                    flow_direction=1)
-    lower_ram =  -1 * calculate_ram(sub_network,
-    net_positions_base_case = calc_base_net_positions(sub_network, config.use_zero_base_flows_flag)
-    base_flows = get_base_flows(sub_network, config.use_zero_base_flows_flag)  # shape: (snapshots, branches)
-    upper_ram, lower_ram = calculate_ram(sub_network,
-                    zonal_ptdf_dict = z_ptdf, 
-                    base_flows = base_flows,
-                    min_ram = config.min_ram, 
-                    reliability_margin_factor = config.reliability_margin_factor,
-                    net_positions_base_case=net_positions_base_case,
-                    )
-    return upper_ram, lower_ram, z_ptdf
-
-    
+    fbmc_parameters = FBMCParameters(   
+        upper_ram_dict=upper_ram,
+        lower_ram_dict=lower_ram,
+        z_ptdf_dict=z_ptdf_dict,
+        cnecs=cnecs
+    )
+    return fbmc_parameters
