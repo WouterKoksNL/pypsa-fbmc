@@ -29,18 +29,18 @@ CASE_FUNCTION_MAP = {
 }
 
 
-def create_case_router(case, load_case_flag=True, save_case_flag=True):
+def create_case(case, load_case_flag=True, save_case_flag=True):
     case_name = case.value
 
     if load_case_flag:
         output = load_case(case_name)
     else:
-        output = create_case(case)
+        output = _create_case(case)
     if save_case_flag:
         save_case(case_name, output)
     return output
 
-def create_case(case):
+def _create_case(case):
     if case in CASE_FUNCTION_MAP:
         case_creation_function = CASE_FUNCTION_MAP[case]
         output = case_creation_function()
@@ -55,6 +55,7 @@ def load_case(case_name):
     with open(f'input_networks/{case_name}_gsk.json', 'r') as f:
         gsk_dict = pickle.load(f)
     output = {
+        'case_name': case_name,
         'zonal_net': zonal_net, 
         'nodal_net': nodal_net,
         'gsk_dict': gsk_dict

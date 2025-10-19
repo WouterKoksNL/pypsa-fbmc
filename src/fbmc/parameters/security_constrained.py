@@ -10,7 +10,7 @@ def apply_security_param_changes(
         cnecs: pd.MultiIndex, 
         nodal_ptdf: pd.DataFrame, 
         base_flows: pd.DataFrame
-        ):
+        ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Apply security constraint parameter changes to nodal PTDF and base flows.""" 
     bodf = get_subnetwork_bodf(sub_network, cnecs)
     nodal_ptdf_outaged = apply_bodf(nodal_ptdf, bodf)
