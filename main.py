@@ -5,8 +5,11 @@ import pandas as pd
 from src.fbmc.config import FBMCConfig, GSKMethod
 from src.fbmc.pos_neg_method import setup_pos_neg_fbmc_model
 from src.fbmc.main import run_fbmc 
-from src.fbmc.network_conversion import nodal_to_zonal
 from src.fbmc.market_prices import calculate_zonal_prices
+
+from src.case_creation.main import create_case, Cases
+
+from src.redispatch.main import run_redispatch
 
 
 
@@ -33,7 +36,7 @@ def main(case_name=Cases.BASIC_THREE_NODE,
     z_da.loads_t.p_set = z_da.loads_t.p_set * (18/15)
     z_da, _, z_ptdf, ram = run_fbmc(n_rd, z_da, config=config, gsk=gsk_dict)
 
-        
+    zonal_net, _, fbmc_parameters = run_fbmc(nodal_net, zonal_net, config=config, gsk=gsk_dict)
 
     # print(z_da.model)
     # z_da.model.objective.value = ((z_da.get_switchable_as_dense('Generator', 'marginal_cost').values * z_da.model.variables['Generator-p']).sum('snapshot').sum()
