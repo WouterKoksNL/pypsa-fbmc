@@ -2,7 +2,7 @@ import xarray as xr
 import linopy as lp
 import pandas as pd
 
-from .fbmc_constraints import (
+from ..constraints.fbmc_constraints import (
     create_load_zone_mapping,
     construct_zonal_balance_constraint,
     create_load_zone_mask,

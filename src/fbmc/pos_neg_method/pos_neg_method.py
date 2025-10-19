@@ -10,12 +10,10 @@ import pandas as pd
 from scipy.stats import norm
 from scipy.stats import halfnorm
 
-from . import network_conversion
-from .constraints.main import add_redispatch_constraints
-from .parameters import calculate_fbmc_parameters
-from .constraints import create_zonal_generation, remove_original_constraints, add_pos_neg_fbmc_constraints
-from .config import FBMCConfig
-from .parameters.gsk import calc_pos_neg_gsk
+from ..parameters.main import calculate_fbmc_parameters
+from ..constraints import create_zonal_generation, remove_original_constraints, add_pos_neg_fbmc_constraints
+from ..config import FBMCConfig
+from ..parameters.gsk import calc_pos_neg_gsk
 
 def setup_pos_neg_fbmc_model(basecase_nodal_network: pypsa.Network, target_zonal_network: pypsa.Network, config: FBMCConfig = FBMCConfig()) -> pypsa.Network:
     """
