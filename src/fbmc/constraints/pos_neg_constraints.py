@@ -8,7 +8,8 @@ from .fbmc_constraints import (
     create_load_zone_mask,
     get_zonal_loads
 )
-from src.fbmc.parameters import convert_zPTDF_to_xarray, convert_RAM_to_xarray
+from src.fbmc.parameters.ptdf import convert_zPTDF_to_xarray
+from src.fbmc.parameters.flows import convert_RAM_to_xarray
 
 
 

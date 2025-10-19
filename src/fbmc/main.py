@@ -16,7 +16,6 @@ from .parameters.flows import convert_RAM_to_xarray
 from .constraints import create_zonal_generation, add_fbmc_constraints, remove_original_constraints
 from .config import FBMCConfig
 from .pos_neg_method import setup_pos_neg_fbmc_model
-from .parameters.security_constrained import add_security_constraints
     
 
 def setup_fbmc_model(basecase_nodal_network: pypsa.Network, zonal_net: pypsa.Network, config: FBMCConfig = FBMCConfig(), gsk=None) -> pypsa.Network:
