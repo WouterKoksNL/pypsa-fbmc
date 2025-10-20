@@ -88,11 +88,11 @@ def calculate_gsk(nodal_net: pypsa.Network,
                 .T
                 .groupby(nodal_net.buses.zone_name)
                 .sum()
-                .reindex(index=nodal_net.buses.zone_name.unique())
+                .reindex(index=nodal_net.buses.zone_name.unique(), columns=nodal_net.buses.zone_name.unique())
                 .values
                 ),
             1.0
-            )).all()), f"GSK matrix should be normalized to 1 per zone, and should not have non-zeros for buses outside the zone. For snapshot {snapshot}, GSK matrix diagonal is {np.diag(gsk[snapshot].T.groupby(nodal_net.buses.zone_name).sum().reindex(index=nodal_net.buses.zone_name.unique()).values)}"
+            )).all()), f"GSK matrix should be normalized to 1 per zone, and should not have non-zeros for buses outside the zone. For snapshot {snapshot}, GSK matrix diagonal is {np.diag(gsk[snapshot].T.groupby(nodal_net.buses.zone_name).sum().reindex(index=nodal_net.buses.zone_name.unique(), columns=nodal_net.buses.zone_name.unique()).values)}"
     return gsk 
 
 def gsk_iterative_uncertainty(
