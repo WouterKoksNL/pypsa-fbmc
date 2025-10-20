@@ -16,7 +16,11 @@ from .constraints.main import create_zonal_generation
 from .constraints.main import add_fbmc_constraints, remove_original_constraints
 from .config import FBMCConfig
 
-def setup_fbmc_model(basecase_nodal_network: pypsa.Network, zonal_net: pypsa.Network, config: FBMCConfig = FBMCConfig(), gsk=None) -> pypsa.Network:
+
+
+
+def setup_fbmc_model(basecase_nodal_network: pypsa.Network, zonal_net: pypsa.Network, config: FBMCConfig = FBMCConfig(), gsk=None, basecase_link_data=None,
+                     ) -> tuple[pypsa.Network, dict[str, SubnetFBMCParameters]]:
     """
     Set up the FBMC model by calculating parameters and adding constraints.
     
@@ -44,33 +48,53 @@ def setup_fbmc_model(basecase_nodal_network: pypsa.Network, zonal_net: pypsa.Net
     if zonal_net.model is None:
         zonal_net.optimize.create_model()
 
+    if config.advanced_hybrid_coupling:
+        basecase_link_data = {
+            'df': basecase_nodal_network.links.loc[:, ['bus0', 'bus1']],
+            'p0': basecase_nodal_network.links_t.p0,
+            'p1': basecase_nodal_network.links_t.p1,
+            'link_bus0_zone_mapping': basecase_nodal_network.links.bus0.map(basecase_nodal_network.buses.zone_name).rename("Zone"),
+            'link_bus1_zone_mapping': basecase_nodal_network.links.bus1.map(basecase_nodal_network.buses.zone_name).rename("Zone"),
+        }
 
     remove_original_constraints(zonal_net)
     create_zonal_generation(zonal_net)
     basecase_nodal_network.determine_network_topology()
-    z_ptdf_dict = {}
-    ram_dict = {}
-    cnecs_dict = {}
-    for sub_network_name, sub_network_data in basecase_nodal_network.sub_networks.iterrows():
-        sub_network = sub_network_data.obj
+    
+    fbmc_parameters: dict[str, SubnetFBMCParameters] = {}
 
-        if sub_network.buses_i().size < 3:
-            raise NotImplementedError("Sub-networks with less than 3 buses are not supported.")
-        
-        fbmc_parameters: FBMCParameters = calculate_fbmc_parameters(sub_network, gsk, config=config)
+    for sub_network_name, sub_network_df in basecase_nodal_network.sub_networks.iterrows():
+        sub_network = sub_network_df.obj
 
-        z_ptdf_xr = convert_zPTDF_to_xarray(fbmc_parameters.z_ptdf_dict)
-        upper_ram_xr = convert_RAM_to_xarray(fbmc_parameters.upper_ram_dict)
-        lower_ram_xr = convert_RAM_to_xarray(fbmc_parameters.lower_ram_dict)
+        subnet_fbmc_parameters: SubnetFBMCParameters = calculate_fbmc_parameters(sub_network, gsk, config=config, basecase_link_data=basecase_link_data)
+        fbmc_parameters[sub_network_name] = subnet_fbmc_parameters
 
-        z_ptdf_dict[sub_network_name] = z_ptdf_xr
-        ram_dict[sub_network_name] = upper_ram_xr
-        cnecs_dict[sub_network_name] = fbmc_parameters.cnecs
-        add_fbmc_constraints(zonal_net, sub_network_name, sub_network, z_ptdf_xr, upper_ram_xr, lower_ram_xr)
-
+    add_fbmc_constraints_loop(zonal_net, fbmc_parameters)
     return zonal_net, fbmc_parameters
 
 
+def add_fbmc_constraints_loop(
+        zonal_net: pypsa.Network,
+        fbmc_parameters: dict[str, SubnetFBMCParameters]
+    ) -> None:
+    """Add FBMC constraints for each sub-network in the zonal network."""
+
+    for sub_network_name, parameters in fbmc_parameters.items():
+        zPTDF_xr = parameters.z_ptdf
+        upper_RAM_xr = parameters.upper_ram
+        lower_RAM_xr = parameters.lower_ram
+        zones = parameters.zones
+
+        add_fbmc_constraints(
+            zonal_net,
+            sub_network_name,
+            zones,
+            zPTDF_xr,
+            upper_RAM_xr,
+            lower_RAM_xr,
+        )
+        
+        
 def run_fbmc(
         nodal_network: pypsa.Network, 
         zonal_net: pypsa.Network, 
@@ -94,16 +118,10 @@ def run_fbmc(
     pypsa.Network
         The updated zonal network after FBMC.
     """
-
-    # Set up the model
-    if config.pos_neg_method:
-        zonal_net = setup_pos_neg_fbmc_model(nodal_network, zonal_net, config=config)
-    else:
-        zonal_net, fbmc_parameters = setup_fbmc_model(nodal_network, zonal_net, config=config, gsk=gsk)
-
+    # Set up the model with FBMC parameters and constraints
+    zonal_net, fbmc_parameters = setup_fbmc_model(nodal_network, zonal_net, config=config, gsk=gsk)
 
     # Run the optimization and save the results to the nodal network
     zonal_net.model.solve(solver_name="gurobi")
-    breakpoint()
     return zonal_net, nodal_network, fbmc_parameters
 

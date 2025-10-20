@@ -8,6 +8,7 @@ from .ptdf import calculate_zonal_ptdf, get_subnetwork_ptdf
 from ..config import FBMCConfig
 from .base_case import calc_base_net_positions, get_base_flows
 from .security_constrained import apply_security_param_changes, calculate_zonal_ptdf_advanced_hybrid
+from .types import SubnetFBMCParameters
 
 def get_base_parameters(sub_network: pypsa.SubNetwork, config: FBMCConfig):
     nodal_ptdf = get_subnetwork_ptdf(sub_network)
@@ -22,7 +23,8 @@ def calculate_fbmc_parameters(
     sub_network: pypsa.SubNetwork,
     gsk: dict[Any, pd.DataFrame], 
     config: FBMCConfig = FBMCConfig(),
-) -> FBMCParameters:
+    basecase_link_data: pd.DataFrame = None
+) -> SubnetFBMCParameters:
     """Add security constraints to zonal network.
 
     This ensures that no branch is overloaded even given the branch outages.
@@ -40,17 +42,22 @@ def calculate_fbmc_parameters(
     FBMCParameters
         Dataclass containing upper and lower RAM, zPTDF and CNECs.
     """
+    if sub_network.buses_i().size < 3:
+        raise NotImplementedError("Sub-networks with less than 3 buses are not supported.")
+
     nodal_ptdf, net_positions_base_case, base_flows = get_base_parameters(sub_network, config)
 
     cnecs = cnec_router(sub_network, config)
 
     if config.add_security_constraints:
         nodal_ptdf, base_flows = apply_security_param_changes(sub_network, cnecs, nodal_ptdf, base_flows)
+        
 
     z_ptdf_dict = {
         snapshot: calculate_zonal_ptdf(nodal_ptdf, gsk_snapshot, cnecs)
         for snapshot, gsk_snapshot in gsk.items()
     }
+
 
     upper_ram, lower_ram = calculate_ram(
         sub_network, 
@@ -59,11 +66,16 @@ def calculate_fbmc_parameters(
         reliability_margin_factor=config.reliability_margin_factor, 
         net_positions_base_case=net_positions_base_case
         )
-
-    fbmc_parameters = FBMCParameters(   
+    
+    zones = sub_network.buses().zone_name.unique()
+    fbmc_parameters = SubnetFBMCParameters(   
         upper_ram_dict=upper_ram,
         lower_ram_dict=lower_ram,
         z_ptdf_dict=z_ptdf_dict,
-        cnecs=cnecs
+        cnecs=cnecs,
+        zones=zones,
     )
+    fbmc_parameters.convert_to_xr()
+    
+
     return fbmc_parameters
