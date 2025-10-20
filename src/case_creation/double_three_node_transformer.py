@@ -22,7 +22,7 @@ def create_double_three_node_transformer_case():
         nodal_net.add('Generator', f'gen_S{sn}B2', bus=f'S{sn}B2', p_nom=12, marginal_cost=200, carrier="Oil")
         nodal_net.add('Load', f'load_S{sn}A1', bus=f'S{sn}A1', p_set=loads[sn])
 
-    zonal_net = nodal_to_zonal(nodal_net)
+    zonal_net = nodal_to_zonal(nodal_net, bus_zone_map=nodal_net.buses.zone_name)
     zonal_net.remove('Link', zonal_net.links.index)
     zonal_net.add('Transformer', 'S1A_S2A', bus1='S1A', bus0='S2A', x=1, s_nom=5)
     # nodal_net.optimize(solver_name='gurobi')

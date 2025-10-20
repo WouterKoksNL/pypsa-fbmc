@@ -6,7 +6,7 @@ from .network_conversion import nodal_to_zonal
 def create_double_three_node_link_case():
     nodal_net = pypsa.Network()
     nodal_net.set_snapshots(['1'])
-    loads = {1: 15, 2: 5}
+    loads = {1: 15, 2: 20}
     for sn in [1, 2]:
         buses_sn = [f'S{sn}A1', f'S{sn}B1', f'S{sn}B2']
         nodal_net.add('Bus', buses_sn)
@@ -20,15 +20,12 @@ def create_double_three_node_link_case():
         nodal_net.add('Generator', f'gen_S{sn}B2', bus=f'S{sn}B2', p_nom=12, marginal_cost=200, carrier="Oil")
         nodal_net.add('Load', f'load_S{sn}A1', bus=f'S{sn}A1', p_set=loads[sn])
 
+    nodal_net.add('Link', 'S1A1_S2A1', bus0='S1A1', bus1='S2A1', p_min_pu=-1, p_nom=5)
 
+    zonal_net = nodal_to_zonal(nodal_net.copy(), bus_zone_map=nodal_net.buses.zone_name)
 
-    zonal_net = nodal_to_zonal(nodal_net)
-    zonal_net.remove('Link', zonal_net.links.index)
-    zonal_net.add('Link', 'S1A_S2A', bus0='S1A', bus1='S2A', p_min_pu=-1, p_nom=5)
     # nodal_net.optimize(solver_name='gurobi')
-
-
-    gsk = pd.DataFrame(0., index=zonal_net.buses.index, columns=nodal_net.buses.index)
+    gsk = pd.DataFrame(0., index=zonal_net.buses.index.copy(), columns=nodal_net.buses.index)
     for sn in [1, 2]:
         gsk.loc[f'S{sn}A', f'S{sn}A1'] = 1.0
         gsk.loc[f'S{sn}B', f'S{sn}B1'] = 0.8
@@ -42,4 +39,5 @@ def create_double_three_node_link_case():
         'nodal_net': nodal_net,
         'gsk_dict': gsk_dict
     }
+
     return output
