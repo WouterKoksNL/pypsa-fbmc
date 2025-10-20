@@ -16,12 +16,6 @@ def get_base_parameters(sub_network: pypsa.SubNetwork, config: FBMCConfig):
     return nodal_ptdf, net_positions_base_case, base_flows
 
 
-@dataclass
-class FBMCParameters:
-    upper_ram_dict: dict[Any, pd.DataFrame]
-    lower_ram_dict: dict[Any, pd.DataFrame]
-    z_ptdf_dict: dict[Any, pd.DataFrame]
-    cnecs: pd.Series | pd.MultiIndex
 
 
 def calculate_fbmc_parameters(
