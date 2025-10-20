@@ -9,7 +9,7 @@ from ..constraints.fbmc_constraints import (
     get_zonal_loads
 )
 from src.fbmc.parameters.ptdf import convert_zPTDF_to_xarray
-from src.fbmc.parameters.flows import convert_RAM_to_xarray
+from src.fbmc.parameters.ram import convert_RAM_to_xarray
 
 
 

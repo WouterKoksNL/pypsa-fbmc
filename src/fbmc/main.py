@@ -8,15 +8,13 @@ Created on Mon Mar 17 13:01:07 2025
 import pypsa
 import pandas as pd
 
-from .parameters.main import calculate_fbmc_parameters, FBMCParameters
+from .parameters.main import calculate_fbmc_parameters
+from .parameters.types import SubnetFBMCParameters
 from .parameters.gsk import calculate_gsk
-from .parameters.ptdf import convert_zPTDF_to_xarray
-from .parameters.flows import convert_RAM_to_xarray
 
-from .constraints import create_zonal_generation, add_fbmc_constraints, remove_original_constraints
+from .constraints.main import create_zonal_generation
+from .constraints.main import add_fbmc_constraints, remove_original_constraints
 from .config import FBMCConfig
-from .pos_neg_method import setup_pos_neg_fbmc_model
-    
 
 def setup_fbmc_model(basecase_nodal_network: pypsa.Network, zonal_net: pypsa.Network, config: FBMCConfig = FBMCConfig(), gsk=None) -> pypsa.Network:
     """

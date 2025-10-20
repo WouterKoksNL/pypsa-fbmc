@@ -5,7 +5,7 @@ import pypsa
 def get_base_flows(sub_network: pypsa.SubNetwork, use_zero_base_flows_flag: bool) -> pd.DataFrame:
     """Get the base case power flows from transformers, links and lines.
     Assumes there are no transformers, links or lines with the same name."""
-    breakpoint()
+
     if use_zero_base_flows_flag:
         return pd.DataFrame(0., index=sub_network.snapshots, columns=sub_network.branches().index)
     return pd.concat([
