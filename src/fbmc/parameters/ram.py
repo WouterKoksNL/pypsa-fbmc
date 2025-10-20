@@ -91,6 +91,7 @@ def calculate_ram(sub_network: pypsa.SubNetwork,
             .set_axis(cnecs)                     # assign full MultiIndex
         )
 
+
     for snapshot in sub_network.snapshots:
         upper_ram, lower_ram = calc_ram_snapshot(
             safety_adjusted_capacity,
@@ -99,6 +100,7 @@ def calculate_ram(sub_network: pypsa.SubNetwork,
             base_flows.loc[snapshot],
             cnecs,
         )
+
         upper_ram_dict[snapshot], lower_ram_dict[snapshot] = upper_ram, lower_ram
 
     upper_ram_df = pd.DataFrame(upper_ram_dict) # shape: (branches, snapshots)
@@ -116,13 +118,3 @@ def calculate_ram(sub_network: pypsa.SubNetwork,
     return upper_ram_df, lower_ram_df
 
 
-
-def convert_RAM_to_xarray(RAM_df: pd.DataFrame) -> xr.DataArray:
-    """
-    Convert a DataFrame containing RAM values to a DataArray.
-    """
-    return xr.DataArray(
-        RAM_df,
-        dims=["cnec", "snapshot"],
-        coords={"cnec": RAM_df.index, "snapshot": RAM_df.columns}
-    )
