@@ -7,7 +7,7 @@ def get_base_flows(sub_network: pypsa.SubNetwork, use_zero_base_flows_flag: bool
     Assumes there are no transformers, links or lines with the same name."""
 
     if use_zero_base_flows_flag:
-        return pd.DataFrame(0., index=sub_network.snapshots, columns=sub_network.branches().index)
+        return pd.DataFrame(0., index=sub_network.snapshots, columns=sub_network.branches_i().droplevel(0))
     return pd.concat([
         sub_network.pnl('transformers')['p0'].T, 
         sub_network.pnl('lines')['p0'].T
