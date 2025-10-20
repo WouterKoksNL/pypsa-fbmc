@@ -2,8 +2,6 @@ import pypsa
 import numpy as np
 import pandas as pd
 
-from src.fbmc.config import FBMCConfig, GSKMethod
-from src.fbmc.pos_neg_method import setup_pos_neg_fbmc_model
 from src.fbmc.main import run_fbmc 
 from src.fbmc.market_prices import calculate_zonal_prices
 
@@ -38,23 +36,7 @@ def main(case_name=Cases.BASIC_THREE_NODE,
 
     zonal_net, _, fbmc_parameters = run_fbmc(nodal_net, zonal_net, config=config, gsk=gsk_dict)
 
-    # print(z_da.model)
-    # z_da.model.objective.value = ((z_da.get_switchable_as_dense('Generator', 'marginal_cost').values * z_da.model.variables['Generator-p']).sum('snapshot').sum()
-    #     #                     + 
-    #     #  z_da.model.variables['Delta_NP_pos'] + z_da.model.variables['Delta_NP_neg']
-    #      )  
-    # z_da_copy.model.objective = ((z_da_copy.get_switchable_as_dense('Generator', 'marginal_cost').values * z_da_copy.model.variables['Generator-p']).sum('snapshot').sum()
-    #     #                     + 
-    #     #  z_da.model.variables['Delta_NP_pos'] + z_da.model.variables['Delta_NP_neg']
-    #      )  
-    # solver_parameters =  {"ResultFile":"model.ilp"}
-    
-    # z_da.model.constraints['Delta_Net_Position'].rhs = np.abs(z_da.model.constraints['Delta_Net_Position'].rhs)
-    # z_da.model.constraints['Zone-p_definition'].rhs = np.abs(z_da.model.constraints['Zone-p_definition'].rhs)
-    # z_da.optimize(solver_name='gurobi', solver_options=solver_parameters)
-    zonal_prices = calculate_zonal_prices(z_da.buses.index, z_da.snapshots, z_ptdf, z_da.model)
-    z_da.buses_t.marginal_price = zonal_prices
-    z_da.export_to_netcdf('output_networks/zonal_no_links.nc')
+    post_process(nodal_net, zonal_net, fbmc_parameters)
     breakpoint()
     return z_da.model.objective.value, None
 
