@@ -9,6 +9,7 @@ from .double_three_node_link import create_double_three_node_link_case
 from .double_three_node_transformer import create_double_three_node_transformer_case
 from .pypsa_eur_central_northern import create_pypsa_eur_central_northern_case
 from .double_three_node_line import create_double_three_node_line_case
+from .double_three_node_link_and_line import create_double_three_node_link_and_line_case
 
 class Cases(Enum):
     SCIGRID_DE = 'scigrid-de'
@@ -17,6 +18,7 @@ class Cases(Enum):
     DOUBLE_THREE_NODE_LINE = 'double-three-node-line'
     DOUBLE_THREE_NODE_TRANSFORMER = 'double-three-node-transformer'
     PYPSA_EUR_CENTRAL_NORTHERN = 'pypsa-eur-central-northern'
+    DOUBLE_THREE_NODE_LINK_AND_LINE = 'double-three-node-link-and-line'
 
 
 CASE_FUNCTION_MAP = {
@@ -25,7 +27,8 @@ CASE_FUNCTION_MAP = {
     Cases.DOUBLE_THREE_NODE_LINK: create_double_three_node_link_case,
     Cases.DOUBLE_THREE_NODE_LINE: create_double_three_node_line_case,
     Cases.DOUBLE_THREE_NODE_TRANSFORMER: create_double_three_node_transformer_case,
-    Cases.PYPSA_EUR_CENTRAL_NORTHERN: create_pypsa_eur_central_northern_case
+    Cases.PYPSA_EUR_CENTRAL_NORTHERN: create_pypsa_eur_central_northern_case,
+    Cases.DOUBLE_THREE_NODE_LINK_AND_LINE: create_double_three_node_link_and_line_case,
 }
 
 
