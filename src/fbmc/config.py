@@ -28,9 +28,10 @@ class FBMCConfig:
     # "ITERATIVE_FBMC" - Iterative FBMC
     
     # use the GSKMethod class 
-    gsk_method: str = GSKMethod.ADJUSTABLE_CAP
+    gsk_method: str = GSKMethod.CURRENT_GENERATION
 
     adjustable_carriers: tuple[str] = ("CCGT", 'coal', 'lignite', 'OCGT', 'oil')
+    # adjustable_carriers: tuple[str] = ("Gas", "Waste", "Hard Coal", "Brown Coal", "Oil")
     # gsk_method: str = "ADJUSTABLE_CAP"
     # gsk_method = GSKMethod(gsk_method)
     
@@ -46,7 +47,14 @@ class FBMCConfig:
 
     pos_neg_method: bool = False
     gsk_std_dev: float = 5
-    run_redispatch: bool = False
+
+    use_zero_base_flows_flag: bool = False
+
+    
 
     add_security_constraints: bool = True
+
+    advanced_hybrid_coupling: bool = False
+
+    run_redispatch: bool = False
 

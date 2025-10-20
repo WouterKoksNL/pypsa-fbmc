@@ -3,7 +3,6 @@ Add the FBMC constraints to the network
 """
 
 import pypsa
-from typing import Union, Dict
 import pandas as pd
 import xarray as xr
 
@@ -20,13 +19,13 @@ def create_zonal_generation(network: pypsa.Network):
     zones = network.buses.index.to_list()
     snapshots = network.snapshots.to_list()
     add_net_position_variable(network, zones, snapshots)
-    define_net_positions_constraint(network, network.snapshots, network.buses.index)
+    define_net_positions_constraint(network)
 
     return 
 
 def add_fbmc_constraints(network: pypsa.Network, 
                          sub_network_name: str,
-                         sub_network: pypsa.SubNetwork,
+                         zones: pd.Index,
                          zPTDF_xr: xr.DataArray,
                          upper_RAM_xr: xr.DataArray,
                          lower_RAM_xr: xr.DataArray,
@@ -57,8 +56,6 @@ def add_fbmc_constraints(network: pypsa.Network,
     network.model.add_constraints(lower_cne_constraint, name=f"CNEC-lower-RAM-subnet-{sub_network_name}")
 
     # Ensure the Net Position of all zones adds up to 0
-    zones = sub_network.buses().zone_name.unique()
-
     zonal_balance_constraint = construct_zonal_balance_constraint(network.model.variables["Zone-p"].sel(Zone=zones))
     network.model.add_constraints(zonal_balance_constraint, name=f"Zonal_balance-subnet-{sub_network_name}")
 

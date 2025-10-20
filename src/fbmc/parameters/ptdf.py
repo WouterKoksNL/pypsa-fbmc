@@ -12,14 +12,18 @@ def get_subnetwork_ptdf(sub_network: pypsa.SubNetwork) -> pd.DataFrame:
     sub_network.calculate_PTDF()
     ptdf = pd.DataFrame(
         sub_network.PTDF,
-        index=sub_network.branches().index.droplevel(0), # Drop MultiIndex. The branches include lines and transformers
+        index=sub_network.branches_i().droplevel(0), # Drop MultiIndex. The branches include lines and transformers
         columns=sub_network.buses_o # Ordered list of buses used in all PF and PTDF calculations (slack first, then PV, then PQ)
     )
     return ptdf
 
 
 def get_subnetwork_bodf(sub_network: pypsa.SubNetwork, cnecs: pd.MultiIndex) -> pd.DataFrame:
+    """
+    Extract BODF values for each (branch, outage) pair in cnecs from a sub-network.
+    """
     sub_network.calculate_BODF()
+
     bodf = pd.DataFrame(
         sub_network.BODF,
         index=sub_network.branches_i().droplevel(0), # Drop MultiIndex. The branches include lines and transformers

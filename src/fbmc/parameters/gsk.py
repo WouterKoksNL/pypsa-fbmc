@@ -406,7 +406,7 @@ def _run_fbmc_with_gsk(
     """
     from ..parameters.main import calculate_fbmc_parameters
     from ..constraints import create_zonal_generation, add_fbmc_constraints, remove_original_constraints
-    from ..network_conversion import nodal_to_zonal
+    from ...case_creation.network_conversion import nodal_to_zonal
     
     try:
         # Use a single silence_output block for the entire operation

@@ -44,8 +44,8 @@ def add_net_position_variable(network: pypsa.Network, zones: list, snapshots: li
 
 def define_net_positions_constraint(
     zonal_net: pypsa.Network,
-    sns: pd.Index,
-    buses: Sequence | None = None,
+    sns: pd.Index = None,
+    buses_input: Sequence | None = None,
     suffix: str = "",
 ) -> None:
     """Define net positions based on PyPSA 0.35.0 nodal balance constraint at
@@ -53,10 +53,13 @@ def define_net_positions_constraint(
     The NPs contain the effect of Generators, Loads, StorageUnits, Links.
     Links are included to model transport by HVDC lines following Standard Hybrid Coupling
     """
+    if sns is None:
+        sns = zonal_net.snapshots
     m = zonal_net.model
-    if buses is None:
-        buses = zonal_net.buses.index
-
+    if buses_input is None:
+        buses = zonal_net.buses.index.copy()
+    else:
+        buses = pd.Index(buses_input)
     args = [
         ["Generator", "p", "bus", 1],
         ["Store", "p", "bus", 1],
@@ -103,6 +106,7 @@ def define_net_positions_constraint(
         .T.groupby(zonal_net.loads.bus[active])
         .sum()
         .T.reindex(columns=buses, fill_value=0)
+        .set_axis(buses, axis=1)
     )
 
     # the name for multi-index is getting lost by groupby before pandas 1.4.0
@@ -126,7 +130,5 @@ def define_net_positions_constraint(
         if mask is not None:
             mask = mask.rename(Bus=f"Bus{suffix}")
     zonal_production = zonal_production.rename({"Bus": "Zone"})
-    breakpoint()
-    # fixed_load = fixed_load.rename({"Bus": "Zone"})
+    fixed_load = fixed_load.rename({"Bus": "Zone"})
     zonal_net.model.add_constraints(zonal_net.model.variables['Zone-p'] - (zonal_production - fixed_load), "=", 0, name=f"Zone{suffix}-definition", mask=mask)
-
