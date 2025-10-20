@@ -10,6 +10,7 @@ from ..config import FBMCConfig
 from .base_case import calc_base_net_positions, get_base_flows
 from .security_constrained import apply_security_param_changes
 
+from .security_constrained import apply_security_param_changes, calculate_zonal_ptdf_advanced_hybrid
 
 def get_base_parameters(sub_network: pypsa.SubNetwork, config: FBMCConfig):
     nodal_ptdf = get_subnetwork_ptdf(sub_network)

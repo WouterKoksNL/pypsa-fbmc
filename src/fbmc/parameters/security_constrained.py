@@ -2,7 +2,7 @@ import pypsa
 import pandas as pd
 import numpy as np
 
-from src.fbmc.parameters.ptdf import get_subnetwork_bodf
+from src.fbmc.parameters.ptdf import get_subnetwork_bodf, calculate_zonal_ptdf
 
 
 def apply_security_param_changes(
@@ -105,3 +105,65 @@ def reindex_to_cnec_nr(df: pd.DataFrame | pd.Series, cnecs_df: pd.DataFrame, fro
         df.reindex(index=cnecs_df[from_index])
         .set_axis(cnecs_df.index)
     )
+
+
+def calculate_zonal_ptdf_advanced_hybrid(
+    ptdf: pd.DataFrame, 
+    gsk: pd.DataFrame, 
+    cnecs: pd.Index | pd.MultiIndex,
+    link_data: dict[str, pd.DataFrame],
+    ):
+    return _calculate_zonal_ptdf_advanced_hybrid(
+        ptdf, 
+        gsk,
+        cnecs,
+        link_data['df'],
+        link_data['p0'],
+        link_data['p1'],
+        link_data['link_bus0_zone_mapping'],
+        link_data['link_bus1_zone_mapping'],
+    )
+
+
+def _calculate_zonal_ptdf_advanced_hybrid(
+        ptdf: pd.DataFrame, 
+        gsk: pd.DataFrame, 
+        cnecs: pd.Index | pd.MultiIndex,
+        links_df: pd.DataFrame,
+        links_p0: pd.DataFrame,
+        links_p1: pd.DataFrame,
+        link_bus0_zone_mapping: pd.Series,
+        link_bus1_zone_mapping: pd.Series,
+        ) -> pd.DataFrame:
+    """
+    Transform nodal PTDF to zonal PTDF using Generation Shift Keys (GSK).
+    PTDF shape: (branches, buses)
+    GSK shape: (zones, buses)
+    CNECs shape: (branches) for N-0 CNECs, or (branches, outaged_branches) for N-1 CNECs
+    zPTDF shape: (branches, zones), filtered on CNECs
+    """
+    z_ptdf = calculate_zonal_ptdf(ptdf, gsk, cnecs)
+    
+    links_with_bus0_in_subnet = links_df[links_df.bus0.isin(ptdf.columns)]
+    links_with_bus1_in_subnet = links_df[links_df.bus1.isin(ptdf.columns)]
+
+    
+    
+    ptdf_bus0 = ptdf.loc[:, links_with_bus0_in_subnet.bus0]
+    ptdf_bus1 = ptdf.loc[:, links_with_bus1_in_subnet.bus1]
+    ptdf_bus0.columns = links_with_bus0_in_subnet.index
+    ptdf_bus1.columns = links_with_bus1_in_subnet.index
+    
+    link_term_bus0 = (
+        (ptdf_bus0 * links_p0.loc[:, links_with_bus0_in_subnet.index].values)
+        .T.groupby(link_bus0_zone_mapping).sum().T
+        .reindex(z_ptdf.columns, fill_value=0.0, axis=1)
+        )
+    link_term_bus1 = (
+        (ptdf_bus1 * links_p1.loc[:, links_with_bus1_in_subnet.index].values)
+        .T.groupby(link_bus1_zone_mapping).sum().T
+        .reindex(z_ptdf.columns, fill_value=0.0, axis=1)
+    )
+    return z_ptdf - link_term_bus0 + link_term_bus1
+
+
