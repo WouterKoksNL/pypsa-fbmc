@@ -2,10 +2,10 @@ import pypsa
 import pandas as pd
 import unittest
 
-from src.fbmc.network_conversion import nodal_to_zonal
-from src.fbmc.main import FBMCConfig, run_fbmc
+from src.case_creation.network_conversion import nodal_to_zonal
+from src.fbmc.pos_neg_method.main import FBMCConfig, run_fbmc
 from src.fbmc.parameters.gsk import GSKMethod
-from src.fbmc.market_prices import calculate_zonal_prices
+from src.post_processing.market_prices import calculate_zonal_prices
 
 
 class TestFBMCResults(unittest.TestCase):
@@ -35,8 +35,7 @@ class TestFBMCResults(unittest.TestCase):
 
     def run_fbmc(self, nodal_net):
         nodal_net.optimize(solver_name='gurobi')
-        zonal_net = nodal_to_zonal(nodal_net)
-        zonal_net.remove('Link', zonal_net.links.index)
+        zonal_net = nodal_to_zonal(nodal_net, nodal_net.buses.zone_name)
         config = FBMCConfig()
 
         config.reliability_margin_factor = 0.0
