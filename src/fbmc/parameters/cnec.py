@@ -37,9 +37,9 @@ def cnec_router(
     if config.add_security_constraints:
         cnecs = pd.MultiIndex.from_tuples(cnecs, names=['branch', 'outage'])
         return cnecs
-    else:
-        cnes = pd.Index(cnes, name='cnec')
-        return cnes
+
+    cnes = pd.Index(cnes, name='cnec')
+    return cnes
 
 def _determine_cnes_threshold(max_absolute_flow, line_capacity, line_usage_threshold) -> list:
     """
