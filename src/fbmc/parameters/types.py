@@ -13,19 +13,26 @@ class SubnetFBMCParameters:
         lower_ram_dict: dict[Any, pd.DataFrame],
         cnecs: pd.Series | pd.MultiIndex,
         zones: pd.Index,
+        link_ptdf_bus0: pd.DataFrame | None = None,
+        link_ptdf_bus1: pd.DataFrame | None = None,
     ):
         self.z_ptdf: dict[Any, pd.DataFrame] | xr.DataArray = z_ptdf_dict
         self.upper_ram: dict[Any, pd.DataFrame] | xr.DataArray = upper_ram_dict
         self.lower_ram: dict[Any, pd.DataFrame] | xr.DataArray = lower_ram_dict
-        
         self.cnecs: pd.Series | pd.MultiIndex = cnecs
         self.zones: pd.Index = zones
+        self.link_ptdf_bus0: pd.DataFrame | None = link_ptdf_bus0
+        self.link_ptdf_bus1: pd.DataFrame | None = link_ptdf_bus1
 
     def convert_to_xr(self):
         """Convert all dict attributes to xarray DataArrays."""
         self.z_ptdf = self._zptdf_to_xarray(self.z_ptdf)
         self.upper_ram = self._ram_dict_to_xarray(self.upper_ram, name="upper_RAM")
         self.lower_ram = self._ram_dict_to_xarray(self.lower_ram, name="lower_RAM")
+        if self.link_ptdf_bus0 is not None:
+            self.link_ptdf_bus0 = self._convert_link_ptdf_to_xarray(self.link_ptdf_bus0)
+        if self.link_ptdf_bus1 is not None:
+            self.link_ptdf_bus1 = self._convert_link_ptdf_to_xarray(self.link_ptdf_bus1)
 
     # ---- zPTDF conversion ----
     def z_ptdf_xr(self) -> xr.DataArray:
@@ -71,3 +78,14 @@ class SubnetFBMCParameters:
                 coords={"cnec": zptdf_data.index, "Zone": zptdf_data.columns},
                 name="zPTDF",
             )
+
+    def _convert_link_ptdf_to_xarray(self, link_ptdf: pd.DataFrame) -> xr.DataArray:
+        """
+        Convert link PTDF DataFrame to a DataArray.
+        """
+        return xr.DataArray(
+            link_ptdf.values,
+            dims=["cnec", "Link"],
+            coords={"cnec": link_ptdf.index, "Link": link_ptdf.columns},
+            name="link_PTDF",
+        )
