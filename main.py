@@ -12,11 +12,11 @@ from src.case_creation.main import create_case, Cases
 
 from src.redispatch.main import run_redispatch
 
-from src.post_processing.post_process import post_process
+from src.post_processing.main import post_process
 
 
 
-def pre_process(net: pypsa.Network):
+def remove_zero_capacity_branches(net: pypsa.Network):
     net.remove('Line', net.lines.index[net.lines.s_nom < 1e-5])
     net.remove('Transformer', net.transformers.index[net.transformers.s_nom < 1e-5])
     net.remove('Link', net.links.index[net.links.p_nom < 1e-5])
@@ -42,7 +42,7 @@ def main(case_name=Cases.BASIC_THREE_NODE,
     
     print(config.gsk_method)
     config.reliability_margin_factor = 0.0
-    pre_process(nodal_net)
+    remove_zero_capacity_branches(nodal_net)
     zonal_net.remove('Link', zonal_net.links.index[zonal_net.links.p_nom < 1e-5])
 
     zonal_net, _, fbmc_parameters = run_fbmc(nodal_net, zonal_net, config=config, gsk=gsk_dict)
