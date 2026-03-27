@@ -129,5 +129,7 @@ def define_net_positions_constraint(
             mask = mask.rename(Bus=f"Bus{suffix}")
 
     zonal_production = zonal_production.rename({"Bus": "Zone"})
-    fixed_load = fixed_load.rename({"Bus": "Zone"})
+    if fixed_load.coords.get("Bus") is not None:
+        print('Fixed load has coordinate Bus')
+        fixed_load = fixed_load.rename({"Bus": "Zone"})
     zonal_net.model.add_constraints(zonal_net.model.variables['Zone-p'] - (zonal_production - fixed_load), "=", 0, name=f"Zone{suffix}-definition", mask=mask)
