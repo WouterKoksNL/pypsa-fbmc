@@ -36,7 +36,7 @@ def construct_cne_constraint_advanced_hybrid(
         Constraint ensuring flows on cnecs are within the RAM.
     """
     lhs = (zPTDF * net_positions).sum(dim="Zone") 
-    if link_flows is not None:
+    if link_flows is not None and advanced_hybrid_flag:
         lhs += ((link_ptdf_bus1 - link_ptdf_bus0) * link_flows).sum(dim="Link")
     # Create the constraint.
     if upper_bool:

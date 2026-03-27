@@ -29,6 +29,7 @@ def add_fbmc_constraints(
         zPTDF_xr: xr.DataArray,
         upper_RAM_xr: xr.DataArray,
         lower_RAM_xr: xr.DataArray,
+        advanced_hybrid_flag: bool,
         link_ptdf_bus0: pd.DataFrame | None = None,
         link_ptdf_bus1: pd.DataFrame | None = None
     ) -> pypsa.Network:
@@ -47,7 +48,7 @@ def add_fbmc_constraints(
     """
     # xarray conversion
 
-    link_flows = network.model.variables["Link-p"] if "Link-p" in network.model.variables else None
+    link_flows = network.model.variables["Link-p"] if ("Link-p" in network.model.variables) and advanced_hybrid_flag else None
 
     # Restrict the load on CNEs by the Remaining Available Margin (RAM)
     upper_cne_constraint = construct_cne_constraint_advanced_hybrid(
@@ -55,7 +56,7 @@ def add_fbmc_constraints(
         network.model.variables["Zone-p"],
         upper_RAM_xr, 
         upper_bool=True, 
-        advanced_hybrid_flag=True,
+        advanced_hybrid_flag=advanced_hybrid_flag,
         link_flows=link_flows,
         link_ptdf_bus0=link_ptdf_bus0, 
         link_ptdf_bus1=link_ptdf_bus1)
@@ -67,7 +68,7 @@ def add_fbmc_constraints(
         network.model.variables["Zone-p"], 
         lower_RAM_xr, 
         upper_bool=False, 
-        advanced_hybrid_flag=True,
+        advanced_hybrid_flag=advanced_hybrid_flag,
         link_flows=link_flows,
         link_ptdf_bus0=link_ptdf_bus0, 
         link_ptdf_bus1=link_ptdf_bus1)
