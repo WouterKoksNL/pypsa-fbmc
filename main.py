@@ -41,6 +41,8 @@ def main(case_name=Cases.BASIC_THREE_NODE,
     bridges = find_bridges_network(nodal_net)
     outaged_lines = nodal_net.lines.index.difference(bridges)
     nodal_net.optimize.optimize_security_constrained(solver_name='gurobi', branch_outages=outaged_lines)
+
+    nodal_optimum = nodal_net.model.objective.value
     print(config.gsk_method)
     config.reliability_margin_factor = 0.0
     remove_zero_capacity_branches(nodal_net)
