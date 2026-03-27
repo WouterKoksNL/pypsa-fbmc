@@ -15,6 +15,7 @@ from .parameters.gsk import calculate_gsk
 from .constraints.main import create_zonal_generation
 from .constraints.main import add_fbmc_constraints, remove_original_constraints
 from .config import FBMCConfig
+from .results_extraction import extract_model_results
 
 
 
@@ -127,5 +128,6 @@ def run_fbmc(
 
     # Run the optimization and save the results to the nodal network
     zonal_net.model.solve(solver_name="gurobi")
+    extract_model_results(zonal_net)
     return zonal_net, nodal_network, fbmc_parameters
 

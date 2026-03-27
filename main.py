@@ -47,8 +47,6 @@ def main(case_name=Cases.BASIC_THREE_NODE,
 
     zonal_net, _, fbmc_parameters = run_fbmc(nodal_net, zonal_net, config=config, gsk=gsk_dict)
 
-    post_process(nodal_net, zonal_net, fbmc_parameters)
-    breakpoint()
     # nodal_net.optimize.optimize_security_constrained(solver_name='gurobi')
     return zonal_net.model.objective.value, None
 
