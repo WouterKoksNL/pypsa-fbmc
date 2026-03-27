@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from logging import Logger 
 
+from src.fbmc.parameters.cnec import find_bridges_network
 from src.fbmc.config import FBMCConfig
 from src.fbmc.main import run_fbmc 
 from src.fbmc.parameters.types import SubnetFBMCParameters
