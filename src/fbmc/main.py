@@ -11,16 +11,15 @@ import pandas as pd
 from .parameters.main import calculate_fbmc_parameters
 from .parameters.types import SubnetFBMCParameters
 from .parameters.gsk import calculate_gsk
-
 from .constraints.main import create_zonal_generation
 from .constraints.main import add_fbmc_constraints, remove_original_constraints
-from .config import FBMCConfig
+from .config import FBMCConfig, GSKMethod
 from .results_extraction import extract_model_results
 
 
 
 
-def setup_fbmc_model(basecase_nodal_network: pypsa.Network, zonal_net: pypsa.Network, config: FBMCConfig = FBMCConfig(), gsk=None, basecase_link_data=None,
+def setup_fbmc_model(basecase_nodal_network: pypsa.Network, zonal_net: pypsa.Network, gsk_strategy: GSKMethod, config: FBMCConfig = FBMCConfig(), gsk=None, basecase_link_data=None,
                      ) -> tuple[pypsa.Network, dict[str, SubnetFBMCParameters]]:
     """
     Set up the FBMC model by calculating parameters and adding constraints.
@@ -41,7 +40,7 @@ def setup_fbmc_model(basecase_nodal_network: pypsa.Network, zonal_net: pypsa.Net
     """
     # Calculate parameters
     if gsk is None:
-        gsk = calculate_gsk(basecase_nodal_network, config)
+        gsk = calculate_gsk(basecase_nodal_network, gsk_strategy, config)
     if isinstance(gsk, pd.DataFrame):
         gsk = {snapshot: gsk.copy() for snapshot in zonal_net.snapshots}
 
@@ -68,6 +67,7 @@ def setup_fbmc_model(basecase_nodal_network: pypsa.Network, zonal_net: pypsa.Net
         sub_network = sub_network_df.obj
 
         subnet_fbmc_parameters: SubnetFBMCParameters = calculate_fbmc_parameters(sub_network, gsk, config=config, basecase_link_data=basecase_link_data)
+        breakpoint()
         fbmc_parameters[sub_network_name] = subnet_fbmc_parameters
 
     add_fbmc_constraints_loop(zonal_net, fbmc_parameters, config.advanced_hybrid_coupling)
@@ -106,6 +106,7 @@ def run_fbmc(
         nodal_network: pypsa.Network, 
         zonal_net: pypsa.Network, 
         config: FBMCConfig = FBMCConfig(), 
+        gsk_strategy: GSKMethod = GSKMethod.BUS_P,
         gsk: None | pd.DataFrame | dict[pd.Timestamp, pd.DataFrame] = None
         ) -> tuple[pypsa.Network, pypsa.Network | None]:
     """
@@ -119,14 +120,14 @@ def run_fbmc(
         The zonal network to be used for FBMC.
     config : FBMCConfig
         Configuration object for FBMC parameters.
-
+    gsk_strategy : GSKMethod
     Returns
     -------
     pypsa.Network
         The updated zonal network after FBMC.
     """
     # Set up the model with FBMC parameters and constraints
-    zonal_net, fbmc_parameters = setup_fbmc_model(nodal_network, zonal_net, config=config, gsk=gsk)
+    zonal_net, fbmc_parameters = setup_fbmc_model(nodal_network, zonal_net, gsk_strategy, config=config, gsk=gsk)
 
     # Run the optimization and save the results to the nodal network
     zonal_net.model.solve(solver_name="gurobi")

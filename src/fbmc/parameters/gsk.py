@@ -16,6 +16,7 @@ from .helpers import (
 
 
 def calculate_gsk(nodal_net: pypsa.Network, 
+                  gsk_strategy: GSKMethod,
                   config: FBMCConfig = FBMCConfig()) -> dict[pd.Timestamp, pd.DataFrame]:
     """
     Calculate the Generator Shift Key (GSK) of every node in the network.
@@ -28,6 +29,8 @@ def calculate_gsk(nodal_net: pypsa.Network,
     ----------
     network : pypsa.Network
         The network object containing generators and buses.
+    gsk_strategy : GSKMethod
+        The strategy to use for calculating the GSK.
     config : FBMCConfig
         Configuration object containing GSK calculation parameters.
     
@@ -51,10 +54,10 @@ def calculate_gsk(nodal_net: pypsa.Network,
         raise ValueError("Buses in network must have 'zone_name' attribute for GSK calculation.")
 
     # Select method based on config
-    if config.gsk_method == GSKMethod.ADJUSTABLE_CAP:
+    if gsk_strategy == GSKMethod.ADJUSTABLE_CAP:
         gsk = gsk_adjustable_cap(nodal_net.generators, nodal_net.buses, adjustable_carriers=config.adjustable_carriers)
         gsk = {snap: gsk.copy() for snap in nodal_net.snapshots}
-    elif config.gsk_method == GSKMethod.ITERATIVE_UNCERTAINTY:
+    elif gsk_strategy == GSKMethod.ITERATIVE_UNCERTAINTY:
         gsk = gsk_iterative_uncertainty(
             nodal_net,
             uncertain_carriers=config.uncertain_carriers,
@@ -62,9 +65,9 @@ def calculate_gsk(nodal_net: pypsa.Network,
             gen_variation_std_dev=config.gen_variation_std_dev,
             load_variation_std_dev=config.load_variation_std_dev,
         )
-    elif config.gsk_method == GSKMethod.CURRENT_GENERATION:
+    elif gsk_strategy == GSKMethod.CURRENT_GENERATION:
         gsk = gsk_current_generation(nodal_net.generators, nodal_net.generators_t.p, nodal_net.buses)
-    elif config.gsk_method == GSKMethod.ITERATIVE_FBMC:
+    elif gsk_strategy == GSKMethod.ITERATIVE_FBMC:
         gsk = gsk_iterative_fbmc(
             nodal_net,
             config=config,
@@ -75,12 +78,12 @@ def calculate_gsk(nodal_net: pypsa.Network,
             load_variation_std_dev=config.load_variation_std_dev,
             initial_gsk_method=config.initial_gsk_method,
         )
-    elif config.gsk_method == GSKMethod.MERIT_ORDER:
+    elif gsk_strategy == GSKMethod.MERIT_ORDER:
         gsk = calc_merit_order_based_gsk(nodal_net, standard_deviation=config.gsk_std_dev)
-    elif config.gsk_method == GSKMethod.BUS_P:
+    elif gsk_strategy == GSKMethod.BUS_P:
         gsk = gsk_bus_p(nodal_net)
     else:
-        raise ValueError(f"Unknown method: {config.gsk_method}. Supported methods are: 'MERIT_ORDER','ADJUSTABLE_CAP', 'ITERATIVE_UNCERTAINTY', 'CURRENT_GENERATION', 'ITERATIVE_FBMC'.")
+        raise ValueError(f"Unknown method: {gsk_strategy}. Supported methods are: 'MERIT_ORDER','ADJUSTABLE_CAP', 'ITERATIVE_UNCERTAINTY', 'CURRENT_GENERATION', 'ITERATIVE_FBMC'.")
     
     if type(gsk) is pd.DataFrame:
         gsk = {snapshot: gsk for snapshot in nodal_net.snapshots}

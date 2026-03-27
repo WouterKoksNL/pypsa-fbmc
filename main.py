@@ -4,7 +4,7 @@ import pandas as pd
 from logging import Logger 
 
 from src.fbmc.parameters.cnec import find_bridges_network
-from src.fbmc.config import FBMCConfig
+from src.fbmc.config import FBMCConfig, GSKMethod
 from src.fbmc.main import run_fbmc 
 from src.fbmc.parameters.types import SubnetFBMCParameters
 from src.post_processing.market_prices import calculate_zonal_prices
@@ -23,8 +23,11 @@ def remove_zero_capacity_branches(net: pypsa.Network):
     net.remove('Link', net.links.index[net.links.p_nom < 1e-5])
 
 
-def main(case_name=Cases.BASIC_THREE_NODE, 
-         snapshot_length=3):
+def main(
+        case_name=Cases.BASIC_THREE_NODE, 
+        gsk_strategy: None | GSKMethod = None,
+         snapshot_length=3
+         ):
     logger = Logger(__name__)
     
     case_data = create_case(case_name, load_case_flag=False, save_case_flag=True)
@@ -43,7 +46,7 @@ def main(case_name=Cases.BASIC_THREE_NODE,
     nodal_net.optimize.optimize_security_constrained(solver_name='gurobi', branch_outages=outaged_lines)
 
     nodal_optimum = nodal_net.model.objective.value
-    print(config.gsk_method)
+    print(gsk_strategy)
     config.reliability_margin_factor = 0.0
     remove_zero_capacity_branches(nodal_net)
     zonal_net.remove('Link', zonal_net.links.index[zonal_net.links.p_nom < 1e-5])
