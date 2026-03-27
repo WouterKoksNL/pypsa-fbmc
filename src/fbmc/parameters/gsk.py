@@ -3,6 +3,7 @@ import pandas as pd
 import pypsa
 from scipy.stats import norm, halfnorm
 
+
 from ..config import FBMCConfig, GSKMethod
 from .helpers import (
     get_uncertain_elements, 
@@ -12,6 +13,7 @@ from .helpers import (
     process_generation_difference,
     silence_output,
 )
+
 
 def calculate_gsk(nodal_net: pypsa.Network, 
                   config: FBMCConfig = FBMCConfig()) -> dict[pd.Timestamp, pd.DataFrame]:

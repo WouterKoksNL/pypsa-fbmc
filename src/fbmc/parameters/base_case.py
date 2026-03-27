@@ -2,7 +2,8 @@ import pandas as pd
 import pypsa
 
 
-def get_base_flows(sub_network: pypsa.SubNetwork, use_zero_base_flows_flag: bool) -> pd.DataFrame:
+def get_base_flows(sub_network: pypsa.SubNetwork, use_zero_base_flows_flag: bool,
+                   ) -> pd.DataFrame:
     """Get the base case power flows from transformers, links and lines.
     Assumes there are no transformers, links or lines with the same name."""
 
@@ -36,7 +37,10 @@ def calc_base_net_positions(sub_network: pypsa.Network, use_zero_base_flows_flag
     if use_zero_base_flows_flag:
         net_positions = pd.DataFrame(0., index=sub_network.snapshots, columns=sub_network.buses()['zone_name'].unique())
         return net_positions
-    net_positions = sub_network.pnl('buses')['p'].T.groupby(sub_network.df('buses').zone_name).sum().T
+    net_positions = (
+        sub_network.pnl('buses')['p'].T.groupby(sub_network.df('buses').zone_name).sum().T 
+    )
+
     if net_positions.sum(axis=1).abs().max() > 1e-6:
         raise ValueError("Net positions do not sum to zero.")
     return net_positions

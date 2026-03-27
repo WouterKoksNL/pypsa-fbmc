@@ -45,6 +45,8 @@ def calculate_fbmc_parameters(
     if sub_network.buses_i().size < 3:
         raise NotImplementedError("Sub-networks with less than 3 buses are not supported.")
 
+
+
     nodal_ptdf, net_positions_base_case, base_flows = get_base_parameters(sub_network, config)
 
     cnecs = cnec_router(sub_network, config)

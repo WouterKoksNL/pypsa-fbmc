@@ -16,7 +16,7 @@ def construct_cne_constraint_advanced_hybrid(
         link_ptdf_bus1: xr.DataArray,
         ):
     """
-    Create the constraint restricting the flow on cnecs by the Remaining Available Margin (RAM).
+    Create the constraint restricting the flow on CNECs by the Remaining Available Margin (RAM).
     
     Parameters
     ----------
