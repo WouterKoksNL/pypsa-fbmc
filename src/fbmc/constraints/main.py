@@ -9,7 +9,7 @@ import xarray as xr
 from .redispatch import add_gen_up_and_down_regulators, update_objective_function
 from .fbmc_constraints import construct_cne_constraint, construct_zonal_balance_constraint
 from .zonal_generation import define_net_positions_constraint, add_net_position_variable
-
+from .link_flows import construct_cne_constraint_advanced_hybrid
 
 def create_zonal_generation(network: pypsa.Network):
     """
@@ -23,13 +23,16 @@ def create_zonal_generation(network: pypsa.Network):
 
     return 
 
-def add_fbmc_constraints(network: pypsa.Network, 
-                         sub_network_name: str,
-                         zones: pd.Index,
-                         zPTDF_xr: xr.DataArray,
-                         upper_RAM_xr: xr.DataArray,
-                         lower_RAM_xr: xr.DataArray,
-                         ) -> pypsa.Network:
+def add_fbmc_constraints(
+        network: pypsa.Network, 
+        sub_network_name: str,
+        zones: pd.Index,
+        zPTDF_xr: xr.DataArray,
+        upper_RAM_xr: xr.DataArray,
+        lower_RAM_xr: xr.DataArray,
+        link_ptdf_bus0: pd.DataFrame | None = None,
+        link_ptdf_bus1: pd.DataFrame | None = None
+    ) -> pypsa.Network:
     """
     Main function to add FBMC constraints to the network.
     
@@ -45,14 +48,30 @@ def add_fbmc_constraints(network: pypsa.Network,
     """
     # xarray conversion
 
-
+    link_flows = network.model.variables["Link-p"] if "Link-p" in network.model.variables else None
 
     # Restrict the load on CNEs by the Remaining Available Margin (RAM)
-    upper_cne_constraint = construct_cne_constraint(zPTDF_xr, network.model.variables["Zone-p"], upper_RAM_xr, upper_bool=True)
+    upper_cne_constraint = construct_cne_constraint_advanced_hybrid(
+        zPTDF_xr, 
+        network.model.variables["Zone-p"],
+        upper_RAM_xr, 
+        upper_bool=True, 
+        advanced_hybrid_flag=True,
+        link_flows=link_flows,
+        link_ptdf_bus0=link_ptdf_bus0, 
+        link_ptdf_bus1=link_ptdf_bus1)
     network.model.add_constraints(upper_cne_constraint, name=f"CNEC-upper-RAM-subnet-{sub_network_name}")
 
     # Restrict the load on CNEs by the Remaining Available Margin (RAM)
-    lower_cne_constraint = construct_cne_constraint(zPTDF_xr, network.model.variables["Zone-p"], lower_RAM_xr, upper_bool=False)
+    lower_cne_constraint = construct_cne_constraint_advanced_hybrid(
+        zPTDF_xr, 
+        network.model.variables["Zone-p"], 
+        lower_RAM_xr, 
+        upper_bool=False, 
+        advanced_hybrid_flag=True,
+        link_flows=link_flows,
+        link_ptdf_bus0=link_ptdf_bus0, 
+        link_ptdf_bus1=link_ptdf_bus1)
     network.model.add_constraints(lower_cne_constraint, name=f"CNEC-lower-RAM-subnet-{sub_network_name}")
 
     # Ensure the Net Position of all zones adds up to 0
