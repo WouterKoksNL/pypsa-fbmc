@@ -6,7 +6,7 @@ import linopy as lp
 import logging
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+
 
 import pandas as pd
 from linopy import merge
@@ -15,8 +15,6 @@ from pypsa.components.common import as_components
 from pypsa.descriptors import get_switchable_as_dense as as_dense
 
 
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
 
 def add_net_position_variable(network: pypsa.Network, zones: list, snapshots: list) -> lp.Variable: 
