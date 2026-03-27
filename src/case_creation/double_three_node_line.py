@@ -1,16 +1,16 @@
 import pypsa
 import pandas as pd
 
-from .network_conversion import nodal_to_zonal, nodal_to_zonal_nocopy     
+from .network_conversion import nodal_to_zonal 
 
 def create_double_three_node_line_case():
     nodal_net = pypsa.Network()
-    nodal_net.set_snapshots(['1'])
+    nodal_net.set_snapshots(['1', '2'])
     loads = {1: 15, 2: 5}
     for sn in [1, 2]:
         buses_sn = [f'S{sn}A1', f'S{sn}B1', f'S{sn}B2']
-        nodal_net.add('Bus', buses_sn)
-        nodal_net.buses.loc[buses_sn, 'zone_name'] = [f'S{sn}A', f'S{sn}B', f'S{sn}B']
+        nodal_net.add('Bus', buses_sn, zone_name=[f'S{sn}A', f'S{sn}B', f'S{sn}B'])
+
         nodal_net.add('Line', f'S{sn}B1-S{sn}A1', bus0=f'S{sn}B1', bus1=f'S{sn}A1', x=1, s_nom=12)
         nodal_net.add('Line', f'S{sn}B1-S{sn}B2', bus0=f'S{sn}B1', bus1=f'S{sn}B2', x=1, s_nom=12)
         nodal_net.add('Line', f'S{sn}A1-S{sn}B2', bus0=f'S{sn}A1', bus1=f'S{sn}B2', x=1, s_nom=12)
@@ -22,12 +22,12 @@ def create_double_three_node_line_case():
 
     nodal_net.add('Line', 'S1A_S2A', bus0='S1A1', bus1='S2A1', x=1, s_nom=5)
 
-    zonal_net = nodal_to_zonal_nocopy(nodal_net.copy(), zone_column='zone_name')
+    zonal_net = nodal_to_zonal(nodal_net.copy(), bus_zone_map=nodal_net.buses.zone_name)
 
     # nodal_net.optimize(solver_name='gurobi')
 
 
-    gsk = pd.DataFrame(0., index=zonal_net.buses.index, columns=nodal_net.buses.index)
+    gsk = pd.DataFrame(0., index=zonal_net.buses.index.copy(), columns=nodal_net.buses.index)
     for sn in [1, 2]:
         gsk.loc[f'S{sn}A', f'S{sn}A1'] = 1.0
         gsk.loc[f'S{sn}B', f'S{sn}B1'] = 0.8
