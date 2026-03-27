@@ -37,7 +37,7 @@ def main(case_name=Cases.BASIC_THREE_NODE,
     # nodal_net.remove('StorageUnit', nodal_net.storage_units.index)
     # zonal_net.remove('StorageUnit', zonal_net.storage_units.index)
     nodal_net.determine_network_topology()
-    bridges = find_network_bridges(nodal_net)
+    bridges = find_bridges_network(nodal_net)
     outaged_lines = nodal_net.lines.index.difference(bridges)
     nodal_net.optimize.optimize_security_constrained(solver_name='gurobi', branch_outages=outaged_lines)
     print(config.gsk_method)
