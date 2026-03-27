@@ -1,6 +1,7 @@
 import pypsa
 import pickle
 from enum import Enum 
+from pathlib import Path
 
 
 from .scigrid_de import create_scigrid_case
@@ -10,6 +11,7 @@ from .double_three_node_transformer import create_double_three_node_transformer_
 from .pypsa_eur_central_northern import create_pypsa_eur_central_northern_case
 from .double_three_node_line import create_double_three_node_line_case
 from .double_three_node_link_and_line import create_double_three_node_link_and_line_case
+from .four_node import create_four_node
 
 class Cases(Enum):
     SCIGRID_DE = 'scigrid-de'
@@ -19,6 +21,7 @@ class Cases(Enum):
     DOUBLE_THREE_NODE_TRANSFORMER = 'double-three-node-transformer'
     PYPSA_EUR_CENTRAL_NORTHERN = 'pypsa-eur-central-northern'
     DOUBLE_THREE_NODE_LINK_AND_LINE = 'double-three-node-link-and-line'
+    FOUR_NODE = 'four-node'
 
 
 CASE_FUNCTION_MAP = {
@@ -29,6 +32,7 @@ CASE_FUNCTION_MAP = {
     Cases.DOUBLE_THREE_NODE_TRANSFORMER: create_double_three_node_transformer_case,
     Cases.PYPSA_EUR_CENTRAL_NORTHERN: create_pypsa_eur_central_northern_case,
     Cases.DOUBLE_THREE_NODE_LINK_AND_LINE: create_double_three_node_link_and_line_case,
+    Cases.FOUR_NODE: create_four_node,
 }
 
 
