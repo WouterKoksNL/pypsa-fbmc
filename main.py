@@ -12,7 +12,7 @@ from src.case_creation.main import create_case, Cases
 
 from src.redispatch.main import run_redispatch
 
-from src.post_processing.main import post_process
+from src.post_processing.lpf import do_lpf_contingency_check
 
 
 
@@ -47,6 +47,30 @@ def main(case_name=Cases.BASIC_THREE_NODE,
 
     zonal_net, _, fbmc_parameters = run_fbmc(nodal_net, zonal_net, config=config, gsk=gsk_dict)
 
+    if config.run_redispatch:
+        zonal_net.generators_t.p = zonal_net.model.solution['Generator-p'].to_pandas()
+        outaged_lines = nodal_net.passive_branches()
+        
+        nodal_net = run_redispatch(nodal_net, zonal_net.generators_t.p, with_security_constraints=True, branch_outages=outaged_lines)
+        dispatch_results = {
+            'generators': nodal_net.generators_t.p,
+            'storage_units': nodal_net.storage_units_t.p,
+            'links': nodal_net.links_t.p0,
+        }
+    else:
+        dispatch_results = {
+            'generators': zonal_net.generators_t.p,
+            'storage_units': zonal_net.storage_units_t.p,
+            'links': zonal_net.links_t.p0,
+        }
+
+    
+    do_lpf_contingency_check(nodal_net, dispatch_results, fbmc_parameters)
+    
+    
+    print("Costs of FBMC to Nodal optimum:", zonal_net.model.objective.value / nodal_optimum)
+    print("Cost of FBMC + redispatch vs nodal optimum:", nodal_net.model.objective.value / nodal_optimum)
+    
     # nodal_net.optimize.optimize_security_constrained(solver_name='gurobi')
     return zonal_net.model.objective.value, None
 
