@@ -36,10 +36,10 @@ def main(case_name=Cases.BASIC_THREE_NODE,
     config = FBMCConfig()
     # nodal_net.remove('StorageUnit', nodal_net.storage_units.index)
     # zonal_net.remove('StorageUnit', zonal_net.storage_units.index)
-    nodal_net.optimize(solver_name='gurobi')
-    
-
-    
+    nodal_net.determine_network_topology()
+    bridges = find_network_bridges(nodal_net)
+    outaged_lines = nodal_net.lines.index.difference(bridges)
+    nodal_net.optimize.optimize_security_constrained(solver_name='gurobi', branch_outages=outaged_lines)
     print(config.gsk_method)
     config.reliability_margin_factor = 0.0
     remove_zero_capacity_branches(nodal_net)
