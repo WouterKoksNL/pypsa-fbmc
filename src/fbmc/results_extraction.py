@@ -26,6 +26,7 @@ def extract_model_results(net: pypsa.Network):
                 index=net.snapshots, 
                 columns=net.links.index
             )
+            print("Warning: not sure about direction of link flows here!")
             net.links_t.p0 = links_p
             net.links_t.p1 = -links_p
         return 
