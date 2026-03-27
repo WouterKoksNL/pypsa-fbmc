@@ -70,10 +70,15 @@ def load_case(case_name):
     return output
 
 
-def save_case(case_name, output):
-    output['zonal_net'].export_to_netcdf(f'input_networks/{case_name}_zonal.nc')
-    output['nodal_net'].export_to_netcdf(f'input_networks/{case_name}_nodal.nc')
-    
+def save_case(case_name, output, 
+    export_path=None):
+    if export_path is None:
+        export_path = Path(f'input_networks/{case_name}')
+        export_path.mkdir(parents=True, exist_ok=True)
+
+    output['zonal_net'].export_to_netcdf(export_path / 'zonal.nc')
+    output['nodal_net'].export_to_netcdf(export_path / 'nodal.nc')
+
     if 'gsk_dict' in output.keys():
-        with open(f'input_networks/{case_name}_gsk.pkl', 'wb') as f:
+        with open(export_path / 'gsk.pkl', 'wb') as f:
             pickle.dump(output['gsk_dict'], f)
