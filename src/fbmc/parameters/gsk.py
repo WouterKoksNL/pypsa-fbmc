@@ -77,6 +77,8 @@ def calculate_gsk(nodal_net: pypsa.Network,
         )
     elif config.gsk_method == GSKMethod.MERIT_ORDER:
         gsk = calc_merit_order_based_gsk(nodal_net, standard_deviation=config.gsk_std_dev)
+    elif config.gsk_method == GSKMethod.BUS_P:
+        gsk = gsk_bus_p(nodal_net)
     else:
         raise ValueError(f"Unknown method: {config.gsk_method}. Supported methods are: 'MERIT_ORDER','ADJUSTABLE_CAP', 'ITERATIVE_UNCERTAINTY', 'CURRENT_GENERATION', 'ITERATIVE_FBMC'.")
     
@@ -857,3 +859,47 @@ def normalize_gsk_zone(generator_weights, gen_bus):
 
 def concat_isk(isk_dict):
     return pd.DataFrame(isk_dict).T.fillna(0)
+
+
+def gsk_bus_p(nodal_network: pypsa.Network) -> dict[pd.Index, pd.DataFrame]:
+    """Calculate GSK based on bus power injections.
+    Also add the power injection from links to the bus power injections.
+
+    Returns:
+        dict[pd.Index, pd.DataFrame]: GSKs for each snapshot.
+    """
+    gsk_dict = {}
+    for snapshot in nodal_network.snapshots:
+        link_p0 = nodal_network.links_t.p0.loc[snapshot]
+        link_p1 = nodal_network.links_t.p1.loc[snapshot]
+        link_p0_by_bus = link_p0.groupby(nodal_network.links.bus0).sum()
+        link_p1_by_bus = link_p1.groupby(nodal_network.links.bus1).sum()
+        bus_p = nodal_network.buses_t.p.loc[snapshot] - link_p1_by_bus.reindex(nodal_network.buses.index, fill_value=0) - link_p0_by_bus.reindex(nodal_network.buses.index, fill_value=0) 
+        zone_names = nodal_network.buses['zone_name']
+        gsk_matrix = pd.DataFrame(0.0, index=zone_names.unique(), columns=nodal_network.buses.index)
+
+        for zone in zone_names.unique():
+            buses_in_zone = zone_names[zone_names == zone].index
+            total_zone_p = bus_p[buses_in_zone].sum()
+
+            if abs(total_zone_p) > 1e-6:  # Avoid division by zero
+                for bus in buses_in_zone:
+                    gsk_matrix.at[zone, bus] = bus_p[bus] / total_zone_p
+            else:
+                # Distribute GSK evenly if total power is zero
+                gsk_matrix.loc[zone, buses_in_zone] = 1.0 / len(buses_in_zone)
+
+        # Normalize rows to ensure they sum to 1
+        gsk_matrix = gsk_matrix.apply(lambda row: row / row.sum() if row.sum() > 1e-6 else row, axis=1)
+
+        # Re-apply equal distribution for zero-sum rows if normalization failed
+        for zone in zone_names.unique():
+            if gsk_matrix.loc[zone].sum() < 1e-6:
+                buses_in_zone = zone_names[zone_names == zone].index
+                gsk_matrix.loc[zone, buses_in_zone] = 1.0 / len(buses_in_zone)
+
+        gsk_matrix.index.name = None  # Remove index name
+        gsk_dict[snapshot] = gsk_matrix
+
+    return gsk_dict
+    

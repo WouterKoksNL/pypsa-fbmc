@@ -10,6 +10,7 @@ class GSKMethod(enum.Enum):
     ITERATIVE_UNCERTAINTY: str = "ITERATIVE_UNCERTAINTY"
     ITERATIVE_FBMC: str = "ITERATIVE_FBMC"
     MERIT_ORDER: str = "MERIT_ORDER"
+    BUS_P: str = "BUS_P"
 
 @dataclass
 class FBMCConfig:
@@ -43,7 +44,7 @@ class FBMCConfig:
 
     # Iterative GSK parameters
     max_gsk_iterations: int = 5
-    initial_gsk_method: str = GSKMethod.CURRENT_GENERATION
+    initial_gsk_method: str = GSKMethod.BUS_P
 
     pos_neg_method: bool = False
     gsk_std_dev: float = 5
