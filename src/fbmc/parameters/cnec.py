@@ -3,18 +3,22 @@
 import pandas as pd
 import numpy as np
 import networkx as nx
+import logging
+import pypsa
 
 from .base_case import get_base_flows
 from src.fbmc.config import FBMCConfig
 
-
+logging.basicConfig(level=logging.INFO)
 
 def cnec_router(
-        sub_network, 
+        sub_network: pypsa.SubNetwork,
         config: FBMCConfig
         ) -> pd.Index | pd.MultiIndex:
-    bridge_branches = find_network_bridges(sub_network)
-    
+    bridge_branches = find_bridges_sub_network(sub_network)
+    bridge_branches = bridge_branches.droplevel(0)  # Drop MultiIndex level for lines and transformers (SHOULD BE FIXED LATER)
+    breakpoint()
+    logging.info(f"Identified {len(bridge_branches)} bridge branches that will be excluded from CNECs: {bridge_branches}.")
     if config.cne_setting == 'all':
         cnes = sub_network.branches().index.droplevel(0).tolist()  # All lines and transformers
         outages = list(set(cnes) - set(bridge_branches))  # Remove bridges from CNEs
@@ -104,20 +108,19 @@ def filter_on_cne(ptdf_parameter: pd.DataFrame, cne_lines: list) -> pd.DataFrame
     return cne_filtered_parameter
 
 
-def find_network_bridges(sub_network) -> pd.Index:
+def find_bridges_sub_network(sub_network: pypsa.SubNetwork) -> pd.MultiIndex:
     """
-    Identify bridges in the network. A bridge is a line or transformer that, if removed, would increase the number of connected components in the network.
+    Identify bridges in the sub-network. A bridge is a line or transformer that, if removed, would increase the number of connected components in the network.
     These cannot be included as outages considered for CNECs since their outage would disconnect the network (BODF value of NaN).
 
     Parameters
     ----------
     sub_network : pypsa.SubNetwork
-        The sub-network containing the branches and buses.
 
     Returns
     -------
-    pd.Index
-        Index of bridges in the network.
+    pd.MultiIndex
+        MultiIndex of bridges in the network. (First level: branch type, second level: branch name)
     """
 
     G = sub_network.graph()
@@ -126,9 +129,22 @@ def find_network_bridges(sub_network) -> pd.Index:
     bus0 = sub_network.branches().bus0
     bus1 = sub_network.branches().bus1
     
-    bridge_branches = []
+    bridge_branches = pd.MultiIndex(levels=[[], []], codes=[[], []])
     for u, v in bridges:
         mask = ((bus0 == u) & (bus1 == v)) | ((bus0 == v) & (bus1 == u))
-        bridge_branches.extend(sub_network.branches().index[mask].droplevel(0).tolist())
+        bridge_branches = bridge_branches.append(sub_network.branches().index[mask])  
+    return bridge_branches
 
+def find_bridges_network(net) -> pd.MultiIndex:
+    """Loops over all sub-networks (connected AC) in a net and returns the bridge branches for each using the find_bridges_sub_network function.
+
+    Args:
+        net (pypsa.Network)
+
+    Returns:
+        pd.MultiIndex: MultiIndex of bridges in the network. (First level: branch type, second level: branch name)
+    """
+    bridge_branches = pd.MultiIndex(levels=[[], []], codes=[[], []])
+    for subnet in net.sub_networks.obj:
+        bridge_branches = bridge_branches.append(find_bridges_sub_network(subnet))
     return bridge_branches
