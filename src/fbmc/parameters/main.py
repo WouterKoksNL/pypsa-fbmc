@@ -51,7 +51,35 @@ def calculate_fbmc_parameters(
 
     if config.add_security_constraints:
         nodal_ptdf, base_flows = apply_security_param_changes(sub_network, cnecs, nodal_ptdf, base_flows)
+    
+    if config.advanced_hybrid_coupling and basecase_link_data is not None:
+        buses = nodal_ptdf.columns 
+        bus0 = basecase_link_data['df'].bus0
+        bus1 = basecase_link_data['df'].bus1
         
+        bus0_subnet = bus0[bus0.isin(buses)]
+        bus1_subnet = bus1[bus1.isin(buses)]
+
+
+        link_ptdf_bus0 = nodal_ptdf.loc[:, bus0_subnet]
+        link_ptdf_bus1 = nodal_ptdf.loc[:, bus1_subnet]
+
+        link_ptdf_bus0.columns = bus0_subnet.index
+        link_ptdf_bus1.columns = bus1_subnet.index
+        link_ptdf_bus0 = link_ptdf_bus0.reindex(columns=basecase_link_data['df'].index, fill_value=0.0)
+        link_ptdf_bus1 = link_ptdf_bus1.reindex(columns=basecase_link_data['df'].index, fill_value=0.0)
+        if not config.use_zero_base_flows_flag:
+            link_bus0_zone = basecase_link_data['link_bus0_zone_mapping']
+            link_bus1_zone = basecase_link_data['link_bus1_zone_mapping']
+            link_p0 = basecase_link_data['p0']
+            p_inflow_bus0 = - link_p0.T.groupby(link_bus0_zone).sum().reindex(index=sub_network.buses().zone_name.unique(), fill_value=0.0).T
+            p_inflow_bus1 = link_p0.T.groupby(link_bus1_zone).sum().reindex(index=sub_network.buses().zone_name.unique(), fill_value=0.0).T
+            p_link = p_inflow_bus0 + p_inflow_bus1
+            net_positions_base_case += p_link
+        # breakpoint()
+
+    else:
+        link_ptdf_bus0, link_ptdf_bus1 = None, None
 
     z_ptdf_dict = {
         snapshot: calculate_zonal_ptdf(nodal_ptdf, gsk_snapshot, cnecs)
@@ -74,6 +102,8 @@ def calculate_fbmc_parameters(
         z_ptdf_dict=z_ptdf_dict,
         cnecs=cnecs,
         zones=zones,
+        link_ptdf_bus0=link_ptdf_bus0,
+        link_ptdf_bus1=link_ptdf_bus1,
     )
     fbmc_parameters.convert_to_xr()
     
