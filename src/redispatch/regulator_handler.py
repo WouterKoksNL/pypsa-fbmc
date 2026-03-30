@@ -134,12 +134,12 @@ class RegulatorHandler:
             as_dense(self.net, "Generator", "p_max_pu").loc[:, self.flex_gens_up]
             - self.gens_p_old.loc[:, self.flex_gens_up]
             / self.net.generators.p_nom.loc[self.flex_gens_up]
-        )
+        ).fillna(0)  # fill with zero in case of p_nom=0
         self.down_regulation_lim_pu = (
             self.gens_p_old.loc[:, self.flex_gens_down]
             / self.net.generators.p_nom.loc[self.flex_gens_down]
             - as_dense(self.net, "Generator", "p_min_pu").loc[:, self.flex_gens_down]
-        )
+        ).fillna(0) # fill with zero in case of p_nom=0
         # ensure the right axis is targeted even when we have only one snapshot
         if isinstance(self.up_regulation_lim_pu, pd.Series):
             self.up_regulation_lim_pu = pd.DataFrame(self.up_regulation_lim_pu)
