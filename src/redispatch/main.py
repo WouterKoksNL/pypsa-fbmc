@@ -53,9 +53,9 @@ def _get_nodal_objective(net: pypsa.Network,
     return (
             (1 - rt_deviation_factor) * (
                 net.get_switchable_as_dense('Generator', 'marginal_cost').values * model.variables['Generator-p']
-                ).sum('snapshot').sum() + 
+                ).sum() + 
             rt_deviation_factor * rt_reference_price * 
-            (model.variables["Generator-p"].loc[up_down_regulators].sum("snapshot").sum() 
+            (model.variables["Generator-p"].sel(Generator=up_down_regulators).sum() 
             # + model.variables['StorageUnit-p'].loc[up_down_storage_regulators].sum('snapshot').sum() * rt_reference_price * rt_deviation_factor
             ))
 
