@@ -57,10 +57,11 @@ def main(
     zonal_net, fbmc_parameters = run_fbmc(nodal_net, zonal_net, config=config, gsk=gsk_dict)
 
     if config.run_redispatch:
-        zonal_net.generators_t.p = zonal_net.model.solution['Generator-p'].to_pandas()
-        outaged_lines = nodal_net.passive_branches()
+        nodal_net.remove('Generator', nodal_net.generators.index[nodal_net.generators.carrier == 'load'])
+        nodal_net, cost = run_redispatch(nodal_net, zonal_net.generators_t.p, with_security_constraints=True, branch_outages=outaged_lines)
         
-        nodal_net = run_redispatch(nodal_net, zonal_net.generators_t.p, with_security_constraints=True, branch_outages=outaged_lines)
+       
+        
         dispatch_results = {
             'generators': nodal_net.generators_t.p,
             'storage_units': nodal_net.storage_units_t.p,
