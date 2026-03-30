@@ -79,9 +79,9 @@ def main(
     
     
     print("Costs of FBMC to Nodal optimum:", zonal_net.model.objective.value / nodal_optimum)
-    print("Cost of FBMC + redispatch vs nodal optimum:", nodal_net.model.objective.value / nodal_optimum)
+    print("Cost of FBMC + redispatch vs nodal optimum:", cost / nodal_optimum)
     
-    # nodal_net.optimize.optimize_security_constrained(solver_name='gurobi')
+
     return zonal_net.model.objective.value, None
 
 if __name__ == "__main__":
