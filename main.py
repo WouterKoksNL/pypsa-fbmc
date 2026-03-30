@@ -51,7 +51,7 @@ def main(
     remove_zero_capacity_branches(nodal_net)
     zonal_net.remove('Link', zonal_net.links.index[zonal_net.links.p_nom < 1e-5])
 
-    zonal_net, _, fbmc_parameters = run_fbmc(nodal_net, zonal_net, config=config, gsk=gsk_dict)
+    zonal_net, fbmc_parameters = run_fbmc(nodal_net, zonal_net, config=config, gsk=gsk_dict)
 
     if config.run_redispatch:
         zonal_net.generators_t.p = zonal_net.model.solution['Generator-p'].to_pandas()

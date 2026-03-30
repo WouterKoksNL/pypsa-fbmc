@@ -67,7 +67,6 @@ def setup_fbmc_model(basecase_nodal_network: pypsa.Network, zonal_net: pypsa.Net
         sub_network = sub_network_df.obj
 
         subnet_fbmc_parameters: SubnetFBMCParameters = calculate_fbmc_parameters(sub_network, gsk, config=config, basecase_link_data=basecase_link_data)
-        breakpoint()
         fbmc_parameters[sub_network_name] = subnet_fbmc_parameters
 
     add_fbmc_constraints_loop(zonal_net, fbmc_parameters, config.advanced_hybrid_coupling)
@@ -131,6 +130,8 @@ def run_fbmc(
 
     # Run the optimization and save the results to the nodal network
     zonal_net.model.solve(solver_name="gurobi")
+    if zonal_net.model.termination_condition != 'optimal':
+        raise ValueError("FBMC optimization did not solve to optimality.")
     extract_model_results(zonal_net)
-    return zonal_net, nodal_network, fbmc_parameters
+    return zonal_net, fbmc_parameters
 
