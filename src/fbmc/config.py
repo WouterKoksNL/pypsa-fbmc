@@ -30,25 +30,30 @@ class FBMCConfig:
     
     # use the GSKMethod class 
     gsk_method: str = GSKMethod.CURRENT_GENERATION
-
-    adjustable_carriers: tuple[str] = ("CCGT", 'coal', 'lignite', 'OCGT', 'oil')
-    # adjustable_carriers: tuple[str] = ("Gas", "Waste", "Hard Coal", "Brown Coal", "Oil")
-    # gsk_method: str = "ADJUSTABLE_CAP"
-    # gsk_method = GSKMethod(gsk_method)
+    gsk_kwargs = {
+        GSKMethod.ADJUSTABLE_CAP: {
+            "adjustable_carriers": ("CCGT", 'coal', 'lignite', 'OCGT', 'oil'),
+        },
+        GSKMethod.ITERATIVE_UNCERTAINTY: {
+            "uncertain_carriers": ("offshore-wind", "onshore-wind"),
+            "num_scenarios": 100,
+            "gen_variation_std_dev": 0.5,
+            "load_variation_std_dev": 0.5,
+        },
+        GSKMethod.ITERATIVE_FBMC: {
+            "uncertain_carriers": ("offshore-wind", "onshore-wind"),
+            "num_scenarios": 100,
+            "max_gsk_iterations": 5,
+            "initial_gsk_method": GSKMethod.BUS_P,
+            "gen_variation_std_dev": 0.5,
+            "load_variation_std_dev": 0.5,
+        },
+        GSKMethod.MERIT_ORDER: {
+            "standard_deviation": 5,
+        },
+        GSKMethod.BUS_P: {},
+    }
     
-    # Uncertainty-based GSK parameters
-    uncertain_carriers: tuple[str] = ("offshore-wind", "onshore-wind")
-    num_scenarios: int = 100
-    gen_variation_std_dev: float = 0.5
-    load_variation_std_dev: float = 0.5
-
-    # Iterative GSK parameters
-    max_gsk_iterations: int = 5
-    initial_gsk_method: str = GSKMethod.BUS_P
-
-    pos_neg_method: bool = False
-    gsk_std_dev: float = 5
-
     use_zero_base_flows_flag: bool = False
 
     

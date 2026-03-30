@@ -46,6 +46,8 @@ def calculate_gsk(nodal_net: pypsa.Network,
     ValueError
         If an unknown GSK method is specified or if required network components are missing.
     """
+    gsk_kwargs = config.gsk_kwargs.get(gsk_strategy, {})
+
     # Validate network has required components
     if len(nodal_net.generators) == 0:
         raise ValueError("Network contains no generators. Cannot calculate GSK.")
@@ -55,15 +57,12 @@ def calculate_gsk(nodal_net: pypsa.Network,
 
     # Select method based on config
     if gsk_strategy == GSKMethod.ADJUSTABLE_CAP:
-        gsk = gsk_adjustable_cap(nodal_net.generators, nodal_net.buses, adjustable_carriers=config.adjustable_carriers)
+        gsk = gsk_adjustable_cap(nodal_net.generators, nodal_net.buses, **gsk_kwargs)
         gsk = {snap: gsk.copy() for snap in nodal_net.snapshots}
     elif gsk_strategy == GSKMethod.ITERATIVE_UNCERTAINTY:
         gsk = gsk_iterative_uncertainty(
             nodal_net,
-            uncertain_carriers=config.uncertain_carriers,
-            num_iterations=config.num_scenarios,
-            gen_variation_std_dev=config.gen_variation_std_dev,
-            load_variation_std_dev=config.load_variation_std_dev,
+            **gsk_kwargs
         )
     elif gsk_strategy == GSKMethod.CURRENT_GENERATION:
         gsk = gsk_current_generation(nodal_net.generators, nodal_net.generators_t.p, nodal_net.buses)
@@ -71,15 +70,10 @@ def calculate_gsk(nodal_net: pypsa.Network,
         gsk = gsk_iterative_fbmc(
             nodal_net,
             config=config,
-            uncertain_carriers=config.uncertain_carriers,
-            num_iterations=config.num_scenarios,
-            max_gsk_iterations=config.max_gsk_iterations,
-            gen_variation_std_dev=config.gen_variation_std_dev,
-            load_variation_std_dev=config.load_variation_std_dev,
-            initial_gsk_method=config.initial_gsk_method,
+            **gsk_kwargs
         )
     elif gsk_strategy == GSKMethod.MERIT_ORDER:
-        gsk = calc_merit_order_based_gsk(nodal_net, standard_deviation=config.gsk_std_dev)
+        gsk = calc_merit_order_based_gsk(nodal_net, **gsk_kwargs)
     elif gsk_strategy == GSKMethod.BUS_P:
         gsk = gsk_bus_p(nodal_net)
     else:
