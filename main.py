@@ -43,6 +43,8 @@ def main(
     nodal_net.determine_network_topology()
     bridges = find_bridges_network(nodal_net)
     outaged_lines = nodal_net.lines.index.difference(bridges)
+    
+    nodal_net.optimize.add_load_shedding(sign=1, marginal_cost=1e5)
     nodal_net.optimize.optimize_security_constrained(solver_name='gurobi', branch_outages=outaged_lines)
 
     nodal_optimum = nodal_net.model.objective.value
