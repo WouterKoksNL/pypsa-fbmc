@@ -46,7 +46,8 @@ def main(
     
     nodal_net.optimize.add_load_shedding(sign=1, marginal_cost=1e5)
     nodal_net.optimize.optimize_security_constrained(solver_name='gurobi', branch_outages=outaged_lines)
-
+    if nodal_net.model.termination_condition != 'optimal':
+        raise ValueError("Initial nodal optimization did not solve to optimality.")
     nodal_optimum = nodal_net.model.objective.value
     print(gsk_strategy)
     config.reliability_margin_factor = 0.0
