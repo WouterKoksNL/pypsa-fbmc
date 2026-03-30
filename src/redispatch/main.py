@@ -28,8 +28,8 @@ def run_redispatch(nodal_net:pypsa.Network, dispatch_results:pd.DataFrame, adjus
     regulator_handler.add_up_down_reg()
 
     if with_security_constraints:
-        nodal_net = add_security_constraints(nodal_net, snapshots=nodal_net.snapshots, branch_outages=branch_outages)
         
+        nodal_net.optimize.add_security_constraints(snapshots=nodal_net.snapshots, branch_outages=branch_outages)
         nodal_net.optimize.solve_model(solver_name="gurobi")
     else:
         nodal_net.optimize(solver_name="gurobi")
