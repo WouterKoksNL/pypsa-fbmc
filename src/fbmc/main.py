@@ -14,8 +14,7 @@ from .parameters.gsk import calculate_gsk
 from .constraints.main import create_zonal_generation
 from .constraints.main import add_fbmc_constraints, remove_original_constraints
 from .config import FBMCConfig, GSKMethod
-from .results_extraction import extract_model_results
-
+from .results_extraction import extract_model_results, get_net_positions
 
 
 
@@ -133,5 +132,7 @@ def run_fbmc(
     if zonal_net.model.termination_condition != 'optimal':
         raise ValueError("FBMC optimization did not solve to optimality.")
     extract_model_results(zonal_net)
+    net_positions = get_net_positions(zonal_net)
+
     return zonal_net, fbmc_parameters
 

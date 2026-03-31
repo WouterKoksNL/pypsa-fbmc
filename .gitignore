@@ -195,3 +195,4 @@ cython_debug/
 *.ilp
 *.nc
 *.pkl
+/unprocessed_input_networks
