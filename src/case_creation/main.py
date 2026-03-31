@@ -4,6 +4,7 @@ from enum import Enum
 from pathlib import Path
 
 
+
 from .scigrid_de import create_scigrid_case
 from .basic_three_node import create_basic_three_node_case
 from .double_three_node_link import create_double_three_node_link_case
@@ -12,6 +13,8 @@ from .pypsa_eur_central_northern import create_pypsa_eur_central_northern_case
 from .double_three_node_line import create_double_three_node_line_case
 from .double_three_node_link_and_line import create_double_three_node_link_and_line_case
 from .four_node import create_four_node
+from src.case_creation.advanced_hybrid_check import create_advanced_hybrid_check
+
 
 class Cases(Enum):
     SCIGRID_DE = 'scigrid-de'
@@ -22,6 +25,7 @@ class Cases(Enum):
     PYPSA_EUR_CENTRAL_NORTHERN = 'pypsa-eur-central-northern'
     DOUBLE_THREE_NODE_LINK_AND_LINE = 'double-three-node-link-and-line'
     FOUR_NODE = 'four-node'
+    ADVANCED_HYBRID_CHECK = 'advanced-hybrid-check'
 
 
 CASE_FUNCTION_MAP = {
@@ -33,24 +37,26 @@ CASE_FUNCTION_MAP = {
     Cases.PYPSA_EUR_CENTRAL_NORTHERN: create_pypsa_eur_central_northern_case,
     Cases.DOUBLE_THREE_NODE_LINK_AND_LINE: create_double_three_node_link_and_line_case,
     Cases.FOUR_NODE: create_four_node,
+    Cases.ADVANCED_HYBRID_CHECK: create_advanced_hybrid_check,
 }
 
 
-def create_case(case, load_case_flag=True, save_case_flag=True):
-    case_name = case.value
+def create_case(case, load_case_flag=True, save_case_flag=True, **kwargs):
+
+    case_name = case.value + (f"-{kwargs.get('variation', '')}" if 'variation' in kwargs else '')
 
     if load_case_flag:
         output = load_case(case_name)
     else:
-        output = _create_case(case)
+        output = _create_case(case, **kwargs)
     if save_case_flag:
         save_case(case_name, output)
     return output
 
-def _create_case(case):
+def _create_case(case, **kwargs):
     if case in CASE_FUNCTION_MAP:
         case_creation_function = CASE_FUNCTION_MAP[case]
-        output = case_creation_function()
+        output = case_creation_function(**kwargs)
     else:
         raise ValueError(f"Unknown case: {case}")
     return output

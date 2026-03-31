@@ -26,11 +26,12 @@ def remove_zero_capacity_branches(net: pypsa.Network):
 def main(
         case_name=Cases.BASIC_THREE_NODE, 
         gsk_strategy: None | GSKMethod = None,
-         snapshot_length=3
+        snapshot_length=3,
+        case_kwargs={}
          ):
     logger = Logger(__name__)
     
-    case_data = create_case(case_name, load_case_flag=False, save_case_flag=True)
+    case_data = create_case(case_name, load_case_flag=False, save_case_flag=True, **case_kwargs)
 
     logger.info(f"Running case: {case_name}")
     nodal_net: pypsa.Network = case_data['nodal_net']
@@ -86,8 +87,9 @@ def main(
 
 if __name__ == "__main__":
     
-    # obj1, obj_rd1 = main(pos_neg_method=True, gsk_method=GSKMethod.MERIT_ORDER)  # 4.95, 5.82,  split-merit-order 5.86, merit-order 6.00, adjustable cap 6.09, 5.83
-    # obj2, obj_rd2 = main(pos_neg_method=False, gsk_method=GSKMethod.MERIT_ORDER)  # 5.82, 6.00, 6.09, 5.83
-    obj3, obj_rd3 = main(Cases.PYPSA_EUR_CENTRAL_NORTHERN)  # 4.95, 5.82,  split-merit-order 5.86, merit-order 6.00, adjustable cap 6.09, 5.83
+    obj3, obj_rd3 = main(
+        Cases.PYPSA_EUR_CENTRAL_NORTHERN, 
+        # case_kwargs={'variation': 'B-to-out'}
+        )  
 
 
