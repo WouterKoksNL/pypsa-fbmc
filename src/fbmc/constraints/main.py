@@ -5,6 +5,7 @@ Add the FBMC constraints to the network
 import pypsa
 import pandas as pd
 import xarray as xr
+from copy import deepcopy
 
 from .fbmc_constraints import construct_cne_constraint, construct_zonal_balance_constraint
 from .zonal_generation import define_net_positions_constraint, add_net_position_variable
@@ -94,8 +95,28 @@ def remove_original_constraints(network):
     # network.model.remove_variables("Link-p")
     # network.model.remove_constraints("Link-fix-p-lower")
     # network.model.remove_constraints("Link-fix-p-upper")
+    
     network.model.remove_constraints("Bus-nodal_balance")
     
     # if it exists, remove the bus-meshed-nodal_balance constraint as well.
     if "Bus-meshed-nodal_balance" in network.model.constraints:
+        network.model.remove_constraints("Bus-meshed-nodal_balance")
+
+def remove_original_constraints_by_bus(network, buses):
+    """"
+    Remove the original constraints introduced by pyPSA from the network model.
+    
+    Parameters
+    ----------
+    network : pypsa.Network
+        The zonal PyPSA network from which to remove constraints.
+
+    """
+    constraint_to_keep = deepcopy(network.model.constraints["Bus-nodal_balance"].drop_sel(Bus=buses))
+    network.model.remove_constraints("Bus-nodal_balance")
+    network.model.add_constraints(constraint_to_keep, name="Bus-nodal_balance")
+    
+    # if it exists, remove the bus-meshed-nodal_balance constraint as well.
+    if "Bus-meshed-nodal_balance" in network.model.constraints:
+        raise NotImplementedError("The function remove_original_constraints_by_subnet is not implemented yet. It should remove the Bus-meshed-nodal_balance constraint only for the buses in the sub-network, but this requires modifications to the pyPSA model structure that have not been implemented yet.")
         network.model.remove_constraints("Bus-meshed-nodal_balance")

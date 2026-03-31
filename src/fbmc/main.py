@@ -12,7 +12,7 @@ from .parameters.main import calculate_fbmc_parameters
 from .parameters.types import SubnetFBMCParameters
 from .parameters.gsk import calculate_gsk
 from .constraints.main import create_zonal_generation
-from .constraints.main import add_fbmc_constraints, remove_original_constraints
+from .constraints.main import add_fbmc_constraints, remove_original_constraints, remove_original_constraints_by_bus
 from .config import FBMCConfig, GSKMethod
 from .results_extraction import extract_model_results, get_net_positions
 
@@ -59,14 +59,23 @@ def setup_fbmc_model(basecase_nodal_network: pypsa.Network, zonal_net: pypsa.Net
     remove_original_constraints(zonal_net)
     create_zonal_generation(zonal_net)
     basecase_nodal_network.determine_network_topology()
-    
+    sub_net_lengths = basecase_nodal_network.sub_networks.obj.apply(lambda x: len(x.buses()))
+    constraints_have_been_removed = False
+    if not (sub_net_lengths < 3).any():
+        remove_original_constraints(zonal_net)
+        constraints_have_been_removed = True
     fbmc_parameters: dict[str, SubnetFBMCParameters] = {}
 
     for sub_network_name, sub_network_df in basecase_nodal_network.sub_networks.iterrows():
         sub_network = sub_network_df.obj
-
+        if sub_network.buses_i().size < 3:
+            logging.warning(f"Sub-network {sub_network_name} has less than 3 buses. Skipping FBMC parameter calculation and constraint addition for this sub-network.")
+            continue
         subnet_fbmc_parameters: SubnetFBMCParameters = calculate_fbmc_parameters(sub_network, gsk, config=config, basecase_link_data=basecase_link_data)
         fbmc_parameters[sub_network_name] = subnet_fbmc_parameters
+
+        if not constraints_have_been_removed:
+            remove_original_constraints_by_bus(zonal_net, sub_network.buses().zone_name.unique())
 
     add_fbmc_constraints_loop(zonal_net, fbmc_parameters, config.advanced_hybrid_coupling)
     return zonal_net, fbmc_parameters
