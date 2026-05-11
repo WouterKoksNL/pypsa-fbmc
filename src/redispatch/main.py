@@ -5,6 +5,7 @@ from linopy import Model, LinearExpression
 
 
 from .regulator_handler import RegulatorHandler
+from .security_constraints import add_security_constraints
 
 def select_flex_gens(net, flexible_carriers: Sequence[str]) -> pd.Index:
     return net.generators.index[
@@ -27,7 +28,7 @@ def run_redispatch(nodal_net:pypsa.Network, dispatch_results:pd.DataFrame, adjus
     regulator_handler.add_up_down_reg()
     nodal_net.optimize.add_load_shedding(sign=1, marginal_cost=1e5)
     if with_security_constraints:
-        nodal_net.optimize.add_security_constraints(snapshots=nodal_net.snapshots, branch_outages=branch_outages)
+        add_security_constraints(nodal_net, branch_outages)
         _set_nodal_objective(nodal_net)
         nodal_net.optimize.solve_model(solver_name="gurobi")
         cost = get_costs(nodal_net)
