@@ -22,7 +22,7 @@ def create_basic_three_node_case():
 
     zonal_net = nodal_to_zonal(nodal_net.copy(), nodal_net.buses.zone_name)
     zonal_net.remove('Link', zonal_net.links.index)
-    nodal_net.optimize(solver_name='gurobi')
+    # nodal_net.optimize(solver_name='gurobi')
 
     gsk = pd.DataFrame(0., index=zonal_net.buses.index, columns=nodal_net.buses.index)
     gsk.loc['A', 'A1'] = 1.0
