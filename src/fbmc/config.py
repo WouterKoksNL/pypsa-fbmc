@@ -1,16 +1,9 @@
 """FBMC configuration parameters."""
 
 from dataclasses import dataclass
-import enum
+from .parameters.base_case import BaseCaseStrategy
 
-class GSKMethod(enum.Enum):
-    """Tracks implemented GSK methods."""
-    ADJUSTABLE_CAP: str = "ADJUSTABLE_CAP"
-    CURRENT_GENERATION: str = "CURRENT_GENERATION"
-    ITERATIVE_UNCERTAINTY: str = "ITERATIVE_UNCERTAINTY"
-    ITERATIVE_FBMC: str = "ITERATIVE_FBMC"
-    MERIT_ORDER: str = "MERIT_ORDER"
-    BUS_P: str = "BUS_P"
+
 
 @dataclass
 class FBMCConfig:
@@ -28,39 +21,39 @@ class FBMCConfig:
     # "ITERATIVE_UNCERTAINTY" - Iterative Uncertainty
     # "ITERATIVE_FBMC" - Iterative FBMC
     
-    # use the GSKMethod class 
-    gsk_method: str = GSKMethod.CURRENT_GENERATION
+    # use the GSKStrategy class 
+    gsk_method: str = 'CURRENT_GENERATION'
     gsk_kwargs = {
-        GSKMethod.ADJUSTABLE_CAP: {
+        'ADJUSTABLE_CAP': {
             "adjustable_carriers": ("CCGT", 'coal', 'lignite', 'OCGT', 'oil'),
         },
-        GSKMethod.ITERATIVE_UNCERTAINTY: {
+        'ITERATIVE_UNCERTAINTY': {
             "uncertain_carriers": ("offshore-wind", "onshore-wind"),
             "num_scenarios": 100,
             "gen_variation_std_dev": 0.5,
             "load_variation_std_dev": 0.5,
         },
-        GSKMethod.ITERATIVE_FBMC: {
+        'ITERATIVE_FBMC': {
             "uncertain_carriers": ("offshore-wind", "onshore-wind"),
             "num_scenarios": 100,
             "max_gsk_iterations": 5,
-            "initial_gsk_method": GSKMethod.BUS_P,
+            "initial_gsk_method": 'BUS_P',
             "gen_variation_std_dev": 0.5,
             "load_variation_std_dev": 0.5,
         },
-        GSKMethod.MERIT_ORDER: {
+        'MERIT_ORDER': {
             "standard_deviation": 5,
         },
-        GSKMethod.BUS_P: {},
+        'BUS_P': {},
     }
     
-    use_zero_base_flows_flag: bool = False
 
+    base_case_strategy: BaseCaseStrategy = BaseCaseStrategy.SECURITY_CONSTRAINED_NODAL_OPTIMUM
+    marginal_cost_load_shedding: float = 1e5
     
 
     add_security_constraints: bool = True
 
-    advanced_hybrid_coupling: bool = False
+    advanced_hybrid_coupling: bool = True
 
-    run_redispatch: bool = False
-
+    run_redispatch: bool = True

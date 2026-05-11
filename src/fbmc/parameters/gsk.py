@@ -2,9 +2,8 @@ import numpy as np
 import pandas as pd
 import pypsa
 from scipy.stats import norm, halfnorm
+from enum import Enum
 
-
-from ..config import FBMCConfig, GSKMethod
 from .helpers import (
     get_uncertain_elements, 
     initialize_gen_difference,
@@ -14,10 +13,23 @@ from .helpers import (
     silence_output,
 )
 
+from ..config import FBMCConfig
+
+
+class GSKStrategy(Enum):
+    """Tracks implemented GSK methods."""
+    ADJUSTABLE_CAP: str = "ADJUSTABLE_CAP"
+    CURRENT_GENERATION: str = "CURRENT_GENERATION"
+    ITERATIVE_UNCERTAINTY: str = "ITERATIVE_UNCERTAINTY"
+    ITERATIVE_FBMC: str = "ITERATIVE_FBMC"
+    MERIT_ORDER: str = "MERIT_ORDER"
+    BUS_P: str = "BUS_P"
+    P_NOM: str = "P_NOM"
+
 
 def calculate_gsk(nodal_net: pypsa.Network, 
-                  gsk_strategy: GSKMethod,
-                  config: FBMCConfig = FBMCConfig()) -> dict[pd.Timestamp, pd.DataFrame]:
+                  gsk_strategy: GSKStrategy,
+                  config,) -> dict[pd.Timestamp, pd.DataFrame]:
     """
     Calculate the Generator Shift Key (GSK) of every node in the network.
     
@@ -29,7 +41,7 @@ def calculate_gsk(nodal_net: pypsa.Network,
     ----------
     network : pypsa.Network
         The network object containing generators and buses.
-    gsk_strategy : GSKMethod
+    gsk_strategy : GSKStrategy
         The strategy to use for calculating the GSK.
     config : FBMCConfig
         Configuration object containing GSK calculation parameters.
@@ -56,26 +68,28 @@ def calculate_gsk(nodal_net: pypsa.Network,
         raise ValueError("Buses in network must have 'zone_name' attribute for GSK calculation.")
 
     # Select method based on config
-    if gsk_strategy == GSKMethod.ADJUSTABLE_CAP:
+    if gsk_strategy == GSKStrategy.ADJUSTABLE_CAP:
         gsk = gsk_adjustable_cap(nodal_net.generators, nodal_net.buses, **gsk_kwargs)
         gsk = {snap: gsk.copy() for snap in nodal_net.snapshots}
-    elif gsk_strategy == GSKMethod.ITERATIVE_UNCERTAINTY:
+    elif gsk_strategy == GSKStrategy.ITERATIVE_UNCERTAINTY:
         gsk = gsk_iterative_uncertainty(
             nodal_net,
             **gsk_kwargs
         )
-    elif gsk_strategy == GSKMethod.CURRENT_GENERATION:
+    elif gsk_strategy == GSKStrategy.CURRENT_GENERATION:
         gsk = gsk_current_generation(nodal_net.generators, nodal_net.generators_t.p, nodal_net.buses)
-    elif gsk_strategy == GSKMethod.ITERATIVE_FBMC:
+    elif gsk_strategy == GSKStrategy.ITERATIVE_FBMC:
         gsk = gsk_iterative_fbmc(
             nodal_net,
             config=config,
             **gsk_kwargs
         )
-    elif gsk_strategy == GSKMethod.MERIT_ORDER:
+    elif gsk_strategy == GSKStrategy.MERIT_ORDER:
         gsk = calc_merit_order_based_gsk(nodal_net, **gsk_kwargs)
-    elif gsk_strategy == GSKMethod.BUS_P:
+    elif gsk_strategy == GSKStrategy.BUS_P:
         gsk = gsk_bus_p(nodal_net)
+    elif gsk_strategy == GSKStrategy.P_NOM:
+        gsk = gsk_p_nom(nodal_net.generators, nodal_net.buses)
     else:
         raise ValueError(f"Unknown method: {gsk_strategy}. Supported methods are: 'MERIT_ORDER','ADJUSTABLE_CAP', 'ITERATIVE_UNCERTAINTY', 'CURRENT_GENERATION', 'ITERATIVE_FBMC'.")
     
@@ -94,6 +108,10 @@ def calculate_gsk(nodal_net: pypsa.Network,
                 ),
             1.0
             )).all()), f"GSK matrix should be normalized to 1 per zone, and should not have non-zeros for buses outside the zone. For snapshot {snapshot}, GSK matrix diagonal is {np.diag(gsk[snapshot].T.groupby(nodal_net.buses.zone_name).sum().reindex(index=nodal_net.buses.zone_name.unique(), columns=nodal_net.buses.zone_name.unique()).values)}"
+        # Calculate parameters
+
+    if isinstance(gsk, pd.DataFrame):
+        gsk = {snapshot: gsk.copy() for snapshot in nodal_net.snapshots}
     return gsk 
 
 def gsk_iterative_uncertainty(
@@ -367,9 +385,9 @@ def _get_initial_gsk(network: pypsa.Network, method: str) -> dict[pd.Timestamp, 
     """Get initial GSK using specified method."""
 
     print(f"Calculating initial GSK using {method} method")
-    if method == GSKMethod.CURRENT_GENERATION:
+    if method == GSKStrategy.CURRENT_GENERATION:
         return gsk_current_generation(network.generators, network.generators_t.p, network.buses)
-    elif method == GSKMethod.ADJUSTABLE_CAP:
+    elif method == GSKStrategy.ADJUSTABLE_CAP:
         gsk = gsk_adjustable_cap(network.generators, network.buses)
         # Convert to dict format for consistency
         return {ts: gsk.copy() for ts in network.snapshots}
@@ -723,6 +741,29 @@ def gsk_current_generation(generators: pd.DataFrame, generators_t_p: pd.DataFram
     return gsk_matrices
 
 
+def gsk_p_nom(generators: pd.DataFrame, buses: pd.DataFrame) -> pd.DataFrame:
+    """Calculate the GSK based on the nominal power of generators in each zone. 
+    !! DOES NOT INCLUDE STORAGE !!
+
+    Args:
+        generators (pd.DataFrame): DataFrame containing generator data with columns ['bus', 'p_nom'].
+        buses (pd.DataFrame): DataFrame containing bus data with column ['zone_name'].
+
+    Returns:
+        pd.DataFrame: GSK matrix with zones as index and buses as columns.
+    """
+    gen_zone_map = generators.bus.map(buses['zone_name'])
+    total_p_nom_per_zone = generators.groupby(gen_zone_map)['p_nom'].sum()
+    p_nom_per_node = generators.groupby([generators.bus, gen_zone_map])['p_nom'].sum().to_frame()
+    
+    gsk_matrix = pd.DataFrame(0.0, index=buses['zone_name'].unique(), columns=buses.index)
+    
+    for (bus, zone), p_nom in p_nom_per_node.itertuples():
+        if total_p_nom_per_zone[zone] > 0:
+            gsk_matrix.at[zone, bus] = p_nom / total_p_nom_per_zone[zone]
+    
+    gsk_matrix.index.name = None
+    return gsk_matrix
 
 
 def calc_merit_order_based_gsk(network: pypsa.Network,

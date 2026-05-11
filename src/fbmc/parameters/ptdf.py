@@ -67,4 +67,13 @@ def calculate_zonal_ptdf(
     z_ptdf.index = cnecs
     return z_ptdf
 
-
+def filter_zptdf(
+        z_ptdf: xr.DataArray,
+        sensitivity_threshold: float = 1e-3
+        ):
+    """
+    Filter zonal PTDF to include only those with a signficant sensitivity to NP changes.
+    """
+    z_ptdf_mask = z_ptdf.max(dim=['zones', 'snapshot']) - z_ptdf.min(dim=['zones', 'snapshot']) > sensitivity_threshold
+    z_ptdf_filtered = z_ptdf.where(z_ptdf_mask, drop=True)
+    return z_ptdf_filtered

@@ -42,8 +42,10 @@ def get_net_positions(zonal_net: pypsa.Network, advanced_hybrid_flag: bool) -> p
     Returns:
         pd.DataFrame: _description_
     """
+
     net_positions = zonal_net.model.solution['Zone-p'].to_pandas()
-    if not advanced_hybrid_flag:
+
+    if "Link-p" not in zonal_net.model.solution or not advanced_hybrid_flag:
         return net_positions
 
     link_flows = zonal_net.model.solution['Link-p'].to_pandas()

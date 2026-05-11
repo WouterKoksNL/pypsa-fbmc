@@ -1,7 +1,6 @@
 import pypsa
 import pickle
 from enum import Enum 
-from pathlib import Path
 
 
 
@@ -13,7 +12,10 @@ from .pypsa_eur_central_northern import create_pypsa_eur_central_northern_case
 from .double_three_node_line import create_double_three_node_line_case
 from .double_three_node_link_and_line import create_double_three_node_link_and_line_case
 from .four_node import create_four_node
+from .pypsa_eur_ua import create_pypsa_eur_ua_case
+from .custom import create_custom_case
 from src.case_creation.advanced_hybrid_check import create_advanced_hybrid_check
+from src.paths import get_case_input_dir
 
 
 class Cases(Enum):
@@ -26,6 +28,8 @@ class Cases(Enum):
     DOUBLE_THREE_NODE_LINK_AND_LINE = 'double-three-node-link-and-line'
     FOUR_NODE = 'four-node'
     ADVANCED_HYBRID_CHECK = 'advanced-hybrid-check'
+    PYPSA_EUR_UA = 'pypsa-eur-ua'
+    CUSTOM = 'custom'
 
 
 CASE_FUNCTION_MAP = {
@@ -38,17 +42,28 @@ CASE_FUNCTION_MAP = {
     Cases.DOUBLE_THREE_NODE_LINK_AND_LINE: create_double_three_node_link_and_line_case,
     Cases.FOUR_NODE: create_four_node,
     Cases.ADVANCED_HYBRID_CHECK: create_advanced_hybrid_check,
+    Cases.PYPSA_EUR_UA: create_pypsa_eur_ua_case,
+    Cases.CUSTOM: create_custom_case, 
 }
 
+def select_snapshot(net: pypsa.Network, snapshot_i_range):
+    net.set_snapshots(net.snapshots[snapshot_i_range])
 
 def create_case(case, load_case_flag=True, save_case_flag=True, **kwargs):
 
     case_name = case.value + (f"-{kwargs.get('variation', '')}" if 'variation' in kwargs else '')
-
+    snapshot_i_range = kwargs.get('snapshot_i_range', None)
+    kwargs.pop('snapshot_i_range', None)
     if load_case_flag:
         output = load_case(case_name)
     else:
         output = _create_case(case, **kwargs)
+
+    if snapshot_i_range is not None:
+        select_snapshot(output['zonal_net'], snapshot_i_range)
+        select_snapshot(output['nodal_net'], snapshot_i_range)
+        if 'gsk_dict' in output and output['gsk_dict'] is not None:
+                output['gsk_dict'] = {snapshot: output['gsk_dict'][snapshot] for snapshot in output['zonal_net'].snapshots}
     if save_case_flag:
         save_case(case_name, output)
     return output
@@ -63,10 +78,17 @@ def _create_case(case, **kwargs):
 
 
 def load_case(case_name):
-    zonal_net = pypsa.Network(f'input_networks/{case_name}_zonal.nc')
-    nodal_net = pypsa.Network(f'input_networks/{case_name}_nodal.nc')
-    with open(f'input_networks/{case_name}_gsk.json', 'r') as f:
-        gsk_dict = pickle.load(f)
+    case_dir = get_case_input_dir(case_name)
+    zonal_net = pypsa.Network(case_dir / 'zonal.nc')
+    nodal_net = pypsa.Network(case_dir / 'nodal.nc')
+
+    # first check if gsk file exists, if not, set gsk to None
+    gsk_path = case_dir / 'gsk.pkl'
+    gsk_dict = None
+    if gsk_path.exists():
+        with open(gsk_path, 'rb') as f:
+            gsk_dict = pickle.load(f)
+
     output = {
         'case_name': case_name,
         'zonal_net': zonal_net, 
@@ -79,7 +101,7 @@ def load_case(case_name):
 def save_case(case_name, output, 
     export_path=None):
     if export_path is None:
-        export_path = Path(f'input_networks/{case_name}')
+        export_path = get_case_input_dir(case_name)
         export_path.mkdir(parents=True, exist_ok=True)
 
     output['zonal_net'].export_to_netcdf(export_path / 'zonal.nc')

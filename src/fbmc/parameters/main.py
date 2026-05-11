@@ -6,24 +6,18 @@ from .cnec import cnec_router
 from .ram import calculate_ram
 from .ptdf import calculate_zonal_ptdf, get_subnetwork_ptdf
 from ..config import FBMCConfig
-from .base_case import calc_base_net_positions, get_base_flows
+from .base_case import calc_base_net_positions, get_base_flows, BaseCaseStrategy
 from .security_constrained import apply_security_param_changes, calculate_zonal_ptdf_advanced_hybrid
 from .types import SubnetFBMCParameters
 
-def get_base_parameters(sub_network: pypsa.SubNetwork, config: FBMCConfig):
-    nodal_ptdf = get_subnetwork_ptdf(sub_network)
-    net_positions_base_case = calc_base_net_positions(sub_network, config.use_zero_base_flows_flag)
-    base_flows = get_base_flows(sub_network, config.use_zero_base_flows_flag)  # shape: (snapshots, branches)
-    return nodal_ptdf, net_positions_base_case, base_flows
 
-
-
-
-def calculate_fbmc_parameters(
+def calculate_fbmc_parameters_subnet(
     sub_network: pypsa.SubNetwork,
     gsk: dict[Any, pd.DataFrame], 
     config: FBMCConfig = FBMCConfig(),
-    basecase_link_data: pd.DataFrame = None
+    basecase_link_data: pd.DataFrame = None,
+    base_case_flows: pd.DataFrame = None,
+    net_positions_base_case: pd.DataFrame = None,
 ) -> SubnetFBMCParameters:
     """Add security constraints to zonal network.
 
@@ -45,14 +39,15 @@ def calculate_fbmc_parameters(
     if sub_network.buses_i().size < 3:
         raise NotImplementedError("Sub-networks with less than 3 buses are not supported.")
 
+    base_flows_subnet = base_case_flows.loc[:, sub_network.df('transformers').index.union(sub_network.df('lines').index)].copy()
+    base_net_positions_subnet = net_positions_base_case.loc[:, sub_network.buses().zone_name.unique()].copy() 
+    breakpoint()
+    nodal_ptdf = get_subnetwork_ptdf(sub_network)
 
-
-    nodal_ptdf, net_positions_base_case, base_flows = get_base_parameters(sub_network, config)
-
-    cnecs = cnec_router(sub_network, config)
+    cnecs = cnec_router(sub_network, config, base_case_flows=base_flows_subnet)
 
     if config.add_security_constraints:
-        nodal_ptdf, base_flows = apply_security_param_changes(sub_network, cnecs, nodal_ptdf, base_flows)
+        nodal_ptdf, base_flows_subnet = apply_security_param_changes(sub_network, cnecs, nodal_ptdf, base_flows_subnet)
     
     if config.advanced_hybrid_coupling and basecase_link_data is not None:
         buses = nodal_ptdf.columns 
@@ -70,14 +65,14 @@ def calculate_fbmc_parameters(
         link_ptdf_bus1.columns = bus1_subnet.index
         link_ptdf_bus0 = link_ptdf_bus0.reindex(columns=basecase_link_data['df'].index, fill_value=0.0)
         link_ptdf_bus1 = link_ptdf_bus1.reindex(columns=basecase_link_data['df'].index, fill_value=0.0)
-        if not config.use_zero_base_flows_flag:
+        if not config.base_case_strategy == BaseCaseStrategy.ZERO_FLOWS:
             link_bus0_zone = basecase_link_data['link_bus0_zone_mapping']
             link_bus1_zone = basecase_link_data['link_bus1_zone_mapping']
             link_p0 = basecase_link_data['p0']
             p_inflow_bus0 = - link_p0.T.groupby(link_bus0_zone).sum().reindex(index=sub_network.buses().zone_name.unique(), fill_value=0.0).T
             p_inflow_bus1 = link_p0.T.groupby(link_bus1_zone).sum().reindex(index=sub_network.buses().zone_name.unique(), fill_value=0.0).T
             p_link = p_inflow_bus0 + p_inflow_bus1
-            net_positions_base_case += p_link
+            base_net_positions_subnet += p_link
         # breakpoint()
 
     else:
@@ -92,9 +87,9 @@ def calculate_fbmc_parameters(
     upper_ram, lower_ram = calculate_ram(
         sub_network, 
         z_ptdf_dict, 
-        base_flows, 
+        base_flows_subnet, 
         reliability_margin_factor=config.reliability_margin_factor, 
-        net_positions_base_case=net_positions_base_case
+        net_positions_base_case=base_net_positions_subnet
         )
     
     zones = sub_network.buses().zone_name.unique()

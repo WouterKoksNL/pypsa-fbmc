@@ -1,12 +1,13 @@
 import pypsa
 import pandas as pd
 from .network_conversion import copy_net, nodal_to_zonal
+from src.paths import get_unprocessed_input_networks_dir
 
 
 def create_pypsa_eur_central_northern_case(day=0, max_snapshots=24):
     case_name = "pypsa-eur_central_northern"
-    case_dir = f"unprocessed_input_networks/{case_name}"
-    nodal_net_unprocessed = pypsa.Network(f"{case_dir}/nodal.nc", ignore_standard_types=False)
+    case_dir = get_unprocessed_input_networks_dir() / case_name
+    nodal_net_unprocessed = pypsa.Network(case_dir / "nodal.nc", ignore_standard_types=False)
     nodal_net = copy_net(nodal_net_unprocessed, time_dependent_attrs={
         'generators_t': ['p_max_pu', 'p'],
         'loads_t': ['p_set'],
@@ -17,7 +18,7 @@ def create_pypsa_eur_central_northern_case(day=0, max_snapshots=24):
         'transformers_t': ['p0'],
         })
     nodal_net.set_snapshots(nodal_net.snapshots[:max_snapshots])
-    bus_zone_map = pd.read_csv(f"{case_dir}/bus_zone_map.csv", index_col=0)
+    bus_zone_map = pd.read_csv(case_dir / "bus_zone_map.csv", index_col=0)
     nodal_net.buses['zone_name'] = bus_zone_map.reindex(nodal_net.buses.index)
     zonal_net = nodal_to_zonal(nodal_net, bus_zone_map=nodal_net.buses.zone_name, add_ntc_flag=False)
     # zonal_net_unprocessed = pypsa.Network(f"{case_dir}/daily_zonal_network_day{day}.nc")

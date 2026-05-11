@@ -1,17 +1,17 @@
 import pypsa
 import pandas as pd
 
-from src.fbmc.parameters.types import SubnetFBMCParameters
+from src.fbmc.parameters.types import SubnetFBMCParameters, DispatchResults
 
 
 def do_lpf_contingency_check(
         nodal_net: pypsa.Network,
-        dispatch_results: dict[str, pd.DataFrame],
+        dispatch_results: DispatchResults,
         fbmc_parameters: dict[str, SubnetFBMCParameters] 
     ):
-    gens_p = dispatch_results.get('generators', pd.DataFrame())
-    storage_p = dispatch_results.get('storage_units', pd.DataFrame())
-    links_p = dispatch_results.get('links', pd.DataFrame())
+    gens_p = dispatch_results.generators_p
+    storage_p = dispatch_results.storage_units_p
+    links_p = dispatch_results.links_p0
     
     nodal_net.generators_t.p_set = gens_p.reindex(index=nodal_net.snapshots, columns=nodal_net.generators.index).fillna(0.0)
     nodal_net.storage_units_t.p_set = storage_p.reindex(index=nodal_net.snapshots, columns=nodal_net.storage_units.index).fillna(0.0)

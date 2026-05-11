@@ -7,19 +7,25 @@ Created on Mon Mar 17 13:01:07 2025
 
 import pypsa
 import pandas as pd
+import logging
+import linopy as lp 
 
-from .parameters.main import calculate_fbmc_parameters
+from .parameters.main import calculate_fbmc_parameters_subnet
 from .parameters.types import SubnetFBMCParameters
 from .parameters.gsk import calculate_gsk
 from .constraints.main import create_zonal_generation
 from .constraints.main import add_fbmc_constraints, remove_original_constraints, remove_original_constraints_by_bus
-from .config import FBMCConfig, GSKMethod
+from .config import FBMCConfig
 from .results_extraction import extract_model_results, get_net_positions
+from .parameters.base_case import calc_base_net_positions, get_base_flows
+logging.basicConfig(level=logging.INFO)
 
 
-
-def setup_fbmc_model(basecase_nodal_network: pypsa.Network, zonal_net: pypsa.Network, gsk_strategy: GSKMethod, config: FBMCConfig = FBMCConfig(), gsk=None, basecase_link_data=None,
-                     ) -> tuple[pypsa.Network, dict[str, SubnetFBMCParameters]]:
+def calculate_fbmc_parameters(
+        basecase_nodal_network: pypsa.Network, 
+        gsk: pd.DataFrame | dict[pd.Timestamp, pd.DataFrame], 
+        config: FBMCConfig = FBMCConfig(), 
+    ) -> dict[str, SubnetFBMCParameters]:
     """
     Set up the FBMC model by calculating parameters and adding constraints.
     
@@ -37,15 +43,6 @@ def setup_fbmc_model(basecase_nodal_network: pypsa.Network, zonal_net: pypsa.Net
     pypsa.Network
         The target zonal network with added FBMC constraints.
     """
-    # Calculate parameters
-    if gsk is None:
-        gsk = calculate_gsk(basecase_nodal_network, gsk_strategy, config)
-    if isinstance(gsk, pd.DataFrame):
-        gsk = {snapshot: gsk.copy() for snapshot in zonal_net.snapshots}
-
-    
-    if zonal_net.model is None:
-        zonal_net.optimize.create_model()
 
     if config.advanced_hybrid_coupling:
         basecase_link_data = {
@@ -55,30 +52,81 @@ def setup_fbmc_model(basecase_nodal_network: pypsa.Network, zonal_net: pypsa.Net
             'link_bus0_zone_mapping': basecase_nodal_network.links.bus0.map(basecase_nodal_network.buses.zone_name).rename("Zone"),
             'link_bus1_zone_mapping': basecase_nodal_network.links.bus1.map(basecase_nodal_network.buses.zone_name).rename("Zone"),
         }
+    else: 
+        basecase_link_data = None
 
-    remove_original_constraints(zonal_net)
-    create_zonal_generation(zonal_net)
-    basecase_nodal_network.determine_network_topology()
-    sub_net_lengths = basecase_nodal_network.sub_networks.obj.apply(lambda x: len(x.buses()))
-    constraints_have_been_removed = False
-    if not (sub_net_lengths < 3).any():
-        remove_original_constraints(zonal_net)
-        constraints_have_been_removed = True
+    
+    if basecase_nodal_network.sub_networks.empty:
+        basecase_nodal_network.determine_network_topology()
+
     fbmc_parameters: dict[str, SubnetFBMCParameters] = {}
 
+    net_positions_base_case = calc_base_net_positions(basecase_nodal_network)
+    base_flows = get_base_flows(basecase_nodal_network)  # shape: (snapshots, branches)
     for sub_network_name, sub_network_df in basecase_nodal_network.sub_networks.iterrows():
         sub_network = sub_network_df.obj
         if sub_network.buses_i().size < 3:
             logging.warning(f"Sub-network {sub_network_name} has less than 3 buses. Skipping FBMC parameter calculation and constraint addition for this sub-network.")
             continue
-        subnet_fbmc_parameters: SubnetFBMCParameters = calculate_fbmc_parameters(sub_network, gsk, config=config, basecase_link_data=basecase_link_data)
+        subnet_fbmc_parameters: SubnetFBMCParameters = calculate_fbmc_parameters_subnet(sub_network, gsk, config=config, basecase_link_data=basecase_link_data, base_case_flows=base_flows, net_positions_base_case=net_positions_base_case)
         fbmc_parameters[sub_network_name] = subnet_fbmc_parameters
+    
+    return fbmc_parameters
 
-        if not constraints_have_been_removed:
-            remove_original_constraints_by_bus(zonal_net, sub_network.buses().zone_name.unique())
 
+def setup_fbmc_model(
+        zonal_net: pypsa.Network, 
+        basecase_nodal_network: pypsa.Network,
+        gsk: pd.DataFrame | dict[pd.Timestamp, pd.DataFrame] = None,
+        config: FBMCConfig = FBMCConfig()
+    ) -> tuple[lp.Model, dict[str, SubnetFBMCParameters]]:
+    """_summary_
+
+    Args:
+        zonal_net (pypsa.Network): _description_
+        basecase_nodal_network (pypsa.Network): _description_
+        gsk (pd.DataFrame | dict[pd.Timestamp, pd.DataFrame]): _description_
+        gsk_strategy (GSKStrategy): _description_
+        config (FBMCConfig, optional): _description_. Defaults to FBMCConfig().
+
+    Returns:
+        lp.Model: _description_
+    """
+
+    fbmc_parameters = calculate_fbmc_parameters(basecase_nodal_network, gsk, config=config)
+
+    if zonal_net.model is None:
+        zonal_net.optimize.create_model()
+    create_zonal_generation(zonal_net)
+    remove_original_constraints_loop(zonal_net, basecase_nodal_network)
     add_fbmc_constraints_loop(zonal_net, fbmc_parameters, config.advanced_hybrid_coupling)
-    return zonal_net, fbmc_parameters
+    return zonal_net.model, fbmc_parameters
+
+
+def remove_original_constraints_loop(
+    zonal_net: pypsa.Network,
+    basecase_nodal_network: pypsa.Network
+    ) -> None:
+    """Remove original nodal balance constraint from `zonal_net` for zones that have more than three buses such that FBMC constraints can be generated. 
+
+    Args:
+        zonal_net (pypsa.Network): Zonal net for which original constraints should be removed
+        basecase_nodal_network (pypsa.Network): Base case nodal network to determine sub-network sizes
+    """
+    if basecase_nodal_network.sub_networks.empty:
+        basecase_nodal_network.determine_network_topology()
+
+    sub_net_lengths = basecase_nodal_network.sub_networks.obj.apply(lambda x: len(x.buses()))
+
+    if not (sub_net_lengths < 3).any():
+        remove_original_constraints(zonal_net)  
+        return 
+    
+    for name, sub_network_df in basecase_nodal_network.sub_networks.iterrows():
+        sub_network = sub_network_df.obj
+        if sub_network.buses_i().size >= 3:
+            remove_original_constraints_by_bus(zonal_net, sub_network.buses().zone_name.unique())
+    return
 
 
 def add_fbmc_constraints_loop(
@@ -109,13 +157,10 @@ def add_fbmc_constraints_loop(
         )
         
         
-def run_fbmc(
-        nodal_network: pypsa.Network, 
+def solve(
         zonal_net: pypsa.Network, 
-        config: FBMCConfig = FBMCConfig(), 
-        gsk_strategy: GSKMethod = GSKMethod.BUS_P,
-        gsk: None | pd.DataFrame | dict[pd.Timestamp, pd.DataFrame] = None
-        ) -> tuple[pypsa.Network, pypsa.Network | None]:
+        advanced_hybrid_flag: bool = False,
+        ) -> tuple[pypsa.Network, pd.DataFrame]:
     """
     Run the FBMC process on the given networks.
 
@@ -127,21 +172,21 @@ def run_fbmc(
         The zonal network to be used for FBMC.
     config : FBMCConfig
         Configuration object for FBMC parameters.
-    gsk_strategy : GSKMethod
+    gsk_strategy : GSKStrategy
     Returns
     -------
     pypsa.Network
         The updated zonal network after FBMC.
     """
-    # Set up the model with FBMC parameters and constraints
-    zonal_net, fbmc_parameters = setup_fbmc_model(nodal_network, zonal_net, gsk_strategy, config=config, gsk=gsk)
+
 
     # Run the optimization and save the results to the nodal network
     zonal_net.model.solve(solver_name="gurobi")
     if zonal_net.model.termination_condition != 'optimal':
         raise ValueError("FBMC optimization did not solve to optimality.")
     extract_model_results(zonal_net)
-    net_positions = get_net_positions(zonal_net)
 
-    return zonal_net, fbmc_parameters
+    net_positions = get_net_positions(zonal_net, advanced_hybrid_flag=advanced_hybrid_flag)
+
+    return zonal_net, net_positions
 

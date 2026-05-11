@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 import xarray as xr
 from typing import Any
-
-
+from dataclasses import dataclass
+import pypsa
 
 class SubnetFBMCParameters:
     def __init__(
@@ -55,6 +55,18 @@ class SubnetFBMCParameters:
             name=name,
         )
 
+
+    def _convert_link_ptdf_to_xarray(self, link_ptdf: pd.DataFrame) -> xr.DataArray:
+        """
+        Convert link PTDF DataFrame to a DataArray.
+        """
+        return xr.DataArray(
+            link_ptdf.values,
+            dims=["cnec", "Link"],
+            coords={"cnec": link_ptdf.index, "Link": link_ptdf.columns},
+            name="link_PTDF",
+        )
+
     @staticmethod
     def _zptdf_to_xarray(zptdf_data: dict | pd.DataFrame) -> xr.DataArray:
         """
@@ -79,13 +91,15 @@ class SubnetFBMCParameters:
                 name="zPTDF",
             )
 
-    def _convert_link_ptdf_to_xarray(self, link_ptdf: pd.DataFrame) -> xr.DataArray:
-        """
-        Convert link PTDF DataFrame to a DataArray.
-        """
-        return xr.DataArray(
-            link_ptdf.values,
-            dims=["cnec", "Link"],
-            coords={"cnec": link_ptdf.index, "Link": link_ptdf.columns},
-            name="link_PTDF",
-        )
+@dataclass
+class DispatchResults:
+    generators_p: pd.DataFrame
+    storage_units_p: pd.DataFrame
+    links_p0: pd.DataFrame
+
+    def __init__(self, nodal_net: pypsa.Network):
+        self.generators_p = nodal_net.generators_t.p
+        self.storage_units_p = nodal_net.storage_units_t.p
+        self.links_p0 = nodal_net.links_t.p0
+
+
