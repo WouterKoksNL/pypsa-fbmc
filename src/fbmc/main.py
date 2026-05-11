@@ -44,7 +44,7 @@ def calculate_fbmc_parameters(
         The target zonal network with added FBMC constraints.
     """
 
-    if config.advanced_hybrid_coupling:
+    if config.advanced_hybrid_coupling_flag:
         basecase_link_data = {
             'df': basecase_nodal_network.links.loc[:, ['bus0', 'bus1']],
             'p0': basecase_nodal_network.links_t.p0,
@@ -99,7 +99,7 @@ def setup_fbmc_model(
         zonal_net.optimize.create_model()
     create_zonal_generation(zonal_net)
     remove_original_constraints_loop(zonal_net, basecase_nodal_network)
-    add_fbmc_constraints_loop(zonal_net, fbmc_parameters, config.advanced_hybrid_coupling)
+    add_fbmc_constraints_loop(zonal_net, fbmc_parameters, config.advanced_hybrid_coupling_flag)
     return zonal_net.model, fbmc_parameters
 
 

@@ -42,6 +42,7 @@ def main(
         case_name=Cases.BASIC_THREE_NODE, 
         gsk_strategy: None | GSKStrategy = None,
         base_case_strategy: None | BaseCaseStrategy = None,
+        advanced_hybrid_coupling_flag: None | bool = None,
         snapshot_length=3,
         case_kwargs={},
         load_case_flag=False,
@@ -57,6 +58,8 @@ def main(
     config = FBMCConfig()
     if base_case_strategy is not None:
         config.base_case_strategy = base_case_strategy
+    if advanced_hybrid_coupling_flag is not None:
+        config.advanced_hybrid_coupling_flag = advanced_hybrid_coupling_flag
     # nodal_net.remove('StorageUnit', nodal_net.storage_units.index)
     # zonal_net.remove('StorageUnit', zonal_net.storage_units.index)
 
@@ -85,6 +88,7 @@ def main(
     )
 
     zonal_net, net_positions = solve(zonal_net, advanced_hybrid_flag=config.advanced_hybrid_coupling)
+    zonal_net, net_positions = solve(zonal_net, advanced_hybrid_flag=config.advanced_hybrid_coupling_flag)
     dispatch_results = DispatchResults(zonal_net)
     if config.run_redispatch:
         bridges = find_bridges_network(nodal_net)

@@ -41,7 +41,6 @@ def calculate_fbmc_parameters_subnet(
 
     base_flows_subnet = base_case_flows.loc[:, sub_network.df('transformers').index.union(sub_network.df('lines').index)].copy()
     base_net_positions_subnet = net_positions_base_case.loc[:, sub_network.buses().zone_name.unique()].copy() 
-    breakpoint()
     nodal_ptdf = get_subnetwork_ptdf(sub_network)
 
     cnecs = cnec_router(sub_network, config, base_case_flows=base_flows_subnet)
@@ -49,7 +48,7 @@ def calculate_fbmc_parameters_subnet(
     if config.add_security_constraints:
         nodal_ptdf, base_flows_subnet = apply_security_param_changes(sub_network, cnecs, nodal_ptdf, base_flows_subnet)
     
-    if config.advanced_hybrid_coupling and basecase_link_data is not None:
+    if config.advanced_hybrid_coupling_flag and basecase_link_data is not None:
         buses = nodal_ptdf.columns 
         bus0 = basecase_link_data['df'].bus0
         bus1 = basecase_link_data['df'].bus1

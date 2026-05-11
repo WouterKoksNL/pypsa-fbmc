@@ -54,6 +54,6 @@ class FBMCConfig:
 
     add_security_constraints: bool = True
 
-    advanced_hybrid_coupling: bool = True
+    advanced_hybrid_coupling_flag: bool = True
 
     run_redispatch: bool = True
