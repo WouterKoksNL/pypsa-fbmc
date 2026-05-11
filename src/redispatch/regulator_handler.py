@@ -10,6 +10,7 @@ import pypsa
 import pandas as pd
 from pypsa.descriptors import get_switchable_as_dense as as_dense
 
+from src.fbmc.parameters.types import DispatchResults
 
 SMALL_NUMBER_OPTIMIZATION = 1e-4  # limit for optimization stability
 
@@ -24,7 +25,7 @@ class RegulatorHandler:
     def __init__(
         self,
         net: pypsa.Network,
-        gens_p_old: pd.DataFrame,
+        dispatch_results: DispatchResults,
         flex_gens_up: pd.Series,
         flex_gens_down: pd.Series,
 
@@ -35,7 +36,7 @@ class RegulatorHandler:
     ):
         self.net: pypsa.Network = net  # net to add up- and downregulators to. Can be zonal or nodal
         
-        self.gens_p_old: pd.DataFrame = gens_p_old
+        self.gens_p_old: pd.DataFrame = dispatch_results.generators_p
         self.flex_gens_up: pd.Series = flex_gens_up
         self.flex_gens_down: pd.Series = flex_gens_down
 
