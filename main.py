@@ -35,7 +35,13 @@ def input_getter(zonal_net: pypsa.Network = None, nodal_net: pypsa.Network = Non
         raise ValueError("Nodal net must be provided if zonal net is provided. ")
     return zonal_net, nodal_net, gsk
 
-def main(
+
+def redispatch_workflow(nodal_net: pypsa.Network, dispatch_results: DispatchResults):
+    bridges = find_bridges_network(nodal_net)
+    outaged_lines = nodal_net.lines.index.difference(bridges)
+    nodal_net, cost = run_redispatch(nodal_net, dispatch_results=dispatch_results, with_security_constraints=True, branch_outages=outaged_lines)
+    dispatch_results = DispatchResults(nodal_net)  # override dispatch results
+    return nodal_net, cost, dispatch_results
         zonal_net: pypsa.Network = None,
         nodal_net: pypsa.Network = None,
         gsk: dict = None,
