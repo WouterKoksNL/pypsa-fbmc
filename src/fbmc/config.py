@@ -8,7 +8,7 @@ from .parameters.base_case import BaseCaseStrategy
 @dataclass
 class FBMCConfig:
     """Configuration parameters for FBMC calculations."""
-    reliability_margin_factor: float = 0.1
+    reliability_margin_factor: float = 0.0
     min_ram: float = 0.0
 
     cne_setting: str = "all"
