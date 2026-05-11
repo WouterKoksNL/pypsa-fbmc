@@ -1,4 +1,4 @@
-from PyPSA import pypsa
+import pypsa
 import numpy as np
 import pandas as pd
 from logging import Logger 
@@ -19,13 +19,26 @@ from src.fbmc.parameters.gsk import calculate_gsk, GSKStrategy
 from src.fbmc.input_checks import do_input_checks
 
 
-def remove_zero_capacity_branches(net: pypsa.Network):
-    net.remove('Line', net.lines.index[net.lines.s_nom < 1e-5])
-    net.remove('Transformer', net.transformers.index[net.transformers.s_nom < 1e-5])
-    net.remove('Link', net.links.index[net.links.p_nom < 1e-5])
-
+def input_getter(zonal_net: pypsa.Network = None, nodal_net: pypsa.Network = None, case_name: Cases = Cases.BASIC_THREE_NODE, load_case_flag: bool = False, save_case_flag: bool = False, **case_kwargs):
+    logger = Logger(__name__)
+    if zonal_net is None and nodal_net is None:
+        case_data = create_case(case_name, load_case_flag=load_case_flag, save_case_flag=save_case_flag, **case_kwargs)
+        logger.info(f"Running case: {case_name}")
+        nodal_net: pypsa.Network = case_data['nodal_net']
+        zonal_net: pypsa.Network = case_data['zonal_net']
+        gsk = case_data.get('gsk_dict', None)
+    # if only one is none, raise an error
+    if nodal_net is not None and zonal_net is None:
+        from src.case_creation.network_conversion import nodal_to_zonal
+        zonal_net = nodal_to_zonal(nodal_net, bus_zone_map=nodal_net.buses.zone_name)
+    if zonal_net is not None and nodal_net is None:
+        raise ValueError("Nodal net must be provided if zonal net is provided. ")
+    return zonal_net, nodal_net, gsk
 
 def main(
+        zonal_net: pypsa.Network = None,
+        nodal_net: pypsa.Network = None,
+        gsk: dict = None,
         case_name=Cases.BASIC_THREE_NODE, 
         gsk_strategy: None | GSKStrategy = None,
         base_case_strategy: None | BaseCaseStrategy = None,
@@ -36,12 +49,9 @@ def main(
          ):
     logger = Logger(__name__)
     
-    case_data = create_case(case_name, load_case_flag=load_case_flag, save_case_flag=False, **case_kwargs)
+    zonal_net, nodal_net, gsk = input_getter(zonal_net, nodal_net, case_name, load_case_flag, save_case_flag, **case_kwargs)
+    
 
-    logger.info(f"Running case: {case_name}")
-    nodal_net: pypsa.Network = case_data['nodal_net']
-    zonal_net: pypsa.Network = case_data['zonal_net']
-    gsk = case_data.get('gsk_dict', None)
 
     do_input_checks(nodal_net, zonal_net, gsk)
     config = FBMCConfig()
@@ -49,11 +59,10 @@ def main(
         config.base_case_strategy = base_case_strategy
     # nodal_net.remove('StorageUnit', nodal_net.storage_units.index)
     # zonal_net.remove('StorageUnit', zonal_net.storage_units.index)
+
     if nodal_net.sub_networks.empty:
         nodal_net.determine_network_topology()
-    bridges = find_bridges_network(nodal_net)
-    outaged_lines = nodal_net.lines.index.difference(bridges)
-    
+
     base_case = prepare_base_case(
         nodal_net, 
         strategy=base_case_strategy, 
@@ -67,10 +76,6 @@ def main(
         gsk_strategy = gsk_strategy if gsk_strategy is not None else config.gsk_method
         gsk = calculate_gsk(base_case, gsk_strategy, config)
 
-    config.reliability_margin_factor = 0.0
-    remove_zero_capacity_branches(nodal_net)
-    zonal_net.remove('Link', zonal_net.links.index[zonal_net.links.p_nom < 1e-5])
-
 
     model, fbmc_parameters = setup_fbmc_model(
         zonal_net, 
@@ -78,10 +83,12 @@ def main(
         gsk=gsk,
         config=config
     )
+
     zonal_net, net_positions = solve(zonal_net, advanced_hybrid_flag=config.advanced_hybrid_coupling)
     dispatch_results = DispatchResults(zonal_net)
     if config.run_redispatch:
-      
+        bridges = find_bridges_network(nodal_net)
+        outaged_lines = nodal_net.lines.index.difference(bridges)
         nodal_net, cost = run_redispatch(nodal_net, zonal_net.generators_t.p, with_security_constraints=True, branch_outages=outaged_lines)
         dispatch_results = DispatchResults(nodal_net)  # override dispatch results
 
