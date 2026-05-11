@@ -14,7 +14,7 @@ from src.case_creation.main import create_case, Cases
 from src.redispatch.main import run_redispatch
 
 from src.post_processing.lpf import do_lpf_contingency_check
-from src.fbmc.parameters.types import DispatchResults
+from src.fbmc.parameters.types import DispatchResults, FBMCWorkflowResult
 from src.fbmc.parameters.gsk import calculate_gsk, GSKStrategy
 from src.fbmc.input_checks import do_input_checks
 
@@ -42,49 +42,39 @@ def redispatch_workflow(nodal_net: pypsa.Network, dispatch_results: DispatchResu
     nodal_net, cost = run_redispatch(nodal_net, dispatch_results=dispatch_results, with_security_constraints=True, branch_outages=outaged_lines)
     dispatch_results = DispatchResults(nodal_net)  # override dispatch results
     return nodal_net, cost, dispatch_results
+
+
+def fbmc_workflow(
         zonal_net: pypsa.Network = None,
         nodal_net: pypsa.Network = None,
         gsk: dict = None,
-        case_name=Cases.BASIC_THREE_NODE, 
         gsk_strategy: None | GSKStrategy = None,
         base_case_strategy: None | BaseCaseStrategy = None,
         advanced_hybrid_coupling_flag: None | bool = None,
-        snapshot_length=3,
-        case_kwargs={},
-        load_case_flag=False,
-        save_case_flag=True,
-         ):
+        config = FBMCConfig()
+         ) -> FBMCWorkflowResult:
+    
     logger = Logger(__name__)
     
-    zonal_net, nodal_net, gsk = input_getter(zonal_net, nodal_net, case_name, load_case_flag, save_case_flag, **case_kwargs)
-    
-
-
     do_input_checks(nodal_net, zonal_net, gsk)
-    config = FBMCConfig()
+
     if base_case_strategy is not None:
         config.base_case_strategy = base_case_strategy
     if advanced_hybrid_coupling_flag is not None:
         config.advanced_hybrid_coupling_flag = advanced_hybrid_coupling_flag
-    # nodal_net.remove('StorageUnit', nodal_net.storage_units.index)
-    # zonal_net.remove('StorageUnit', zonal_net.storage_units.index)
-
-    if nodal_net.sub_networks.empty:
-        nodal_net.determine_network_topology()
 
     base_case = prepare_base_case(
         nodal_net, 
         strategy=base_case_strategy, 
         base_case_kwargs={'marginal_cost_load_shedding': config.marginal_cost_load_shedding}
         )
-    gsk = None
-
-    print(gsk_strategy)
 
     if gsk is None:
         gsk_strategy = gsk_strategy if gsk_strategy is not None else config.gsk_method
         gsk = calculate_gsk(base_case, gsk_strategy, config)
 
+    if nodal_net.sub_networks.empty:
+        nodal_net.determine_network_topology()
 
     model, fbmc_parameters = setup_fbmc_model(
         zonal_net, 
@@ -93,38 +83,66 @@ def redispatch_workflow(nodal_net: pypsa.Network, dispatch_results: DispatchResu
         config=config
     )
 
-    zonal_net, net_positions = solve(zonal_net, advanced_hybrid_flag=config.advanced_hybrid_coupling)
     zonal_net, net_positions = solve(zonal_net, advanced_hybrid_flag=config.advanced_hybrid_coupling_flag)
     dispatch_results = DispatchResults(zonal_net)
+    return FBMCWorkflowResult(
+        zonal_net=zonal_net,
+        net_positions=net_positions,
+        dispatch_results=dispatch_results,
+        fbmc_parameters=fbmc_parameters,
+        base_case=base_case,
+    )
+
+
+
+
+    
+
+
+def main(
+        zonal_net: pypsa.Network = None,
+        nodal_net: pypsa.Network = None,
+        load_case_flag: bool = False,
+        save_case_flag: bool = False,
+        case_kwargs={},
+        case_name=Cases.BASIC_THREE_NODE,
+        gsk_strategy: None | GSKStrategy = None,
+        base_case_strategy: None | BaseCaseStrategy = None,
+        advanced_hybrid_coupling_flag: None | bool = None,
+        config = FBMCConfig()
+):
+    
+    zonal_net, nodal_net, gsk = input_getter(zonal_net, nodal_net, case_name, load_case_flag, save_case_flag, **case_kwargs)
+    
+    result = fbmc_workflow(
+            zonal_net=zonal_net,
+            nodal_net=nodal_net,
+            gsk=gsk,
+            gsk_strategy=gsk_strategy,
+            base_case_strategy=base_case_strategy,
+            advanced_hybrid_coupling_flag=advanced_hybrid_coupling_flag,
+            config=config
+        )
     if config.run_redispatch:
-        bridges = find_bridges_network(nodal_net)
-        outaged_lines = nodal_net.lines.index.difference(bridges)
-        nodal_net, cost = run_redispatch(nodal_net, zonal_net.generators_t.p, with_security_constraints=True, branch_outages=outaged_lines)
-        dispatch_results = DispatchResults(nodal_net)  # override dispatch results
+        nodal_net, cost, result.dispatch_results = redispatch_workflow(nodal_net, result.dispatch_results)
 
-    if base_case_strategy in [BaseCaseStrategy.NODAL_OPTIMUM, BaseCaseStrategy.SECURITY_CONSTRAINED_NODAL_OPTIMUM]:
-        nodal_optimum = base_case.objective    
-        print("Costs of FBMC to Nodal optimum:", zonal_net.model.objective.value / nodal_optimum)
-        print("Cost of FBMC + redispatch vs nodal optimum:", cost / nodal_optimum)
-    breakpoint()
-    do_lpf_contingency_check(nodal_net, dispatch_results, fbmc_parameters)
+    do_lpf_contingency_check(nodal_net, result.dispatch_results, result.fbmc_parameters)
     
+    return result.zonal_net.model.objective.value
     
-
-    
-
-    return zonal_net.model.objective.value, None
 
 if __name__ == "__main__":
     
-    obj3, obj_rd3 = main(
-        Cases.PYPSA_EUR_UA, 
+    obj3 = main(
+        case_name=Cases.DOUBLE_THREE_NODE_LINK_AND_LINE, 
         gsk_strategy=GSKStrategy.P_NOM,
-        base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
+        base_case_strategy=BaseCaseStrategy.SECURITY_CONSTRAINED_NODAL_OPTIMUM,
+        advanced_hybrid_coupling_flag=True,
         case_kwargs={
-            'snapshot_i_range': slice(0, 3),
-            'drop_countries': ["GB"]
+            # 'snapshot_i_range': slice(0, 3),
+            # 'drop_countries': ["GB"]
             },
         )  
+
 
 

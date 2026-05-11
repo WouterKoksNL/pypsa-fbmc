@@ -103,3 +103,12 @@ class DispatchResults:
         self.links_p0 = nodal_net.links_t.p0
 
 
+@dataclass
+class FBMCWorkflowResult:
+    zonal_net: pypsa.Network
+    net_positions: pd.DataFrame
+    dispatch_results: DispatchResults
+    fbmc_parameters: dict[str, "SubnetFBMCParameters"]
+    base_case: pypsa.Network
+
+
