@@ -13,7 +13,7 @@ class BaseCaseStrategy(Enum):
 def prepare_nodal_optimum_base_case(_nodal_net: pypsa.Network, marginal_cost_load_shedding: float):
     base_case = _nodal_net.copy()
     base_case.optimize.add_load_shedding(sign=1, marginal_cost=marginal_cost_load_shedding)
-    base_case.optimize.optimize(solver_name='gurobi')
+    base_case.optimize(solver_name='gurobi')
     if base_case.model.termination_condition != 'optimal':
         raise ValueError("Initial nodal optimization did not solve to optimality.")
     return base_case
@@ -28,6 +28,7 @@ def prepare_zero_flow_base_case(_nodal_net: pypsa.Network, **kwargs):
 
 
 def prepare_custom_base_case(_nodal_net: pypsa.Network, custom_flows: pd.DataFrame):
+
     return _nodal_net.copy()
 
 
