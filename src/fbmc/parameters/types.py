@@ -91,16 +91,12 @@ class SubnetFBMCParameters:
                 name="zPTDF",
             )
 
-@dataclass
-class DispatchResults:
-    generators_p: pd.DataFrame
-    storage_units_p: pd.DataFrame
-    links_p0: pd.DataFrame
 
-    def __init__(self, nodal_net: pypsa.Network):
-        self.generators_p = nodal_net.generators_t.p
-        self.storage_units_p = nodal_net.storage_units_t.p
-        self.links_p0 = nodal_net.links_t.p0
+class DispatchResults:
+    def __init__(self, net: pypsa.Network):
+        self.generators_p: pd.DataFrame = net.generators_t.p
+        self.storage_units_p: pd.DataFrame = net.storage_units_t.p
+        self.links_p0: pd.DataFrame = net.links_t.p0
 
 
 @dataclass
