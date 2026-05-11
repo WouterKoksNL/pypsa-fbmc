@@ -13,6 +13,7 @@ from .double_three_node_line import create_double_three_node_line_case
 from .double_three_node_link_and_line import create_double_three_node_link_and_line_case
 from .four_node import create_four_node
 from .pypsa_eur_ua import create_pypsa_eur_ua_case
+from .linear import create_linear_case
 from .custom import create_custom_case
 from src.case_creation.advanced_hybrid_check import create_advanced_hybrid_check
 from src.paths import get_case_input_dir
@@ -29,6 +30,7 @@ class Cases(Enum):
     FOUR_NODE = 'four-node'
     ADVANCED_HYBRID_CHECK = 'advanced-hybrid-check'
     PYPSA_EUR_UA = 'pypsa-eur-ua'
+    LINEAR = 'linear'
     CUSTOM = 'custom'
 
 
@@ -43,6 +45,7 @@ CASE_FUNCTION_MAP = {
     Cases.FOUR_NODE: create_four_node,
     Cases.ADVANCED_HYBRID_CHECK: create_advanced_hybrid_check,
     Cases.PYPSA_EUR_UA: create_pypsa_eur_ua_case,
+    Cases.LINEAR: create_linear_case,
     Cases.CUSTOM: create_custom_case, 
 }
 
