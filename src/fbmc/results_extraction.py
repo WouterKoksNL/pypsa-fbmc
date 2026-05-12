@@ -14,12 +14,17 @@ def extract_model_results(net: pypsa.Network):
 
         if not net.storage_units.empty:
             storage_p = pd.DataFrame(
-            net.model.solution['StorageUnit-p_dispatch'].values,
+            net.model.solution['StorageUnit-p_dispatch'].values - net.model.solution['StorageUnit-p_store'].values,
             index=net.snapshots, 
             columns=net.storage_units.index
             )
-            net.storage_units_t.p_dispatch = storage_p
-        
+            net.storage_units_t.p = storage_p
+            storage_soc = pd.DataFrame(
+                net.model.solution['StorageUnit-state_of_charge'].values,
+                index=net.snapshots, 
+                columns=net.storage_units.index
+            )
+            net.storage_units_t.state_of_charge = storage_soc
         if not net.links.empty:
             links_p = pd.DataFrame(
                 net.model.solution['Link-p'].values,
