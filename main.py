@@ -36,10 +36,14 @@ def input_getter(zonal_net: pypsa.Network = None, nodal_net: pypsa.Network = Non
     return zonal_net, nodal_net, gsk
 
 
-def redispatch_workflow(nodal_net: pypsa.Network, dispatch_results: DispatchResults):
-    bridges = find_bridges_network(nodal_net)
-    outaged_lines = nodal_net.lines.index.difference(bridges)
-    nodal_net, cost = run_redispatch(nodal_net, dispatch_results=dispatch_results, with_security_constraints=True, branch_outages=outaged_lines)
+def redispatch_workflow(nodal_net: pypsa.Network, dispatch_results: DispatchResults, **redispatch_kwargs: dict) -> tuple[pypsa.Network, float, DispatchResults]:
+
+    nodal_net, cost = run_redispatch(
+        nodal_net, 
+        dispatch_results=dispatch_results, 
+        **redispatch_kwargs
+    )
+
     dispatch_results = DispatchResults(nodal_net)  # override dispatch results
     return nodal_net, cost, dispatch_results
 
@@ -124,7 +128,14 @@ def main(
             config=config
         )
     if config.run_redispatch:
-        nodal_net, cost, result.dispatch_results = redispatch_workflow(nodal_net, result.dispatch_results)
+        bridges = find_bridges_network(nodal_net)
+        outaged_lines = nodal_net.lines.index.difference(bridges)
+        redispatch_kwargs = {
+            'with_security_constraints': config.security_constrained_redispatch,
+            'branch_outages': outaged_lines,
+            'rt_deviation_factor': config.deviation_factor_redispatch,  # allow 20% deviation from base case flows in redispatch
+        }
+        nodal_net, cost, result.dispatch_results = redispatch_workflow(nodal_net, result.dispatch_results, **redispatch_kwargs)
 
     do_lpf_contingency_check(nodal_net, result.dispatch_results, result.fbmc_parameters)
     
