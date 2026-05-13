@@ -9,6 +9,7 @@ set -e  # Exit immediately if any command fails
 module load Python/3.11.5-GCCcore-13.2.0
 module load gurobi/9.5
 module load Miniconda3/23.10.0-1
+source activate fbmc
 conda activate fbmc
 
 # --- UPDATE PATHS ---
