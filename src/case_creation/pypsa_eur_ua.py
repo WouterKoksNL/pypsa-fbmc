@@ -3,7 +3,7 @@
 
 import pypsa
 from src.paths import get_case_input_dir
-
+from .network_conversion import copy_net, nodal_to_zonal
 
 def _remove_buses_and_connected_components(net: pypsa.Network, buses_to_remove):
     # remove lines and transformers connected to the buses to remove
@@ -20,18 +20,34 @@ def _remove_buses_and_connected_components(net: pypsa.Network, buses_to_remove):
     # remove the buses
     net.remove('Bus', buses_to_remove)
 
+
 def create_pypsa_eur_ua_case(keep_countries=None, drop_countries=None):
+    """Precedence: keep countries over drop countries.
+
+    Args:
+        keep_countries (_type_, optional): _description_. Defaults to None.
+        drop_countries (_type_, optional): _description_. Defaults to None.
+
+    Returns:
+        _type_: _description_
+    """
     case_name = "pypsa-eur-ua"
     case_dir = get_case_input_dir(case_name)
     nodal_net = pypsa.Network(case_dir / "nodal.nc")
-    zonal_net = pypsa.Network(case_dir / "zonal.nc")
+    # if zonal exists, use it, otherwise create it from the nodal net
+    if (case_dir / "zonal.nc").exists():
+        zonal_net = pypsa.Network(case_dir / "zonal.nc")
+    else:
+        zonal_net = nodal_to_zonal(nodal_net, bus_zone_map=nodal_net.buses.country)
+    remove_countries_list = None
     if keep_countries is not None:
         remove_countries_list = list(set(nodal_net.buses.country.unique()).difference(set(keep_countries)))
-    if drop_countries is not None:
+    elif drop_countries is not None:
         remove_countries_list = drop_countries
-    remove_buses = nodal_net.buses.index[nodal_net.buses.country.isin(remove_countries_list)]
-    _remove_buses_and_connected_components(nodal_net, remove_buses)
-    _remove_buses_and_connected_components(zonal_net, remove_countries_list)
+    if remove_countries_list is not None:
+        remove_buses = nodal_net.buses.index[nodal_net.buses.country.isin(remove_countries_list)]
+        _remove_buses_and_connected_components(nodal_net, remove_buses)
+        _remove_buses_and_connected_components(zonal_net, remove_countries_list)
     nodal_net.buses.loc[:, 'zone_name'] = nodal_net.buses.country
     zonal_net.remove('Line', zonal_net.lines.index)
     zonal_net.remove('Transformer', zonal_net.transformers.index)
