@@ -17,6 +17,7 @@ from .linear import create_linear_case
 from .custom import create_custom_case
 from src.case_creation.advanced_hybrid_check import create_advanced_hybrid_check
 from src.paths import get_case_input_dir
+from .utils import select_snapshot
 
 
 class Cases(Enum):
@@ -49,8 +50,7 @@ CASE_FUNCTION_MAP = {
     Cases.CUSTOM: create_custom_case, 
 }
 
-def select_snapshot(net: pypsa.Network, snapshot_i_range):
-    net.set_snapshots(net.snapshots[snapshot_i_range])
+
 
 def create_case(case, load_case_flag=True, save_case_flag=True, **kwargs):
 
