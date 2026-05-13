@@ -20,6 +20,23 @@ from src.fbmc.input_checks import do_input_checks
 
 
 def input_getter(zonal_net: pypsa.Network = None, nodal_net: pypsa.Network = None, case_name: Cases = Cases.BASIC_THREE_NODE, load_case_flag: bool = False, save_case_flag: bool = False, **case_kwargs):
+    """_summary_
+
+    Args:
+        zonal_net (pypsa.Network, optional): _description_. Defaults to None.
+        nodal_net (pypsa.Network, optional): _description_. Defaults to None.
+        case_name (Cases, optional): _description_. Defaults to Cases.BASIC_THREE_NODE.
+        load_case_flag (bool, optional): _description_. Defaults to False.
+        save_case_flag (bool, optional): _description_. Defaults to False.
+
+    Raises:
+        ValueError: _description_
+
+    Returns:
+        pypsa.Network: Zonal net 
+        pypsa.Network: Nodal net
+        dict: GSK dict (if exists, else None)
+    """
     logger = Logger(__name__)
     if zonal_net is None and nodal_net is None:
         case_data = create_case(case_name, load_case_flag=load_case_flag, save_case_flag=save_case_flag, **case_kwargs)
@@ -98,11 +115,6 @@ def fbmc_workflow(
     )
 
 
-
-
-    
-
-
 def main(
         zonal_net: pypsa.Network = None,
         nodal_net: pypsa.Network = None,
@@ -143,15 +155,15 @@ def main(
     
 
 if __name__ == "__main__":
-    
     obj3 = main(
-        case_name=Cases.DOUBLE_THREE_NODE_LINK_AND_LINE, 
+        case_name=Cases.PYPSA_EUR_UA, 
         gsk_strategy=GSKStrategy.P_NOM,
-        base_case_strategy=BaseCaseStrategy.SECURITY_CONSTRAINED_NODAL_OPTIMUM,
+        base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
         advanced_hybrid_coupling_flag=True,
+        load_case_flag=False,
         case_kwargs={
-            # 'snapshot_i_range': slice(0, 3),
-            # 'drop_countries': ["GB"]
+            'snapshot_i_range': slice(0, 3),
+            # 'drop_countries': ["UA"]
             },
         )  
 
