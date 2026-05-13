@@ -82,6 +82,7 @@ def _set_nodal_objective(net, dispatch_results, redispatchable_gen_inds, rt_devi
             coords=[net.snapshots, redispatchable_gen_inds],
             dims=["snapshot", "Generator"]
         )
+    storage_unit_data = None
     if "StorageUnit-p_dispatch" in model.variables:
         storage_unit_data = StorageUnitData(
             p_old=xr.DataArray(
