@@ -96,9 +96,13 @@ class DispatchResults:
     def __init__(self, net: pypsa.Network):
         self.generators_p: pd.DataFrame = net.generators_t.p
         self.storage_units_p: pd.DataFrame = net.storage_units_t.p
-        self.storage_units_soc: pd.DataFrame = net.storage_units_t.state_of_charge
+
         self.links_p0: pd.DataFrame = net.links_t.p0
-        self.water_values: xr.DataArray = net.model.dual["StorageUnit-energy_balance"]
+        self.storage_units_soc: pd.DataFrame | None = None
+        self.water_values: xr.DataArray | None = None
+        if not net.storage_units.empty:
+            self.storage_units_soc: pd.DataFrame = net.storage_units_t.state_of_charge
+            self.water_values: xr.DataArray = net.model.dual["StorageUnit-energy_balance"]
 
 
 
