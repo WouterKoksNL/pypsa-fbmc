@@ -129,7 +129,7 @@ def main(
 ):
     
     zonal_net, nodal_net, gsk = input_getter(zonal_net, nodal_net, case_name, load_case_flag, save_case_flag, **case_kwargs)
-    
+    zonal_net.remove("Links", zonal_net.links.index)  # remove links if they exist, as they will be re-created in the FBMC model setup based on the base case flows
     result = fbmc_workflow(
             zonal_net=zonal_net,
             nodal_net=nodal_net,
@@ -158,7 +158,7 @@ if __name__ == "__main__":
     obj3 = main(
         case_name=Cases.PYPSA_EUR_UA, 
         gsk_strategy=GSKStrategy.P_NOM,
-        base_case_strategy=BaseCaseStrategy.SECURITY_CONSTRAINED_NODAL_OPTIMUM,
+        base_case_strategy=BaseCaseStrategy.NODAL_OPTIMUM,
         advanced_hybrid_coupling_flag=True,
         load_case_flag=False,
         case_kwargs={
