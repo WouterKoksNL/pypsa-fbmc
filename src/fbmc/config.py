@@ -11,7 +11,7 @@ class FBMCConfig:
     reliability_margin_factor: float = 0.0
     min_ram: float = 0.0
 
-    cne_setting: str = "all"
+    cne_setting: str = "utilization_threshold"  
     line_usage_threshold: float = 0.2
     cne_list: list[str] = None
     security_constraint_bodf_size_threshold: float = 0.2
