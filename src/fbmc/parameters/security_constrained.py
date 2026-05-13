@@ -9,10 +9,11 @@ def apply_security_param_changes(
         sub_network: pypsa.SubNetwork, 
         cnecs: pd.MultiIndex, 
         nodal_ptdf: pd.DataFrame, 
-        base_flows: pd.DataFrame
+        base_flows: pd.DataFrame,
+        bodf_size_threshold: float,
         ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Apply security constraint parameter changes to nodal PTDF and base flows.""" 
-    bodf = get_subnetwork_bodf(sub_network, cnecs)
+    bodf = get_subnetwork_bodf(sub_network, cnecs, bodf_size_threshold)
     nodal_ptdf_outaged = apply_bodf(nodal_ptdf, bodf)
     base_flows_outaged = apply_bodf(base_flows.T, bodf).T
     return nodal_ptdf_outaged, base_flows_outaged
@@ -50,6 +51,7 @@ def calc_bodf_cnec_values(BODF: pd.DataFrame, cnecs: pd.MultiIndex) -> pd.Series
 
 def apply_bodf(df: pd.DataFrame, bodf: pd.DataFrame) -> pd.DataFrame:
     """Assumes df has index branches."""
+
     outage_term = (df.loc[bodf.index.get_level_values(1)].T * bodf.values).T
     outage_term.index = bodf.index.get_level_values(0)
     result_df = df.reindex(bodf.index.get_level_values(0)) + outage_term

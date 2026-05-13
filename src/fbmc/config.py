@@ -14,6 +14,7 @@ class FBMCConfig:
     cne_setting: str = "all"
     line_usage_threshold: float = 0.2
     cne_list: list[str] = None
+    security_constraint_bodf_size_threshold: float = 0.2
 
     # GSK Method options:
     # "ADJUSTABLE_CAP" - Share of Adjustable Capacity

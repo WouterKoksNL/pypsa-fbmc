@@ -18,9 +18,22 @@ def get_subnetwork_ptdf(sub_network: pypsa.SubNetwork) -> pd.DataFrame:
     return ptdf
 
 
-def get_subnetwork_bodf(sub_network: pypsa.SubNetwork, cnecs: pd.MultiIndex) -> pd.DataFrame:
+def get_subnetwork_bodf(
+        sub_network: pypsa.SubNetwork, 
+        cnecs: pd.MultiIndex,
+        min_size_threshold: float = 0.05
+        ) -> pd.DataFrame:
     """
     Extract BODF values for each (branch, outage) pair in cnecs from a sub-network.
+
+    Parameters
+    ----------
+    sub_network : pypsa.SubNetwork
+        The sub-network to extract BODF values from.
+    cnecs : pd.MultiIndex
+        MultiIndex where the first level contains the outages and the second level contains the branches.
+    min_size_threshold : float
+        Minimum absolute value of BODF to include in the result, to reduce computational size. Default is 0.05.
     """
     sub_network.calculate_BODF()
 
@@ -40,6 +53,7 @@ def get_subnetwork_bodf(sub_network: pypsa.SubNetwork, cnecs: pd.MultiIndex) -> 
     # Extract only the matching diagonal elements
     bodf_cnec = bodf.values[row_idx, col_idx]
     bodf = pd.Series(bodf_cnec, index=cnecs, name='BODF')
+    bodf = bodf[bodf.abs() > min_size_threshold] 
     if bodf.isna().any().any():
         raise ValueError("BODF contains NaN values. Check if network bridges are filtered out of outage list.")
     return bodf
