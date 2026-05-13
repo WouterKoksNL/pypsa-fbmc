@@ -6,7 +6,7 @@ from enum import Enum
 
 from .helpers import (
     get_uncertain_elements, 
-    initialize_gen_difference,
+    initialize_nodal_injection_difference,
     introduce_variation_to_network,
     calculate_generation_difference,
     process_generation_difference,
@@ -149,10 +149,18 @@ def gsk_iterative_uncertainty(
         dictionary of DataFrames containing GSK values for each bus and zone, one per snapshot
     """
     # Validate inputs
-    if num_iterations < 1:
+    if num_scenarios < 1:
         raise ValueError("Number of iterations must be at least 1")
     if gen_variation_std_dev < 0 or load_variation_std_dev < 0:
         raise ValueError("Standard deviations must be non-negative")
+
+
+    # Set up random generator from config.base_seed
+    if config is not None and hasattr(config, 'base_seed') and config.base_seed is not None:
+        rng = np.random.default_rng(config.base_seed)
+        np.random.seed(config.base_seed)  # For legacy code if needed
+    else:
+        rng = np.random.default_rng()
 
     # Run the network once to get initial generation and load values
     try:
@@ -164,14 +172,17 @@ def gsk_iterative_uncertainty(
     # Collect the loads and gens (wind) with uncertainty
     uncertain_gens, uncertain_loads = get_uncertain_elements(network, uncertain_carriers)
     
-    # Initialize the generation difference array
-    gen_difference = initialize_gen_difference(network, num_iterations)
+    # Initialize the nodal injections difference array
+    nodal_injections_difference = initialize_nodal_injection_difference(network, num_scenarios)
+
+    # Save the original nodal injections
+    original_nodal_injections = network.buses_t.p.copy()
 
     # Perform stochastic sampling
-    for i in range(num_iterations):
+    for i in range(num_scenarios):
         # Create a fresh copy for this iteration
         stochastic_network = network.copy(snapshots=network.snapshots)
-        
+
         # Apply uncertainty to generators and loads
         introduce_variation_to_network(
             stochastic_network,
@@ -181,11 +192,8 @@ def gsk_iterative_uncertainty(
             load_variation_std_dev,
         )
 
-        # Calculate generation differences after optimization
-        gen_difference[i,:,:] = calculate_generation_difference(stochastic_network)
-        
-    # Process results and calculate GSK
-    return process_generation_difference(gen_difference, network)
+        silent_run_opf(stochastic_network)
+        nodal_injections_difference[i,:,:] = (stochastic_network.buses_t.p - original_nodal_injections).values.T
 
 
 
@@ -231,51 +239,34 @@ def gsk_iterative_merit_order(
     if gen_variation_std_dev < 0 or load_variation_std_dev < 0:
         raise ValueError("Standard deviations must be non-negative")
 
-    # Run the network once to get initial generation and load values
-    try:
-        with silence_output():
-            network.optimize(solver_name='gurobi')
-    except Exception as e:
-        raise RuntimeError(f"Failed to optimize initial network state: {e}")
+    # Optional convergence check: compare N vs 2N scenarios
+    if config is not None and getattr(config, 'enable_uncertainty_convergence_check', False):
+        # Reseed to reproduce the same first N draws, so 2N includes those plus extra
+        if hasattr(config, 'base_seed') and config.base_seed is not None:
+            np.random.seed(config.base_seed)
+        n2 = 2 * num_scenarios
+        nodal_injections_difference_2n = initialize_nodal_injection_difference(network, n2)
+        original_nodal_injections_2n = network.buses_t.p.copy()
 
-    # Collect the loads and gens (wind) with uncertainty
-    uncertain_gens, uncertain_loads = get_uncertain_elements(network, uncertain_carriers)
-    
-    # Initialize the generation difference array
-    gen_difference = initialize_gen_difference(network, num_iterations)
+        for i in range(n2):
+            stochastic_network = network.copy(snapshots=network.snapshots)
+            introduce_variation_to_network(
+                stochastic_network,
+                uncertain_gens,
+                uncertain_loads,
+                gen_variation_std_dev,
+                load_variation_std_dev,
+            )
+            silent_run_opf(stochastic_network)
+            nodal_injections_difference_2n[i,:,:] = (stochastic_network.buses_t.p - original_nodal_injections_2n).values.T
 
-    # Perform stochastic sampling
-    for i in range(num_iterations):
-        # Create a fresh copy for this iteration
-        stochastic_network = network.copy(snapshots=network.snapshots)
-        
-        # Apply uncertainty to generators and loads
-        introduce_variation_to_network(
-            stochastic_network,
-            uncertain_gens,
-            uncertain_loads,
-            gen_variation_std_dev,
-            load_variation_std_dev,
-        )
+        gsk_2n = calculate_gsk_per_bus(nodal_injections_difference_2n, network)
 
-        # Store generator values before optimization
-        gen_t_before_optimization = stochastic_network.generators_t.p.copy()
-
-        stochastic_network.optimize.create_model()
-        
-
-        try:
-            # Run optimization silently using the silence_output context manager
-            with silence_output():
-                stochastic_network.optimize(solver_name="gurobi", solver_options={"OutputFlag": 0})
-        except Exception as e:
-            raise RuntimeError(f"Network optimization failed: {e}")
-        
-        # Calculate generation differences (transpose to match expected dimensions)
-        gen_difference[i,:,:] = (stochastic_network.generators_t.p - gen_t_before_optimization).values.T
+        print("Uncertainty-based GSK convergence check (N vs 2N scenarios):")
+        _check_gsk_convergence(gsk_2n, processed_nodal_difference, tolerance=(config.fbmc_iter_tolerance if hasattr(config, 'fbmc_iter_tolerance') else 0.01))
 
     # Process results and calculate GSK
-    return process_generation_difference(gen_difference, network)
+    return processed_nodal_difference
 
 def gsk_iterative_fbmc(
     network: pypsa.Network,
@@ -339,12 +330,21 @@ def gsk_iterative_fbmc(
     # Main GSK iteration loop
     for gsk_iteration in range(max_gsk_iterations):
         print(f"Starting GSK iteration {gsk_iteration + 1}/{max_gsk_iterations}")
-        
+
+        # Set up random generator for this scenario refinement
+        if hasattr(config, 'base_seed') and config.base_seed is not None:
+            rng = np.random.default_rng(config.base_seed)
+            np.random.seed(config.base_seed)  # For legacy code if needed
+        else:
+            rng = np.random.default_rng()
+
         # Collect uncertain elements
         uncertain_gens, uncertain_loads = get_uncertain_elements(network, uncertain_carriers)
         
-        # Initialize storage for generation differences in this GSK iteration
-        gen_difference_data = initialize_gen_difference(network, num_iterations)
+        # Initialize storage for nodal injection differences in this GSK iteration
+        nodal_difference_data = initialize_nodal_injection_difference(network, num_iterations)
+
+        original_nodal_injections = network.buses_t.p.copy()
         
         # Monte Carlo iterations using current GSK
         for i in range(num_iterations):
@@ -360,17 +360,15 @@ def gsk_iterative_fbmc(
                 load_variation_std_dev
             )
             
-            # Run FBMC with current GSK to get generation allocation
-            fbmc_results = _run_fbmc_with_gsk(perturbed_network, current_gsk, config)
-            
-            # Calculate generation differences from the FBMC results
-            gen_difference_data[i,:,:] = _calculate_fbmc_gen_difference(network, fbmc_results)
-            
+            # Run FBMC with current GSK to get nodal difference
+            fbmc_nodal_difference_result = _run_fbmc_with_gsk(perturbed_network, current_gsk, config)
+            nodal_difference_data[i,:,:] = (fbmc_nodal_difference_result - original_nodal_injections).values.T
+           
         # Calculate new GSK from Monte Carlo results
-        new_gsk = process_generation_difference(gen_difference_data, network)
+        new_gsk = calculate_gsk_per_bus(nodal_difference_data, network)
         
         # Check for convergence
-        if _check_gsk_convergence(new_gsk, current_gsk):
+        if _check_gsk_convergence(new_gsk, current_gsk, tolerance=config.fbmc_iter_tolerance):
             print(f"GSK converged after {gsk_iteration + 1} iterations")
             break
             
@@ -463,18 +461,28 @@ def _run_fbmc_with_gsk(
             # Clean up the MultiIndex columns
             opt_gens_df.columns = opt_gens_df.columns.droplevel(0)
             
-            # Return the generation allocation results
-            results = {
-                'generators_t': {
-                    'p': opt_gens_df
-                }
-            }
-            return results
+            opt_loads_df = zonal_network.loads_t.p.copy()
+
+            # Sum generator outputs by bus
+            gen_inj = opt_gens_df.T.groupby(perturbed_network.generators.bus).sum().T
+            
+            # Sum loads by bus (loads consumed are negative injections)
+            load_inj = opt_loads_df.T.groupby(perturbed_network.loads.bus).sum().T
+            
+            # Align to all buses
+            buses = perturbed_network.buses.index
+            gen_inj = gen_inj.reindex(columns=buses, fill_value=0.0)
+            load_inj = load_inj.reindex(columns=buses, fill_value=0.0)
+            
+            # Net injection: generation minus load
+            nodal_inj = gen_inj - load_inj
+
+            return nodal_inj
         else:
             print("Warning: Optimization model solution not found, using direct network values")
             return {
                 'generators_t': {
-                    'p': zonal_network.generators_t.p.copy()
+                    'p': zonal_network.buses_t.p.copy()
                 }
             }
         
@@ -505,13 +513,34 @@ def _check_gsk_convergence(
     current_gsk: dict[pd.Timestamp, pd.DataFrame],
     tolerance: float = 0.01
 ) -> bool:
-    """Check if GSK has converged by comparing new and current values."""
-    # Simple implementation: check if maximum absolute difference is below tolerance
+    """Check if GSK has converged by comparing new and current values.
+
+    Prints the maximum absolute difference per timestamp and an overall summary
+    to help track convergence across iterations.
+    """
+    overall_max_diff = 0.0
+    converged = True
+
     for ts in new_gsk:
-        max_diff = abs(new_gsk[ts].values - current_gsk[ts].values).max()
+        try:
+            # Fast path matching existing behavior
+            max_diff = float(np.max(np.abs(new_gsk[ts].values - current_gsk[ts].values)))
+        except Exception:
+            # Safer path with alignment in case of ordering/shape issues
+            diff_df = (new_gsk[ts] - current_gsk[ts]).abs()
+            max_diff = float(np.nanmax(diff_df.to_numpy()))
+
+        overall_max_diff = max(overall_max_diff, max_diff)
+        print(f"GSK convergence check: ts={ts}, max abs diff={max_diff:.6f}, tolerance={tolerance}")
+
         if max_diff > tolerance:
-            return False
-    return True
+            converged = False
+
+    print(
+        f"GSK convergence summary: overall max abs diff={overall_max_diff:.6f}, "
+        f"tolerance={tolerance} -> {'converged' if converged else 'not converged'}"
+    )
+    return converged
 
 
 def gsk_adjustable_cap(
