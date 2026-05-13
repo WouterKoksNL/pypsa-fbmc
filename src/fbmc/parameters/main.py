@@ -36,11 +36,11 @@ def calculate_fbmc_parameters_subnet(
     FBMCParameters
         Dataclass containing upper and lower RAM, zPTDF and CNECs.
     """
-    if sub_network.buses_i().size < 3:
+    if sub_network.components.buses.static.index.size < 3:
         raise NotImplementedError("Sub-networks with less than 3 buses are not supported.")
 
-    base_flows_subnet = base_case_flows.loc[:, sub_network.df('transformers').index.union(sub_network.df('lines').index)].copy()
-    base_net_positions_subnet = net_positions_base_case.loc[:, sub_network.buses().zone_name.unique()].copy() 
+    base_flows_subnet = base_case_flows.loc[:, sub_network.components.transformers.static.index.union(sub_network.components.lines.static.index)].copy()
+    base_net_positions_subnet = net_positions_base_case.loc[:, sub_network.components.buses.static.zone_name.unique()].copy()
     nodal_ptdf = get_subnetwork_ptdf(sub_network)
 
     cnecs = cnec_router(sub_network, config, base_case_flows=base_flows_subnet)
@@ -68,8 +68,8 @@ def calculate_fbmc_parameters_subnet(
             link_bus0_zone = basecase_link_data['link_bus0_zone_mapping']
             link_bus1_zone = basecase_link_data['link_bus1_zone_mapping']
             link_p0 = basecase_link_data['p0']
-            p_inflow_bus0 = - link_p0.T.groupby(link_bus0_zone).sum().reindex(index=sub_network.buses().zone_name.unique(), fill_value=0.0).T
-            p_inflow_bus1 = link_p0.T.groupby(link_bus1_zone).sum().reindex(index=sub_network.buses().zone_name.unique(), fill_value=0.0).T
+            p_inflow_bus0 = - link_p0.T.groupby(link_bus0_zone).sum().reindex(index=sub_network.components.buses.static.zone_name.unique(), fill_value=0.0).T
+            p_inflow_bus1 = link_p0.T.groupby(link_bus1_zone).sum().reindex(index=sub_network.components.buses.static.zone_name.unique(), fill_value=0.0).T
             p_link = p_inflow_bus0 + p_inflow_bus1
             base_net_positions_subnet += p_link
         # breakpoint()
@@ -91,7 +91,7 @@ def calculate_fbmc_parameters_subnet(
         net_positions_base_case=base_net_positions_subnet
         )
     
-    zones = sub_network.buses().zone_name.unique()
+    zones = sub_network.components.buses.static.zone_name.unique()
     fbmc_parameters = SubnetFBMCParameters(   
         upper_ram_dict=upper_ram,
         lower_ram_dict=lower_ram,

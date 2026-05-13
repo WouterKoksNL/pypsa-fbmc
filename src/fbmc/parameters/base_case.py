@@ -66,8 +66,8 @@ def get_base_flows_subnet(sub_network: pypsa.SubNetwork
     Assumes there are no transformers, links or lines with the same name."""
 
     return pd.concat([
-        sub_network.pnl('transformers')['p0'].T, 
-        sub_network.pnl('lines')['p0'].T
+        sub_network.components.transformers.dynamic['p0'].T,
+        sub_network.components.lines.dynamic['p0'].T,
     ]).T
 
 
@@ -84,7 +84,7 @@ def calc_base_net_positions_subnet(sub_network: pypsa.SubNetwork) -> pd.DataFram
     """
 
     net_positions = (
-        sub_network.pnl('buses')['p'].T.groupby(sub_network.df('buses').zone_name).sum().T 
+        sub_network.components.buses.dynamic['p'].T.groupby(sub_network.components.buses.static.zone_name).sum().T
     )
 
     if net_positions.sum(axis=1).abs().max() > 1e-6:

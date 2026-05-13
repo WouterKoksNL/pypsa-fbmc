@@ -12,7 +12,6 @@ import pandas as pd
 from linopy import merge
 from xarray import DataArray
 from pypsa.components.common import as_components
-from pypsa.descriptors import get_switchable_as_dense as as_dense
 
 
 
@@ -64,12 +63,12 @@ def define_net_positions_constraint(
         ["StorageUnit", "p_dispatch", "bus", 1],
         ["StorageUnit", "p_store", "bus", -1],
         ["Link", "p", "bus0", -1],
-        ["Link", "p", "bus1", as_dense(zonal_net, "Link", "efficiency", sns)],
+        ["Link", "p", "bus1", zonal_net.get_switchable_as_dense("Link", "efficiency", sns)],
     ]
 
     if not zonal_net.links.empty:
         for i in zonal_net.components.links.additional_ports:
-            eff = as_dense(zonal_net, "Link", f"efficiency{i}", sns)
+            eff = zonal_net.get_switchable_as_dense("Link", f"efficiency{i}", sns)
             args.append(["Link", "p", f"bus{i}", eff])
 
 
@@ -100,7 +99,7 @@ def define_net_positions_constraint(
     zonal_production = merge(exprs, join="outer").reindex(Bus=buses)
     active = zonal_net.loads.query("active").index
     fixed_load = (
-        (-as_dense(zonal_net, "Load", "p_set", sns, active) * zonal_net.loads.sign[active])
+        (-zonal_net.get_switchable_as_dense("Load", "p_set", sns, active) * zonal_net.loads.sign[active])
         .T.groupby(zonal_net.loads.bus[active])
         .sum()
         .T.reindex(columns=buses, fill_value=0)

@@ -65,7 +65,7 @@ def calculate_fbmc_parameters(
     base_flows = get_base_flows(basecase_nodal_network)  # shape: (snapshots, branches)
     for sub_network_name, sub_network_df in basecase_nodal_network.sub_networks.iterrows():
         sub_network = sub_network_df.obj
-        if sub_network.buses_i().size < 3:
+        if sub_network.components.buses.static.index.size < 3:
             logging.warning(f"Sub-network {sub_network_name} has less than 3 buses. Skipping FBMC parameter calculation and constraint addition for this sub-network.")
             continue
         subnet_fbmc_parameters: SubnetFBMCParameters = calculate_fbmc_parameters_subnet(sub_network, gsk, config=config, basecase_link_data=basecase_link_data, base_case_flows=base_flows, net_positions_base_case=net_positions_base_case)
@@ -116,7 +116,7 @@ def remove_original_constraints_loop(
     if basecase_nodal_network.sub_networks.empty:
         basecase_nodal_network.determine_network_topology()
 
-    sub_net_lengths = basecase_nodal_network.sub_networks.obj.apply(lambda x: len(x.buses()))
+    sub_net_lengths = basecase_nodal_network.sub_networks.obj.apply(lambda x: x.components.buses.static.index.size)
 
     if not (sub_net_lengths < 3).any():
         remove_original_constraints(zonal_net)  
@@ -124,8 +124,8 @@ def remove_original_constraints_loop(
     
     for name, sub_network_df in basecase_nodal_network.sub_networks.iterrows():
         sub_network = sub_network_df.obj
-        if sub_network.buses_i().size >= 3:
-            remove_original_constraints_by_bus(zonal_net, sub_network.buses().zone_name.unique())
+        if sub_network.components.buses.static.index.size >= 3:
+            remove_original_constraints_by_bus(zonal_net, sub_network.components.buses.static.zone_name.unique())
     return
 
 
