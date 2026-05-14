@@ -2,6 +2,7 @@ import pandas as pd
 from itertools import product
 import xarray as xr 
 
+from src.fbmc.parameters.bridge_branches import find_bridges_sub_network
 
 def add_security_constraints(nodal_net, branch_outages):
         if not hasattr(nodal_net, "model"):
@@ -9,7 +10,11 @@ def add_security_constraints(nodal_net, branch_outages):
         m = nodal_net.model
         for sub_network in nodal_net.sub_networks.obj:
             branches_i = sub_network.branches_i()
-            outages = branches_i.intersection(branch_outages)
+            if branch_outages is None:
+                bridges = find_bridges_sub_network(sub_network)
+                outages = branches_i.difference(bridges)
+            else:
+                outages = branches_i.intersection(branch_outages)
 
             if outages.empty:
                 continue
