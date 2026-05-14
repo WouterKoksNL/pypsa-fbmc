@@ -59,7 +59,8 @@ def cnec_router(
     elif config.cne_setting == 'utilization_threshold':
         cne_reference_case_flows = kwargs['cne_reference_case_flows']
         max_absolute_flow = cne_reference_case_flows.abs().max()
-        max_absolute_flow_subnet = max_absolute_flow.loc[:, sub_network.df('transformers').index.union(sub_network.df('lines').index)]
+
+        max_absolute_flow_subnet = max_absolute_flow.loc[sub_network.df('transformers').index.union(sub_network.df('lines').index)]
         line_capacity = sub_network.branches().s_nom.droplevel(0)
         cnes = _determine_cnes_threshold(
             max_absolute_flow_subnet,
