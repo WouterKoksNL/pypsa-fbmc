@@ -12,7 +12,7 @@ class FBMCConfig:
     reliability_margin_factor: float = 0.0
     min_ram: float = 0.0
 
-    cne_setting: str = "utilization_threshold"  
+    cne_setting: str = "all"  
     line_usage_threshold: float = 0.2
     cne_list: list[str] = None
     cne_reference_case_flows: BaseCaseStrategy = BaseCaseStrategy.NODAL_OPTIMUM
