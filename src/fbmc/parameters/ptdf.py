@@ -69,7 +69,7 @@ def calculate_zonal_ptdf(
     PTDF shape: (branches, buses)
     GSK shape: (zones, buses)
     CNECs shape: (branches) for N-0 CNECs, or (branches, outaged_branches) for N-1 CNECs
-    zPTDF shape: (branches, zones), filtered on CNECs
+    zPTDF shape: (CNECs, zones). 
     """
     if not set(ptdf.columns).issubset(set(gsk.columns)):
         raise ValueError("PTDF columns must match GSK bus names") #PTDF is based on subnetwork, GSK is based on full network
