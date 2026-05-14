@@ -5,10 +5,12 @@ import pypsa
 from typing import Sequence
 from linopy import Model, LinearExpression
 import xarray as xr
+import logging
 
 from .security_constraints import add_security_constraints
 from src.types import DispatchResults
 
+logging.basicConfig(level=logging.INFO)
 
 def select_flex_gens(net, flexible_carriers: Sequence[str]) -> pd.Index:
     return net.generators.index[
@@ -50,7 +52,7 @@ def run_redispatch(
     _set_nodal_objective(nodal_net, dispatch_results, flex_gens_up, rt_deviation_factor)
     if with_security_constraints:
         add_security_constraints(nodal_net, branch_outages)
-
+    logging.info("Solving redispatch optimization...")
     nodal_net.optimize.solve_model(solver_name="gurobi")
     cost = get_costs(nodal_net)
 
