@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import pypsa
 from scipy.stats import norm, halfnorm
-from enum import Enum
 
 from .helpers import (
     get_uncertain_elements, 
@@ -14,17 +13,7 @@ from .helpers import (
 )
 
 from ..config import FBMCConfig
-
-
-class GSKStrategy(Enum):
-    """Tracks implemented GSK methods."""
-    ADJUSTABLE_CAP: str = "ADJUSTABLE_CAP"
-    CURRENT_GENERATION: str = "CURRENT_GENERATION"
-    ITERATIVE_UNCERTAINTY: str = "ITERATIVE_UNCERTAINTY"
-    ITERATIVE_FBMC: str = "ITERATIVE_FBMC"
-    MERIT_ORDER: str = "MERIT_ORDER"
-    BUS_P: str = "BUS_P"
-    P_NOM: str = "P_NOM"
+from ...enums import GSKStrategy
 
 
 def calculate_gsk(nodal_net: pypsa.Network, 

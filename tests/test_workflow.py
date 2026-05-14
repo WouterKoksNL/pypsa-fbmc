@@ -13,8 +13,7 @@ import pypsa
 from src.case_creation.main import Cases
 from src.case_creation.network_conversion import nodal_to_zonal
 from src.fbmc.config import FBMCConfig
-from src.fbmc.parameters.base_case import BaseCaseStrategy
-from src.fbmc.parameters.gsk import GSKStrategy
+from src.enums import BaseCaseStrategy
 
 from tests.workflow_test_case import FBMCWorkflowTestCase, run_workflow_test
 

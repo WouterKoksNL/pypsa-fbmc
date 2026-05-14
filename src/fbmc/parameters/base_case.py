@@ -1,13 +1,7 @@
 import pandas as pd
 import pypsa
-from enum import Enum
 from .bridge_branches import find_bridges_network
-
-class BaseCaseStrategy(Enum):
-    ZERO_FLOWS = "zero_flows"
-    NODAL_OPTIMUM = "nodal_optimum"
-    SECURITY_CONSTRAINED_NODAL_OPTIMUM = "security_constrained"
-    CUSTOM = "custom"
+from ...enums import BaseCaseStrategy
 
 
 def prepare_nodal_optimum_base_case(_nodal_net: pypsa.Network, marginal_cost_load_shedding: float):
