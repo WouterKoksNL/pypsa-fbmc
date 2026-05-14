@@ -78,7 +78,9 @@ def calculate_zonal_ptdf(
     gsk_filtered = gsk_filtered.loc[gsk_filtered.sum(axis=1) > 1e-6]  # Remove zones with zero GSK in this subnetwork
 
     z_ptdf = (gsk_filtered @ ptdf.T).T  # shape: (branches, zones)
-    z_ptdf.index = cnecs
+
+    if not isinstance(cnecs, pd.MultiIndex):
+        z_ptdf = z_ptdf.loc[cnecs] # filter on cnecs
     return z_ptdf
 
 def filter_zptdf(
