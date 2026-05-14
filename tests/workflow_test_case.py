@@ -9,7 +9,7 @@ from src.case_creation.main import Cases
 from src.configs.config import FBMCConfig
 from src.fbmc.parameters.base_case import BaseCaseStrategy
 from src.fbmc.parameters.gsk import GSKStrategy
-from src.fbmc.parameters.types import FBMCWorkflowResult
+from src.types import FBMCWorkflowResult
 
 
 @dataclass

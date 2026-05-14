@@ -8,7 +8,7 @@ from .ptdf import calculate_zonal_ptdf, get_subnetwork_ptdf
 from ...configs.config import FBMCConfig
 from .base_case import calc_base_net_positions, get_base_flows, BaseCaseStrategy
 from .security_constrained import apply_security_param_changes, calculate_zonal_ptdf_advanced_hybrid
-from .types import SubnetFBMCParameters
+from ...types import SubnetFBMCParameters
 
 
 def calculate_fbmc_parameters_subnet(
@@ -48,6 +48,7 @@ def calculate_fbmc_parameters_subnet(
 
     if config.add_security_constraints:
         nodal_ptdf, base_flows_subnet = apply_security_param_changes(sub_network, cnecs, nodal_ptdf, base_flows_subnet, bodf_size_threshold=config.security_constraint_bodf_size_threshold)
+
         cnecs = nodal_ptdf.index  # Update CNECs to match the potentially reduced set in apply_security_param_changes
 
 

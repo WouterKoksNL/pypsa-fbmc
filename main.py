@@ -4,7 +4,7 @@ import pandas as pd
 from logging import Logger 
 
 from src.fbmc.parameters.bridge_branches import find_bridges_network
-from src.fbmc.config import FBMCConfig
+from src.configs.config import FBMCConfig
 from src.fbmc.main import setup_fbmc_model, solve
 from src.fbmc.parameters.base_case import prepare_base_case, BaseCaseStrategy
 from src.post_processing.market_prices import calculate_zonal_prices
@@ -14,7 +14,7 @@ from src.case_creation.main import create_case, Cases
 from src.redispatch.main import run_redispatch
 
 from src.post_processing.lpf import do_lpf_contingency_check
-from src.fbmc.parameters.types import DispatchResults, FBMCWorkflowResult
+from src.types import DispatchResults, FBMCWorkflowResult
 from src.fbmc.parameters.gsk import calculate_gsk, GSKStrategy
 from src.fbmc.input_checks import do_input_checks
 
@@ -146,14 +146,15 @@ def main(
         )
     if config.run_redispatch:
         bridges = find_bridges_network(nodal_net)
-        outaged_lines = nodal_net.lines.index.difference(bridges)
+        # outaged_lines = nodal_net.lines.index.difference(bridges)
         redispatch_kwargs = {
             'with_security_constraints': config.security_constrained_redispatch,
-            'branch_outages': outaged_lines,
+            # 'branch_outages': outaged_lines,
             'rt_deviation_factor': config.deviation_factor_redispatch,  # allow 20% deviation from base case flows in redispatch
         }
-        nodal_net, cost, result.dispatch_results = redispatch_workflow(nodal_net, result.dispatch_results, **redispatch_kwargs)
 
+        nodal_net, cost, result.dispatch_results = redispatch_workflow(nodal_net, result.dispatch_results, **redispatch_kwargs)
+  
     do_lpf_contingency_check(nodal_net, result.dispatch_results, result.fbmc_parameters)
     
     return result.zonal_net.model.objective.value

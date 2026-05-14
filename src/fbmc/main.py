@@ -11,7 +11,7 @@ import logging
 import linopy as lp 
 
 from .parameters.main import calculate_fbmc_parameters_subnet
-from .parameters.types import SubnetFBMCParameters
+from ..types import SubnetFBMCParameters
 from .parameters.cnec import define_cne_reference_case_flows
 from .constraints.main import create_zonal_generation
 from .constraints.main import add_fbmc_constraints, remove_original_constraints, remove_original_constraints_by_bus
