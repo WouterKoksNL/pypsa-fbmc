@@ -17,7 +17,7 @@ def calculate_fbmc_parameters_subnet(
     config: FBMCConfig = FBMCConfig(),
     basecase_link_data: pd.DataFrame = None,
     base_case_flows: pd.DataFrame = None,
-    cnecs_reference_case_flows: pd.DataFrame = None,
+    cne_reference_case_flows: pd.DataFrame = None,
     net_positions_base_case: pd.DataFrame = None,
 ) -> SubnetFBMCParameters:
     """Add security constraints to zonal network.
@@ -44,7 +44,7 @@ def calculate_fbmc_parameters_subnet(
     base_net_positions_subnet = net_positions_base_case.loc[:, sub_network.buses().zone_name.unique()].copy() 
     nodal_ptdf = get_subnetwork_ptdf(sub_network)
 
-    cnecs = cnec_router(sub_network, config, cne_reference_case_flows=base_flows_subnet)
+    cnecs = cnec_router(sub_network, config, cne_reference_case_flows=cne_reference_case_flows)
 
     if config.add_security_constraints:
         nodal_ptdf, base_flows_subnet = apply_security_param_changes(sub_network, cnecs, nodal_ptdf, base_flows_subnet, bodf_size_threshold=config.security_constraint_bodf_size_threshold)

@@ -73,7 +73,7 @@ def calculate_fbmc_parameters(
             logging.warning(f"Sub-network {sub_network_name} has less than 3 buses. Skipping FBMC parameter calculation and constraint addition for this sub-network.")
             continue
 
-        subnet_fbmc_parameters: SubnetFBMCParameters = calculate_fbmc_parameters_subnet(sub_network, gsk, config=config, basecase_link_data=basecase_link_data, base_case_flows=base_flows, cnecs_reference_case_flows=cne_reference_case_flows, net_positions_base_case=net_positions_base_case)
+        subnet_fbmc_parameters: SubnetFBMCParameters = calculate_fbmc_parameters_subnet(sub_network, gsk, config=config, basecase_link_data=basecase_link_data, base_case_flows=base_flows, cne_reference_case_flows=cne_reference_case_flows, net_positions_base_case=net_positions_base_case)
         fbmc_parameters[sub_network_name] = subnet_fbmc_parameters
     
     return fbmc_parameters
