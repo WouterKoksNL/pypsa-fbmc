@@ -163,7 +163,7 @@ if __name__ == "__main__":
     obj3 = main(
         case_name=Cases.PYPSA_EUR_UA, 
         gsk_strategy=GSKStrategy.P_NOM,
-        base_case_strategy=BaseCaseStrategy.NODAL_OPTIMUM,
+        base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
         advanced_hybrid_coupling_flag=True,
         load_case_flag=False,
         case_kwargs={
