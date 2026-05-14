@@ -7,7 +7,8 @@ from linopy import Model, LinearExpression
 import xarray as xr
 
 from .security_constraints import add_security_constraints
-from src.fbmc.parameters.types import DispatchResults
+from src.types import DispatchResults
+
 
 def select_flex_gens(net, flexible_carriers: Sequence[str]) -> pd.Index:
     return net.generators.index[
