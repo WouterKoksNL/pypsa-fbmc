@@ -50,7 +50,10 @@ def calc_bodf_cnec_values(BODF: pd.DataFrame, cnecs: pd.MultiIndex) -> pd.Series
     # return pd.Series(bodf_cnec_values, index=cnecs, name='BODF_value')
 
 def apply_bodf(df: pd.DataFrame, bodf: pd.DataFrame) -> pd.DataFrame:
-    """Assumes df has index branches."""
+    """Assumes df has index branches.
+    Applies outage scenarios defined by the BODF. 
+    Returns a new df with index as (line, outage) pairs and columns the same as the input df, containing the adjusted flows for each outage scenario.
+    """
 
     outage_term = (df.loc[bodf.index.get_level_values(1)].T * bodf.values).T
     outage_term.index = bodf.index.get_level_values(0)
