@@ -84,11 +84,13 @@ def fbmc_workflow(
     if advanced_hybrid_coupling_flag is not None:
         config.advanced_hybrid_coupling_flag = advanced_hybrid_coupling_flag
 
+    logger.info(f"Preparing base case with strategy {config.base_case_strategy}")
     base_case = prepare_base_case(
         nodal_net, 
         strategy=base_case_strategy, 
         base_case_kwargs={'marginal_cost_load_shedding': config.marginal_cost_load_shedding}
         )
+    logger.info("Base case prepared.")
 
     if gsk is None:
         gsk_strategy = gsk_strategy if gsk_strategy is not None else config.gsk_method
@@ -97,6 +99,7 @@ def fbmc_workflow(
     if nodal_net.sub_networks.empty:
         nodal_net.determine_network_topology()
 
+    logger.info("Calculating FBMC parameters and setting up FBMC model.")
     model, fbmc_parameters = setup_fbmc_model(
         zonal_net, 
         basecase_nodal_network=base_case, 
@@ -104,6 +107,7 @@ def fbmc_workflow(
         config=config
     )
 
+    logger.info("Solving FBMC model.")
     zonal_net, net_positions = solve(zonal_net, advanced_hybrid_flag=config.advanced_hybrid_coupling_flag)
     dispatch_results = DispatchResults(zonal_net)
     return FBMCWorkflowResult(
