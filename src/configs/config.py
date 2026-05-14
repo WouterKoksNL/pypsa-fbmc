@@ -56,10 +56,10 @@ class FBMCConfig:
     marginal_cost_load_shedding: float = 1e5
     
 
-    add_security_constraints: bool = False
+    add_security_constraints: bool = True
     
 
-    advanced_hybrid_coupling_flag: bool = True
+    advanced_hybrid_coupling_flag: bool = False
 
     run_redispatch: bool = True
     security_constrained_redispatch: bool = False
