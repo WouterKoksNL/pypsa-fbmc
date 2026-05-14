@@ -47,7 +47,10 @@ def calculate_fbmc_parameters_subnet(
 
     if config.add_security_constraints:
         nodal_ptdf, base_flows_subnet = apply_security_param_changes(sub_network, cnecs, nodal_ptdf, base_flows_subnet, bodf_size_threshold=config.security_constraint_bodf_size_threshold)
-    
+        cnecs = nodal_ptdf.index  # Update CNECs to match the potentially reduced set in apply_security_param_changes
+
+
+    link_ptdf_bus0, link_ptdf_bus1 = None, None
     if config.advanced_hybrid_coupling_flag and basecase_link_data is not None:
         buses = nodal_ptdf.columns 
         bus0 = basecase_link_data['df'].bus0
