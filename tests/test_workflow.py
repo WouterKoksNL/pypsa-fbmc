@@ -7,8 +7,7 @@ To add a new test:
 2. Add a test method that calls _assert_objective(test_case).
 """
 import unittest
-import pandas as pd
-import pypsa
+from copy import deepcopy
 
 from src.case_creation.main import Cases
 from src.configs.config import FBMCConfig
@@ -17,11 +16,53 @@ from src.enums import BaseCaseStrategy
 from tests.workflow_test_case import FBMCWorkflowTestCase, run_workflow_test
 
 
+# Keep test defaults explicit so tests do not implicitly depend on FBMCConfig internals.
+EXPLICIT_TEST_CONFIG_DEFAULTS = {
+    "reliability_margin_factor": 0.0,
+    "min_ram": 0.0,
+    "cne_setting": "utilization_threshold",
+    "line_usage_threshold": 0.2,
+    "cne_list": None,
+    "cne_reference_case_flows": BaseCaseStrategy.NODAL_OPTIMUM,
+    "security_constraint_bodf_size_threshold": 0.2,
+    "gsk_method": "CURRENT_GENERATION",
+    "gsk_kwargs": {
+        "ADJUSTABLE_CAP": {
+            "adjustable_carriers": ("CCGT", "coal", "lignite", "OCGT", "oil"),
+        },
+        "ITERATIVE_UNCERTAINTY": {
+            "uncertain_carriers": ("offshore-wind", "onshore-wind"),
+            "num_scenarios": 100,
+            "gen_variation_std_dev": 0.5,
+            "load_variation_std_dev": 0.5,
+        },
+        "ITERATIVE_FBMC": {
+            "uncertain_carriers": ("offshore-wind", "onshore-wind"),
+            "num_scenarios": 100,
+            "max_gsk_iterations": 5,
+            "initial_gsk_method": "BUS_P",
+            "gen_variation_std_dev": 0.5,
+            "load_variation_std_dev": 0.5,
+        },
+        "MERIT_ORDER": {
+            "standard_deviation": 5,
+        },
+        "BUS_P": {},
+    },
+    "base_case_strategy": BaseCaseStrategy.ZERO_FLOWS,
+    "marginal_cost_load_shedding": 1e5,
+    "add_security_constraints": False,
+    "advanced_hybrid_coupling_flag": True,
+    "run_redispatch": True,
+    "security_constrained_redispatch": False,
+    "deviation_factor_redispatch": 0.9,
+}
+
+
 def _make_config(**kwargs) -> FBMCConfig:
-    config = FBMCConfig()
-    for key, value in kwargs.items():
-        setattr(config, key, value)
-    return config
+    explicit_values = deepcopy(EXPLICIT_TEST_CONFIG_DEFAULTS)
+    explicit_values.update(kwargs)
+    return FBMCConfig(**explicit_values)
 
 
 class TestFBMCWorkflow(unittest.TestCase):
@@ -64,58 +105,58 @@ class TestFBMCWorkflow(unittest.TestCase):
     #         case_name=Cases.LINEAR,
     #     )
 
-    #     test_case = FBMCWorkflowTestCase(
-    #         case_name=Cases.LINEAR,
-    #         zonal_net=zonal_net,
-    #         nodal_net=nodal_net,
-    #         gsk=gsk,
-    #         gsk_strategy=GSKStrategy.P_NOM,
-    #         base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
-    #         advanced_hybrid_coupling_flag=False,
-    #         expected_objective=4800,  
-    #         expected_rd_objective=100.,  
-    #     )
-    #     self._assert_objective(test_case)
+        # test_case = FBMCWorkflowTestCase(
+        #     case_name=Cases.LINEAR,
+        #     zonal_net=zonal_net,
+        #     nodal_net=nodal_net,
+        #     gsk=gsk,
+        #     gsk_strategy=GSKStrategy.P_NOM,
+        #     base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
+        #     advanced_hybrid_coupling_flag=False,
+        #     expected_objective=4800,  
+        #     expected_rd_objective=100.,  
+        # )
+        # self._assert_objective(test_case)
 
-    # def test_three_node_redispatch(self):
-    #     from main import input_getter
-    #     zonal_net, nodal_net, gsk_dict = input_getter(
-    #         case_name=Cases.THREE_NODE_REDISPATCH,
-    #     )
-    #     test_case = FBMCWorkflowTestCase(
-    #         case_name=Cases.THREE_NODE_REDISPATCH,
-    #         gsk=gsk_dict,
-    #         zonal_net=zonal_net,
-    #         nodal_net=nodal_net,
-    #         base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
-    #         advanced_hybrid_coupling_flag=False,
-    #         config=_make_config(run_redispatch=True),
-    #         expected_objective=3600,  
-    #         expected_rd_objective=6300,  
-    #     )
-    #     self._assert_objective(test_case)
+    def test_three_node_redispatch(self):
+        from main import input_getter
+        zonal_net, nodal_net, gsk_dict = input_getter(
+            case_name=Cases.THREE_NODE_REDISPATCH,
+        )
+        test_case = FBMCWorkflowTestCase(
+            case_name=Cases.THREE_NODE_REDISPATCH,
+            gsk=gsk_dict,
+            zonal_net=zonal_net,
+            nodal_net=nodal_net,
+            base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
+            advanced_hybrid_coupling_flag=False,
+            config=_make_config(run_redispatch=True),
+            expected_objective=3600,  
+            expected_rd_objective=6300,  
+        )
+        self._assert_objective(test_case)
 
-    # def test_three_node_redispatch_with_storage(self):
-    #     from main import input_getter
-    #     zonal_net, nodal_net, gsk_dict = input_getter(
-    #         case_name=Cases.THREE_NODE_REDISPATCH,
-    #     )
-    #     nodal_net.add("StorageUnit", "Storage", bus="A1", p_nom=1, max_hours=2)
-    #     nodal_net.loads_t.p_set.loc['1', 'load_A1'] *= 0.5
-    #     zonal_net.add("StorageUnit", "Storage", bus="A", p_nom=1, max_hours=2)  
-    #     zonal_net.loads_t.p_set.loc['1', 'load_A1'] *= 0.5
-    #     test_case = FBMCWorkflowTestCase(
-    #         case_name='Three Node Redispatch with Storage',
-    #         gsk=gsk_dict,
-    #         zonal_net=zonal_net,
-    #         nodal_net=nodal_net,
-    #         base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
-    #         advanced_hybrid_coupling_flag=False,
-    #         config=_make_config(run_redispatch=True),
-    #         expected_objective=2700,  
-    #         expected_rd_objective=3750.0,  
-    #     )
-    #     self._assert_objective(test_case)
+    def test_three_node_redispatch_with_storage(self):
+        from main import input_getter
+        zonal_net, nodal_net, gsk_dict = input_getter(
+            case_name=Cases.THREE_NODE_REDISPATCH,
+        )
+        nodal_net.add("StorageUnit", "Storage", bus="A1", p_nom=1, max_hours=2)
+        nodal_net.loads_t.p_set.loc['1', 'load_A1'] *= 0.5
+        zonal_net.add("StorageUnit", "Storage", bus="A", p_nom=1, max_hours=2)  
+        zonal_net.loads_t.p_set.loc['1', 'load_A1'] *= 0.5
+        test_case = FBMCWorkflowTestCase(
+            case_name='Three Node Redispatch with Storage',
+            gsk=gsk_dict,
+            zonal_net=zonal_net,
+            nodal_net=nodal_net,
+            base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
+            advanced_hybrid_coupling_flag=False,
+            config=_make_config(run_redispatch=True),
+            expected_objective=2700,  
+            expected_rd_objective=3750.0,  
+        )
+        self._assert_objective(test_case)
 
     def test_three_node_redispatch_with_storage_redispatching(self):
         """A case in which storage is being used in DA but gets adapted in redispatch. 
