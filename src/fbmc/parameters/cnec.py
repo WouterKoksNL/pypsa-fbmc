@@ -11,6 +11,12 @@ from .bridge_branches import find_bridges_sub_network
 
 logging.basicConfig(level=logging.INFO)
 
+def cnecs_from_combinatorial_cne_and_outages(cnes: list, outages: list) -> pd.MultiIndex:
+    """Create a MultiIndex of (cne, outage) pairs for all combinations of cnes and outages, excluding pairs where cne == outage."""
+    cnecs = [(cne, outage) for cne in cnes for outage in outages if cne != outage]
+    cnecs = pd.MultiIndex.from_tuples(cnecs, names=['branch', 'outage'])
+    return cnecs
+
 def cnec_router(
         sub_network: pypsa.SubNetwork,
         config: FBMCConfig = FBMCConfig(),
@@ -22,7 +28,7 @@ def cnec_router(
     if config.cne_setting == 'all':
         cnes = sub_network.branches().index.droplevel(0).tolist()  # All lines and transformers
         outages = list(set(cnes) - set(bridge_branches))  # Remove bridges from CNEs
-        cnecs = [(cne, outage) for cne in cnes for outage in outages if cne != outage]
+        cnecs = cnecs_from_combinatorial_cne_and_outages(cnes, outages)
     elif config.cne_setting == 'manual':
         # cnes = config.cne_list
         raise NotImplementedError('Manual CNE selection not implemented yet.')
@@ -35,12 +41,12 @@ def cnec_router(
             line_capacity,
             line_usage_threshold = config.line_usage_threshold
             )
-        
+        outages = list(set(cnes) - set(bridge_branches))  # Remove bridges from CNEs
+        cnecs = cnecs_from_combinatorial_cne_and_outages(cnes, outages)
     else:
         raise ValueError(f'cnec_setting {config.cnec_setting} not recognized. Choices are "all", "manual" or "utilization_threshold".')
     
     if config.add_security_constraints:
-        cnecs = pd.MultiIndex.from_tuples(cnecs, names=['branch', 'outage'])
         return cnecs
 
     cnes = pd.Index(cnes, name='cnec')
