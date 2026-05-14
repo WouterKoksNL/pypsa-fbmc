@@ -27,7 +27,7 @@ from src.fbmc.parameters.gsk import (
     calculate_generation_difference,
     process_generation_difference
 )
-from src.fbmc.config import FBMCConfig
+from src.configs.config import FBMCConfig
 
 
 class TestGskAdjustableCap(unittest.TestCase):

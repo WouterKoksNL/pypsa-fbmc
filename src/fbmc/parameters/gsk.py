@@ -12,7 +12,7 @@ from .helpers import (
     silence_output,
 )
 
-from ..config import FBMCConfig
+from ...configs.config import FBMCConfig
 from ...enums import GSKStrategy
 
 

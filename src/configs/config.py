@@ -1,7 +1,8 @@
 """FBMC configuration parameters."""
 
-from dataclasses import dataclass
-from .parameters.base_case import BaseCaseStrategy
+from dataclasses import dataclass, field
+from typing import Any
+from src.enums import BaseCaseStrategy
 
 
 
@@ -25,7 +26,7 @@ class FBMCConfig:
     
     # use the GSKStrategy class 
     gsk_method: str = 'CURRENT_GENERATION'
-    gsk_kwargs = {
+    gsk_kwargs: dict[str, dict[str, Any]] = field(default_factory=lambda: {
         'ADJUSTABLE_CAP': {
             "adjustable_carriers": ("CCGT", 'coal', 'lignite', 'OCGT', 'oil'),
         },
@@ -47,18 +48,18 @@ class FBMCConfig:
             "standard_deviation": 5,
         },
         'BUS_P': {},
-    }
+    })
     
 
-    base_case_strategy: BaseCaseStrategy = BaseCaseStrategy.SECURITY_CONSTRAINED_NODAL_OPTIMUM
+    base_case_strategy: BaseCaseStrategy = BaseCaseStrategy.ZERO_FLOWS
     marginal_cost_load_shedding: float = 1e5
     
 
-    add_security_constraints: bool = True
+    add_security_constraints: bool = False
     
 
     advanced_hybrid_coupling_flag: bool = True
 
     run_redispatch: bool = True
-    security_constrained_redispatch: bool = True
+    security_constrained_redispatch: bool = False
     deviation_factor_redispatch: float = 0.9

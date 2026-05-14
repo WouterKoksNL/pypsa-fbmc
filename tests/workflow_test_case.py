@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 import pypsa 
 
 from src.case_creation.main import Cases
-from src.fbmc.config import FBMCConfig
+from src.configs.config import FBMCConfig
 from src.fbmc.parameters.base_case import BaseCaseStrategy
 from src.fbmc.parameters.gsk import GSKStrategy
 from src.fbmc.parameters.types import FBMCWorkflowResult
