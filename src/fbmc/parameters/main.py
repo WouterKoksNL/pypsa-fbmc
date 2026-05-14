@@ -47,7 +47,14 @@ def calculate_fbmc_parameters_subnet(
     cnecs = cnec_router(sub_network, config, cne_reference_case_flows=cne_reference_case_flows)
 
     if config.add_security_constraints:
-        nodal_ptdf, base_flows_subnet = apply_security_param_changes(sub_network, cnecs, nodal_ptdf, base_flows_subnet, bodf_size_threshold=config.security_constraint_bodf_size_threshold)
+        nodal_ptdf, base_flows_subnet = apply_security_param_changes(
+            sub_network,
+            cnecs,
+            nodal_ptdf,
+            base_flows_subnet,
+            bodf_size_threshold=config.security_constraint_bodf_size_threshold,
+            bodf_columnwise_matrix_size_limit=config.security_constraint_bodf_columnwise_matrix_size_limit,
+        )
 
         cnecs = nodal_ptdf.index  # Update CNECs to match the potentially reduced set in apply_security_param_changes
 

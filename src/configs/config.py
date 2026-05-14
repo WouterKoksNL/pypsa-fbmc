@@ -17,6 +17,7 @@ class FBMCConfig:
     cne_list: list[str] = None
     cne_reference_case_flows: BaseCaseStrategy = BaseCaseStrategy.NODAL_OPTIMUM
     security_constraint_bodf_size_threshold: float = 0.2
+    security_constraint_bodf_columnwise_matrix_size_limit: int = 5_000_000
 
     # GSK Method options:
     # "ADJUSTABLE_CAP" - Share of Adjustable Capacity

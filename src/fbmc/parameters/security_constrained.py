@@ -5,17 +5,21 @@ import numpy as np
 from src.fbmc.parameters.ptdf import get_subnetwork_bodf, calculate_zonal_ptdf
 
 
+BODF_COLUMNWISE_MATRIX_SIZE_LIMIT = 5_000_000
+
+
 def apply_security_param_changes(
         sub_network: pypsa.SubNetwork, 
         cnecs: pd.MultiIndex, 
         nodal_ptdf: pd.DataFrame, 
         base_flows: pd.DataFrame,
         bodf_size_threshold: float,
+        bodf_columnwise_matrix_size_limit: int = BODF_COLUMNWISE_MATRIX_SIZE_LIMIT,
         ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Apply security constraint parameter changes to nodal PTDF and base flows.""" 
     bodf = get_subnetwork_bodf(sub_network, cnecs, bodf_size_threshold)
-    nodal_ptdf_outaged = apply_bodf(nodal_ptdf, bodf)
-    base_flows_outaged = apply_bodf(base_flows.T, bodf).T
+    nodal_ptdf_outaged = apply_bodf(nodal_ptdf, bodf, matrix_size_limit=bodf_columnwise_matrix_size_limit)
+    base_flows_outaged = apply_bodf(base_flows.T, bodf, matrix_size_limit=bodf_columnwise_matrix_size_limit).T
     return nodal_ptdf_outaged, base_flows_outaged
 
 
@@ -49,11 +53,46 @@ def calc_bodf_cnec_values(BODF: pd.DataFrame, cnecs: pd.MultiIndex) -> pd.Series
     return bodf_cnec_values
     # return pd.Series(bodf_cnec_values, index=cnecs, name='BODF_value')
 
-def apply_bodf(df: pd.DataFrame, bodf: pd.DataFrame) -> pd.DataFrame:
+def _should_use_columnwise_bodf(
+        df: pd.DataFrame,
+        bodf: pd.Series,
+        matrix_size_limit: int | None,
+        ) -> bool:
+    """Select a RAM-saving path when the intermediate matrix would be large."""
+    if matrix_size_limit is None:
+        return False
+    estimated_elements = bodf.shape[0] * df.shape[1]
+    return estimated_elements > matrix_size_limit
+
+
+def apply_bodf_columnwise(df: pd.DataFrame, bodf: pd.Series) -> pd.DataFrame:
+    """Apply BODF one column at a time to lower peak RAM usage."""
+    cnec_branches = bodf.index.get_level_values(0)
+    outage_branches = bodf.index.get_level_values(1)
+
+    result_df = df.reindex(cnec_branches).copy()
+    bodf_values = bodf.to_numpy()
+
+    for column in result_df.columns:
+        outage_contribution = df[column].reindex(outage_branches).to_numpy() * bodf_values
+        result_df[column] = result_df[column].to_numpy() + outage_contribution
+
+    result_df.index = bodf.index
+    return result_df
+
+
+def apply_bodf(
+        df: pd.DataFrame,
+        bodf: pd.Series,
+        matrix_size_limit: int | None = BODF_COLUMNWISE_MATRIX_SIZE_LIMIT,
+        ) -> pd.DataFrame:
     """Assumes df has index branches.
     Applies outage scenarios defined by the BODF. 
     Returns a new df with index as (line, outage) pairs and columns the same as the input df, containing the adjusted flows for each outage scenario.
     """
+
+    if _should_use_columnwise_bodf(df, bodf, matrix_size_limit):
+        return apply_bodf_columnwise(df, bodf)
 
     outage_term = (df.loc[bodf.index.get_level_values(1)].T * bodf.values).T
     outage_term.index = bodf.index.get_level_values(0)

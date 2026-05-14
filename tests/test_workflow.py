@@ -25,6 +25,7 @@ EXPLICIT_TEST_CONFIG_DEFAULTS = {
     "cne_list": None,
     "cne_reference_case_flows": BaseCaseStrategy.NODAL_OPTIMUM,
     "security_constraint_bodf_size_threshold": 0.2,
+    "security_constraint_bodf_columnwise_matrix_size_limit": 5_000_000,
     "gsk_method": "CURRENT_GENERATION",
     "gsk_kwargs": {
         "ADJUSTABLE_CAP": {
