@@ -14,6 +14,7 @@ class FBMCConfig:
     cne_setting: str = "utilization_threshold"  
     line_usage_threshold: float = 0.2
     cne_list: list[str] = None
+    cne_reference_case_flows: BaseCaseStrategy = BaseCaseStrategy.NODAL_OPTIMUM
     security_constraint_bodf_size_threshold: float = 0.2
 
     # GSK Method options:

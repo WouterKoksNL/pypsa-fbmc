@@ -7,9 +7,33 @@ import logging
 import pypsa
 
 from src.fbmc.config import FBMCConfig
+from src.fbmc.parameters.base_case import get_base_flows, prepare_base_case
+
 from .bridge_branches import find_bridges_sub_network
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+def define_cne_reference_case_flows(basecase_nodal_network, config):
+    """Define the reference flows in case CNE setting is 
+    config.cne_setting == 'utilization_threshold'. 
+    In this case, config.cne_reference_case_flows must be set.
+    In case config.cne_reference_case_flows is equal to config.base_case_strategy,
+    return None since the base case flows will be used as reference flows for CNE selection.
+    In case config.cne_reference_case_flows != config.base_case_strategy, prepare the reference case according to config.cne_reference_case_flows and return the flows of that case.
+    """
+    if config.cne_setting != 'utilization_threshold':
+        return None
+    
+    if config.cne_reference_case_flows == config.base_case_strategy:
+        return None
+    
+    reference_case = prepare_base_case(
+        basecase_nodal_network.copy(), 
+        strategy=config.cne_reference_case_flows, 
+        base_case_kwargs={'marginal_cost_load_shedding': config.marginal_cost_load_shedding}
+    )
+    reference_case_flows = get_base_flows(reference_case)
+    return reference_case_flows
 
 def cnecs_from_combinatorial_cne_and_outages(cnes: list, outages: list) -> pd.MultiIndex:
     """Create a MultiIndex of (cne, outage) pairs for all combinations of cnes and outages, excluding pairs where cne == outage."""
@@ -33,8 +57,8 @@ def cnec_router(
         # cnes = config.cne_list
         raise NotImplementedError('Manual CNE selection not implemented yet.')
     elif config.cne_setting == 'utilization_threshold':
-        base_case_flows = kwargs.get('base_case_flows')
-        max_absolute_flow = base_case_flows.abs().max()
+        cne_reference_case_flows = kwargs['cne_reference_case_flows']
+        max_absolute_flow = cne_reference_case_flows.abs().max()
         line_capacity = sub_network.branches().s_nom.droplevel(0)
         cnes = _determine_cnes_threshold(
             max_absolute_flow,
