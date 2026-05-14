@@ -21,8 +21,8 @@ def do_lpf_contingency_check(
         branch_outages = sn_params.cnecs.get_level_values('outage').unique()
 
         lpf_result = nodal_net.lpf_contingency(snapshots=nodal_net.snapshots[0], branch_outages=branch_outages)
-        no_overload = (lpf_result.abs().max(axis=1).droplevel(0).loc[branches] <= nodal_net.lines.s_nom.loc[branches] + 1e-5).all().all()
-        if not no_overload:
+        overload = (lpf_result.abs().max(axis=1).droplevel(0).loc[branches] > nodal_net.lines.s_nom.loc[branches] + 1e-5).all().all()
+        if overload:
             breakpoint()
             raise ValueError("N-1 overloads detected using zonal dispatch.")
     return 
