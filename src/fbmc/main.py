@@ -130,7 +130,9 @@ def remove_original_constraints_loop(
     for name, sub_network_df in basecase_nodal_network.sub_networks.iterrows():
         sub_network = sub_network_df.obj
         if sub_network.buses_i().size >= 3:
-            remove_original_constraints_by_bus(zonal_net, sub_network.buses().zone_name.unique())
+            zones = sub_network.buses().zone_name.unique()
+            zonal_buses = zonal_net.buses.index[zonal_net.buses.index.isin(zones)]
+            remove_original_constraints_by_bus(zonal_net, zonal_buses)
     return
 
 
