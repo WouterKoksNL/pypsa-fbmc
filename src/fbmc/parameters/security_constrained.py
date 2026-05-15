@@ -1,4 +1,4 @@
-import pypsa
+from PyPSA import pypsa
 import pandas as pd
 import numpy as np
 

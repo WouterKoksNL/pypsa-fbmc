@@ -1,5 +1,5 @@
 import pandas as pd
-import pypsa
+from PyPSA import pypsa
 
 
 def extract_model_results(net: pypsa.Network):

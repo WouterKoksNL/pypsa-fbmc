@@ -1,5 +1,5 @@
 import logging
-import pypsa
+from PyPSA import pypsa
 
 logging.basicConfig(level=logging.INFO)
 

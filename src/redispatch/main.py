@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 import pandas as pd
-import pypsa
+from PyPSA import pypsa
 from typing import Sequence
 from linopy import Model, LinearExpression
 import xarray as xr

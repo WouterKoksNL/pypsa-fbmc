@@ -1,5 +1,5 @@
 import numpy as np
-import pypsa
+from PyPSA import pypsa
 
 from .network_conversion import nodal_to_zonal, nodal_to_zonal_nocopy, copy_net
 

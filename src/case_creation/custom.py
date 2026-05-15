@@ -1,4 +1,4 @@
-import pypsa
+from PyPSA import pypsa
 from src.paths import get_case_input_dir
 
 

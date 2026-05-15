@@ -1,4 +1,4 @@
-import pypsa
+from PyPSA import pypsa
 import pickle
 from enum import Enum 
 

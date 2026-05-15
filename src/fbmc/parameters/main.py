@@ -1,4 +1,4 @@
-import pypsa
+from PyPSA import pypsa
 import pandas as pd
 from typing import Any
 
@@ -84,6 +84,7 @@ def calculate_fbmc_parameters_subnet(
             p_inflow_bus1 = link_p0.T.groupby(link_bus1_zone).sum().reindex(index=sub_network.buses().zone_name.unique(), fill_value=0.0).T
             p_link = p_inflow_bus0 + p_inflow_bus1
             base_net_positions_subnet += p_link
+
 
     z_ptdf_dict = {
         snapshot: calculate_zonal_ptdf(nodal_ptdf, gsk_snapshot, cnecs)

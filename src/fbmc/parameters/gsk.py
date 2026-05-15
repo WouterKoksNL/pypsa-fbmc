@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import pypsa
+from PyPSA import pypsa
 from scipy.stats import norm, halfnorm
 
 from .helpers import (

@@ -1,5 +1,5 @@
 import pandas as pd
-import pypsa
+from PyPSA import pypsa
 from .bridge_branches import find_bridges_network
 from ...enums import BaseCaseStrategy
 

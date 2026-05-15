@@ -3,7 +3,7 @@ import numpy as np
 import xarray as xr
 from typing import Any
 from dataclasses import dataclass
-import pypsa
+from PyPSA import pypsa
 
 class SubnetFBMCParameters:
     def __init__(

@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 import numpy as np
-import pypsa
+from PyPSA import pypsa
 import os
 import sys
 from unittest.mock import patch, MagicMock

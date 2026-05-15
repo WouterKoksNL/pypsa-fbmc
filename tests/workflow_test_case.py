@@ -3,7 +3,7 @@ Defines FBMCWorkflowTestCase — a dataclass describing a full workflow test sce
 and run_workflow_test, which executes the scenario and returns the objective value.
 """
 from dataclasses import dataclass, field
-import pypsa 
+from PyPSA import pypsa 
 
 from src.case_creation.main import Cases
 from src.configs.config import FBMCConfig
