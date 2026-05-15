@@ -43,7 +43,7 @@ def input_getter(zonal_net: pypsa.Network = None, nodal_net: pypsa.Network = Non
         logger.info(f"Running case: {case_name}")
         nodal_net: pypsa.Network = case_data['nodal_net']
         zonal_net: pypsa.Network = case_data['zonal_net']
-        gsk = case_data.get('gsk_dict', None)
+        gsk: dict[pd.Timestamp, pd.DataFrame] | None = case_data.get('gsk_dict', None)
     # if only one is none, raise an error
     if nodal_net is not None and zonal_net is None:
         from src.case_creation.network_conversion import nodal_to_zonal
@@ -165,7 +165,7 @@ if __name__ == "__main__":
         case_name=Cases.PYPSA_EUR_UA, 
         gsk_strategy=GSKStrategy.P_NOM,
         base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
-        advanced_hybrid_coupling_flag=True,
+        advanced_hybrid_coupling_flag=False,
         load_case_flag=False,
         case_kwargs={
             'snapshot_i_range': slice(0, 3),
