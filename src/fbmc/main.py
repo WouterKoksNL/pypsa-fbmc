@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO)
 
 def _create_model_without_meshed_split(network: pypsa.Network) -> None:
     """Create PyPSA model without separate meshed/weakly-meshed nodal balance."""
-    from PyPSA.pypsa.optimization import optimize as optimize_module
+    from pypsa.optimization import optimize as optimize_module
 
     original_get_meshed = optimize_module.get_strongly_meshed_buses
 
