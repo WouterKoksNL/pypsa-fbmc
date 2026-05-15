@@ -9,22 +9,66 @@ from typing import Optional
 
 
 def copy_net(oldnet, time_dependent_attrs={}):
+    """
+    Use only default columns to prevent issues when a pypsa net of a different version is used. 
+    Do retain buses.country as a non-default attribute since its used for zone_name.
+
+    Args:
+        oldnet (_type_): _description_
+        time_dependent_attrs (dict, optional): _description_. Defaults to {}.
+
+    Returns:
+        _type_: _description_
+    """
     net = pypsa.Network()
      # --- Copy static components ---
-    net.add('Bus', oldnet.buses.index, **oldnet.buses)
-    net.add('Line', oldnet.lines.index, **oldnet.lines)
-    net.add('Transformer', oldnet.transformers.index, **oldnet.transformers)
-    net.add('StorageUnit', oldnet.storage_units.index, **oldnet.storage_units)
-    net.add('Link', oldnet.links.index, **oldnet.links)
-    net.add('Generator', oldnet.generators.index, **oldnet.generators)
-    net.add('Load', oldnet.loads.index, **oldnet.loads)
-    net.add('Carrier', oldnet.carriers.index, **oldnet.carriers)
+    bus_data_to_transfer = oldnet.buses.loc[:, oldnet.buses.columns.isin(pypsa.Network().buses.columns)]
+    line_data_to_transfer = oldnet.lines.loc[:, oldnet.lines.columns.isin(pypsa.Network().lines.columns)]
+    transformer_data_to_transfer = oldnet.transformers.loc[:, oldnet.transformers.columns.isin(pypsa.Network().transformers.columns)]
+    storage_unit_data_to_transfer = oldnet.storage_units.loc[:, oldnet.storage_units.columns.isin(pypsa.Network().storage_units.columns)]
+    link_data_to_transfer = oldnet.links.loc[:, oldnet.links.columns.isin(pypsa.Network().links.columns)]
+    generator_data_to_transfer = oldnet.generators.loc[:, oldnet.generators.columns.isin(pypsa.Network().generators.columns)]
+    load_data_to_transfer = oldnet.loads.loc[:, oldnet.loads.columns.isin(pypsa.Network().loads.columns)]
+    carrier_data_to_transfer = oldnet.carriers.loc[:, oldnet.carriers.columns.isin(pypsa.Network().carriers.columns)]
+
+    if 'country' in oldnet.buses.columns:
+        bus_data_to_transfer.loc[:, 'country'] = oldnet.buses['country']
+
+    if "sub_network" in oldnet.buses.columns:
+        bus_data_to_transfer = bus_data_to_transfer.drop(columns=["sub_network"])
+        line_data_to_transfer = line_data_to_transfer.drop(columns=["sub_network"])
+        transformer_data_to_transfer = transformer_data_to_transfer.drop(columns=["sub_network"])
+        
+
+    net.add('Bus', oldnet.buses.index, **bus_data_to_transfer)
+    net.add('Line', oldnet.lines.index, **line_data_to_transfer)
+    net.add('Transformer', oldnet.transformers.index, **transformer_data_to_transfer)
+    net.add('StorageUnit', oldnet.storage_units.index, **storage_unit_data_to_transfer)
+    net.add('Link', oldnet.links.index, **link_data_to_transfer)
+    net.add('Generator', oldnet.generators.index, **generator_data_to_transfer)
+    net.add('Load', oldnet.loads.index, **load_data_to_transfer)
+    net.add('Carrier', oldnet.carriers.index, **carrier_data_to_transfer)
     net.set_snapshots(oldnet.snapshots)
 
-    for attr_name in time_dependent_attrs:
-        for attr in time_dependent_attrs[attr_name]:
-            if not oldnet.__getattribute__(attr_name)[attr].empty:
-                net.__getattribute__(attr_name)[attr] = oldnet.__getattribute__(attr_name)[attr].copy()
+    if not time_dependent_attrs:
+        # copy all time-dependent attributes if none specified
+        comp_list = ['generators_t', 'loads_t', 'storage_units_t', 'links_t', 'lines_t', 'transformers_t']
+        for comp in comp_list:
+            if hasattr(oldnet, comp):
+                old_attr = getattr(oldnet, comp)
+                new_attr = getattr(net, comp)
+                for attr_name in old_attr:
+                    if not old_attr[attr_name].empty:
+                        old_df = old_attr[attr_name]
+                        cols = old_df.columns
+                        new_attr[attr_name].loc[:, cols] = old_df.values
+    else:
+        for attr_name in time_dependent_attrs:
+            
+            for attr in time_dependent_attrs[attr_name]:
+                df = oldnet.__getattribute__(attr_name)[attr]
+                if not df.empty:
+                    net.__getattribute__(attr_name)[attr].loc[:, df.columns] = df.values
 
     return net
 
@@ -43,9 +87,8 @@ def nodal_to_zonal(n, bus_zone_map: pd.Series, interzonal_cap_factor: float=0.7,
     if bus_zone_map.isna().any():
         raise ValueError(f"Some buses do not have a zone assigned: {bus_zone_map[bus_zone_map.isna()]}")
 
-
-     # Remove the model if it exists to avoid issues during copying
-     # Try-except needed because hasattr(n, 'model') raises an error if model not created. 
+    # Remove the model if it exists to avoid issues during copying
+    # Try-except needed because hasattr(n, 'model') raises an error if model not created. 
     try:
         if hasattr(n, 'model'):
             del(n.model) 
@@ -53,7 +96,7 @@ def nodal_to_zonal(n, bus_zone_map: pd.Series, interzonal_cap_factor: float=0.7,
         pass
 
     # Copy the original nodal network
-    zonal_net = n.copy()
+    zonal_net = copy_net(n)
 
     # Store original mapping from nodal bus -> zone
 
@@ -68,6 +111,7 @@ def nodal_to_zonal(n, bus_zone_map: pd.Series, interzonal_cap_factor: float=0.7,
     for zone_name, buses_zone in n.buses.groupby(bus_zone_map):
         x_zone, y_zone= np.mean(buses_zone.x), np.mean(buses_zone.y)
         zonal_net.add("Bus", zone_name, x=x_zone, y=y_zone) 
+
     zonal_net.buses.index.name = "Bus"
 
     # Remove all original nodal buses (i.e. sub-zonal nodes) 
