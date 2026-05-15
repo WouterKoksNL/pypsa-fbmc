@@ -1,5 +1,5 @@
 
-from PyPSA import pypsa
+import pypsa
 
 
 def remove_zero_capacity_branches(net: pypsa.Network):

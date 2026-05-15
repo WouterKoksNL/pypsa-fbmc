@@ -3,7 +3,7 @@ Functions for converting between nodal and zonal network representations.
 """
 
 import pandas as pd
-from PyPSA import pypsa
+import pypsa
 import numpy as np
 from typing import Optional
 

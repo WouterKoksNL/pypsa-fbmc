@@ -1,7 +1,7 @@
 from src.case_creation.network_conversion import nodal_to_zonal
 from src.paths import get_case_input_dir
 import sys
-from PyPSA import pypsa
+import pypsa
 
 # get argv
 case_name = sys.argv[1]

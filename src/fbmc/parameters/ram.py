@@ -1,5 +1,5 @@
 import pandas as pd
-from PyPSA import pypsa
+import pypsa
 import xarray as xr
 from typing import Any 
 

@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import xarray as xr
-from PyPSA import pypsa
+import pypsa
 import sys
 import io
 import contextlib

@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import networkx as nx
 import logging
-from PyPSA import pypsa
+import pypsa
 
 from src.configs.config import FBMCConfig
 from src.fbmc.parameters.base_case import get_base_flows, prepare_base_case

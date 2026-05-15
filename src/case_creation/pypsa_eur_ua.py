@@ -1,7 +1,7 @@
 
 
 
-from PyPSA import pypsa
+import pypsa
 from src.paths import get_case_input_dir
 from .network_conversion import copy_net, nodal_to_zonal
 

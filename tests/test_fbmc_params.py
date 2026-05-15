@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 import numpy as np
-from PyPSA import pypsa
+import pypsa
 import src.fbmc.pos_neg_method.main as fbmc_main
 import src.fbmc.parameters.cnec as cne_params
 import src.fbmc.parameters as fbmc_params

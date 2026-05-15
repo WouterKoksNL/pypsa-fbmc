@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 import numpy as np
-from PyPSA import pypsa
+import pypsa
 
 import src.fbmc.parameters.ram as fbmc_flow
 

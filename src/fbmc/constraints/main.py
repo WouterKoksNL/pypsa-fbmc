@@ -2,7 +2,7 @@
 Add the FBMC constraints to the network
 """
 
-from PyPSA import pypsa
+import pypsa
 import pandas as pd
 import xarray as xr
 from copy import deepcopy

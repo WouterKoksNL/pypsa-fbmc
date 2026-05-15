@@ -5,7 +5,7 @@ Created on Mon Mar 17 13:01:07 2025
 @author: ameldekok
 """
 
-from PyPSA import pypsa
+import pypsa
 import pandas as pd
 import logging
 import linopy as lp 

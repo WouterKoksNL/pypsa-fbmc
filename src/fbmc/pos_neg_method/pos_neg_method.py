@@ -5,7 +5,7 @@ Created on Mon Mar 17 13:01:07 2025
 @author: wouterko
 """
 
-from PyPSA import pypsa
+import pypsa
 import pandas as pd
 from scipy.stats import norm
 from scipy.stats import halfnorm

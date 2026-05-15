@@ -1,4 +1,4 @@
-from PyPSA import pypsa
+import pypsa
 import pandas as pd
 
 from src.types import SubnetFBMCParameters, DispatchResults

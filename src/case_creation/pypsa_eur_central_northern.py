@@ -1,4 +1,4 @@
-from PyPSA import pypsa
+import pypsa
 import pandas as pd
 from .network_conversion import copy_net, nodal_to_zonal
 from src.paths import get_unprocessed_input_networks_dir

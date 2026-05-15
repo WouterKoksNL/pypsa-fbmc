@@ -2,7 +2,7 @@
 import unittest
 import pandas as pd
 import numpy as np
-from PyPSA import pypsa
+import pypsa
 from src.fbmc.parameters.security_constrained import add_security_constraints
 from src.case_creation.network_conversion import nodal_to_zonal
 

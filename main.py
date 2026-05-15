@@ -1,4 +1,4 @@
-from PyPSA import pypsa
+import pypsa
 import numpy as np
 import pandas as pd
 from logging import Logger 
