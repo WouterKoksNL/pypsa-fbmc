@@ -21,6 +21,22 @@ from .parameters.base_case import calc_base_net_positions, get_base_flows
 logging.basicConfig(level=logging.INFO)
 
 
+def _create_model_without_meshed_split(network: pypsa.Network) -> None:
+    """Create PyPSA model without separate meshed/weakly-meshed nodal balance."""
+    from PyPSA.pypsa.optimization import optimize as optimize_module
+
+    original_get_meshed = optimize_module.get_strongly_meshed_buses
+
+    def _no_meshed_buses(n: pypsa.Network, threshold: int = 45) -> pd.Index:
+        return pd.Index([], name=n.buses.index.name)
+
+    optimize_module.get_strongly_meshed_buses = _no_meshed_buses
+    try:
+        network.optimize.create_model()
+    finally:
+        optimize_module.get_strongly_meshed_buses = original_get_meshed
+
+
 def calculate_fbmc_parameters(
         basecase_nodal_network: pypsa.Network, 
         gsk: pd.DataFrame | dict[pd.Timestamp, pd.DataFrame], 
@@ -58,7 +74,7 @@ def calculate_fbmc_parameters(
     
     if basecase_nodal_network.sub_networks.empty:
         basecase_nodal_network.determine_network_topology()
-
+    logging.info(f"Determined {len(basecase_nodal_network.sub_networks)} sub-networks in the base case nodal network.")
     fbmc_parameters: dict[str, SubnetFBMCParameters] = {}
 
     net_positions_base_case = calc_base_net_positions(basecase_nodal_network)
@@ -101,7 +117,7 @@ def setup_fbmc_model(
     fbmc_parameters = calculate_fbmc_parameters(basecase_nodal_network, gsk, config=config)
 
     if zonal_net.model is None:
-        zonal_net.optimize.create_model()
+        _create_model_without_meshed_split(zonal_net)
     create_zonal_generation(zonal_net)
     remove_original_constraints_loop(zonal_net, basecase_nodal_network)
     add_fbmc_constraints_loop(zonal_net, fbmc_parameters, config.advanced_hybrid_coupling_flag)
