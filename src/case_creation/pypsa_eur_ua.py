@@ -41,7 +41,7 @@ def create_pypsa_eur_ua_case(keep_countries=None, drop_countries=None):
             'loads_t': ['p_set'],
             'storage_units_t': ['inflow']
         })  # since we used another pypsa version for creating the case, we need to copy the net to get it to the current version. 
-    breakpoint()
+
     # if zonal exists, use it, otherwise create it from the nodal net
     if (case_dir / "zonal.nc").exists():
         zonal_net = pypsa.Network(case_dir / "zonal.nc")
