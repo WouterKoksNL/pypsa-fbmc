@@ -1,13 +1,13 @@
 import pypsa
-import numpy as np
 import pandas as pd
+from pathlib import Path
 from logging import Logger 
+from typing import Any
 
 from src.fbmc.parameters.bridge_branches import find_bridges_network
 from src.configs.config import FBMCConfig, coerce_enum_value, merge_config_overrides
 from src.fbmc.main import setup_fbmc_model, solve
 from src.fbmc.parameters.base_case import prepare_base_case, BaseCaseStrategy
-from src.post_processing.market_prices import calculate_zonal_prices
 
 from src.case_creation.main import create_case, Cases
 
@@ -18,7 +18,9 @@ from src.types import DispatchResults, FBMCWorkflowResult
 from src.fbmc.parameters.gsk import calculate_gsk, GSKStrategy
 from src.fbmc.input_checks import do_input_checks
 
+from src.post_processing.main import process_results
 from src.paths import get_case_results_dir
+
 
 def input_getter(zonal_net: pypsa.Network = None, nodal_net: pypsa.Network = None, case_name: Cases = Cases.BASIC_THREE_NODE, load_case_flag: bool = False, save_case_flag: bool = False, **case_kwargs):
     """_summary_
@@ -39,6 +41,7 @@ def input_getter(zonal_net: pypsa.Network = None, nodal_net: pypsa.Network = Non
         dict: GSK dict (if exists, else None)
     """
     logger = Logger(__name__)
+    gsk = None
     if zonal_net is None and nodal_net is None:
         case_data = create_case(case_name, load_case_flag=load_case_flag, save_case_flag=save_case_flag, **case_kwargs)
         logger.info(f"Running case: {case_name}")
@@ -78,10 +81,7 @@ def fbmc_workflow(
     
     config = merge_config_overrides(config, config_overrides)
 
-    if base_case_strategy is not None:
-        config.base_case_strategy = base_case_strategy
-    if advanced_hybrid_coupling_flag is not None:
-        config.advanced_hybrid_coupling_flag = advanced_hybrid_coupling_flag
+    do_input_checks(nodal_net, zonal_net, gsk)
 
     logger.info(f"Preparing base case with strategy {config.base_case_strategy}")
     base_case = prepare_base_case(
@@ -139,18 +139,16 @@ def main(
     zonal_net, nodal_net, gsk = input_getter(zonal_net, nodal_net, case_name, load_case_flag, save_case_flag, **case_kwargs)
     zonal_net.remove("Link", zonal_net.links.index)  # remove links if they exist, as they will be re-created in the FBMC model setup based on the base case flows
     nodal_net.remove("Link", nodal_net.links.index)  # remove links if they exist, as they will be re-created in the FBMC model setup based on the base case flows
-    result = fbmc_workflow(
+    fbmc_result = fbmc_workflow(
             zonal_net=zonal_net,
             nodal_net=nodal_net,
             gsk=gsk,
-            gsk_strategy=gsk_strategy,
-            base_case_strategy=base_case_strategy,
-            advanced_hybrid_coupling_flag=advanced_hybrid_coupling_flag,
-            config=config
             config=config,
         )
+    rd_cost = None
+    rd_dispatch = fbmc_result.dispatch_results
     if config.run_redispatch:
-        bridges = find_bridges_network(nodal_net)
+        find_bridges_network(nodal_net)
         # outaged_lines = nodal_net.lines.index.difference(bridges)
         redispatch_kwargs = {
             'with_security_constraints': config.security_constrained_redispatch,
@@ -158,7 +156,7 @@ def main(
             'rt_deviation_factor': config.deviation_factor_redispatch,  # allow 20% deviation from base case flows in redispatch
         }
 
-        nodal_net, cost, result.dispatch_results = redispatch_workflow(nodal_net, result.dispatch_results, **redispatch_kwargs)
+        nodal_net, rd_cost, rd_dispatch = redispatch_workflow(nodal_net, fbmc_result.dispatch_results, **redispatch_kwargs)
   
     # do_lpf_contingency_check(nodal_net, rd_dispatch, fbmc_result.fbmc_parameters)
     
@@ -171,7 +169,8 @@ def main(
     )
 
     
-    return result.zonal_net.model.objective.value
+
+    return fbmc_result.zonal_net.model.objective.value
     
 
 if __name__ == "__main__":
