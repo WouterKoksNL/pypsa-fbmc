@@ -20,6 +20,7 @@ def _load_paths_config() -> dict[str, str]:
     return {
         "input_networks_dir": paths_config.get("input_networks_dir"),
         "unprocessed_input_networks_dir": paths_config.get("unprocessed_input_networks_dir"),
+        "results_dir": paths_config.get("results_dir"),
     }
 
 
@@ -47,3 +48,11 @@ def get_unprocessed_input_networks_dir() -> Path:
 
 def get_case_input_dir(case_name: str) -> Path:
     return get_input_networks_dir() / case_name
+
+def get_results_dir() -> Path:
+    file_path = _load_paths_config().get("results_dir")
+    env_path = os.getenv("PYPSA_FBMC_RESULTS_DIR")
+    return _resolve_from_project(env_path or file_path, PROJECT_ROOT / "results") 
+
+def get_case_results_dir(case_name: str) -> Path:
+    return get_results_dir() / case_name

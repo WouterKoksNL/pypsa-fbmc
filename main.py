@@ -18,6 +18,7 @@ from src.types import DispatchResults, FBMCWorkflowResult
 from src.fbmc.parameters.gsk import calculate_gsk, GSKStrategy
 from src.fbmc.input_checks import do_input_checks
 
+from src.paths import get_case_results_dir
 
 def input_getter(zonal_net: pypsa.Network = None, nodal_net: pypsa.Network = None, case_name: Cases = Cases.BASIC_THREE_NODE, load_case_flag: bool = False, save_case_flag: bool = False, **case_kwargs):
     """_summary_
