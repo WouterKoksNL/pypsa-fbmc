@@ -160,7 +160,16 @@ def main(
 
         nodal_net, cost, result.dispatch_results = redispatch_workflow(nodal_net, result.dispatch_results, **redispatch_kwargs)
   
-    do_lpf_contingency_check(nodal_net, result.dispatch_results, result.fbmc_parameters)
+    # do_lpf_contingency_check(nodal_net, rd_dispatch, fbmc_result.fbmc_parameters)
+    
+    
+    process_results(
+        fbmc_results=fbmc_result,
+        rd_cost=rd_cost,
+        rd_dispatch=rd_dispatch,
+        save_path=Path(get_case_results_dir(case_name.value)) / f"n-0_RM_{str(config.reliability_margin_factor)}",
+    )
+
     
     return result.zonal_net.model.objective.value
     
