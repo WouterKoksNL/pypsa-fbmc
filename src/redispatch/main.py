@@ -49,10 +49,15 @@ def run_redispatch(
     flex_gens_up = select_flex_gens(nodal_net, adjustable_carriers)
     add_load_shedding(nodal_net, load_shedding_cost=load_shedding_cost)
 
+
+    nodal_net.buses.loc[:, 'sub_network'] = pd.NA
+    nodal_net.lines.loc[:, 'sub_network'] = pd.NA
+    nodal_net.transformers.loc[:, 'sub_network'] = pd.NA
     _set_nodal_objective(nodal_net, dispatch_results, flex_gens_up, rt_deviation_factor)
     if with_security_constraints:
         add_security_constraints(nodal_net, branch_outages)
     logging.info("Solving redispatch optimization...")
+    
     nodal_net.optimize.solve_model(solver_name="gurobi")
     cost = get_costs(nodal_net)
 
