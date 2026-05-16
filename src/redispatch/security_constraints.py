@@ -5,7 +5,7 @@ import xarray as xr
 from src.fbmc.parameters.bridge_branches import find_bridges_sub_network
 
 def add_security_constraints(nodal_net, branch_outages):
-        if not hasattr(nodal_net, "model"):
+        if nodal_net.model is None:
              nodal_net.optimize.create_model()
         m = nodal_net.model
         for sub_network in nodal_net.sub_networks.obj:
