@@ -76,7 +76,9 @@ def add_load_shedding(net: pypsa.Network, load_shedding_cost: float) -> None:
 def _set_nodal_objective(net, dispatch_results, redispatchable_gen_inds, rt_deviation_factor, load_shedding_cost=1000) -> None:
     '''Create a model instance and alter its objective from the standard PyPSA formulation.'''
     if net.model is None:
-        model = net.optimize.create_model()
+        # model = net.optimize.create_model()
+        from src.fbmc.main import _create_model_without_meshed_split
+        model = _create_model_without_meshed_split(net)
     else:
         model = net.model
 
