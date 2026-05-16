@@ -124,10 +124,9 @@ def main(
         save_case_flag: bool = False,
         case_kwargs: dict[str, Any] | None = None,
         case_name=Cases.BASIC_THREE_NODE,
-        gsk_strategy: None | GSKStrategy = None,
-        base_case_strategy: None | BaseCaseStrategy = None,
-        advanced_hybrid_coupling_flag: None | bool = None,
-        config = FBMCConfig()
+        config: FBMCConfig | None = None,
+        config_overrides: dict[str, Any] | None = None,
+        **config_kwargs: Any,
 ):
     case_kwargs = case_kwargs or {}
     merged_config_overrides = {
@@ -147,6 +146,7 @@ def main(
             base_case_strategy=base_case_strategy,
             advanced_hybrid_coupling_flag=advanced_hybrid_coupling_flag,
             config=config
+            config=config,
         )
     if config.run_redispatch:
         bridges = find_bridges_network(nodal_net)
