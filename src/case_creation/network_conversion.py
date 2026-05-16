@@ -8,14 +8,14 @@ import numpy as np
 from typing import Optional
 
 
-def copy_net(oldnet, time_dependent_attrs={}):
+def copy_net(oldnet, time_dependent_attrs=None):
     """
     Use only default columns to prevent issues when a pypsa net of a different version is used. 
     Do retain buses.country as a non-default attribute since its used for zone_name.
 
     Args:
         oldnet (_type_): _description_
-        time_dependent_attrs (dict, optional): _description_. Defaults to {}.
+        time_dependent_attrs (dict, optional): _description_. Defaults to None.
 
     Returns:
         _type_: _description_
@@ -38,7 +38,17 @@ def copy_net(oldnet, time_dependent_attrs={}):
         bus_data_to_transfer = bus_data_to_transfer.drop(columns=["sub_network"])
         line_data_to_transfer = line_data_to_transfer.drop(columns=["sub_network"])
         transformer_data_to_transfer = transformer_data_to_transfer.drop(columns=["sub_network"])
-        
+    
+    assert pypsa.Network().buses.index.name == bus_data_to_transfer.index.name, "Bus index name does not match"
+    assert pypsa.Network().lines.index.name == line_data_to_transfer.index.name, "Line index name does not match"
+    assert pypsa.Network().transformers.index.name == transformer_data_to_transfer.index.name, "Transformer index name does not match"
+    assert pypsa.Network().storage_units.index.name == storage_unit_data_to_transfer.index.name, "Storage unit index name does not match"
+    assert pypsa.Network().links.index.name == link_data_to_transfer.index.name, "Link index name does not match"
+    assert pypsa.Network().generators.index.name == generator_data_to_transfer.index.name, "Generator index name does not match"
+    assert pypsa.Network().loads.index.name == load_data_to_transfer.index.name, "Load index name does not match"
+    assert pypsa.Network().carriers.index.name == carrier_data_to_transfer.index.name,  "Carrier index name does not match"
+
+     # --- Add components to new network ---
 
     net.add('Bus', oldnet.buses.index, **bus_data_to_transfer)
     net.add('Line', oldnet.lines.index, **line_data_to_transfer)
@@ -48,9 +58,11 @@ def copy_net(oldnet, time_dependent_attrs={}):
     net.add('Generator', oldnet.generators.index, **generator_data_to_transfer)
     net.add('Load', oldnet.loads.index, **load_data_to_transfer)
     net.add('Carrier', oldnet.carriers.index, **carrier_data_to_transfer)
+
+
     net.set_snapshots(oldnet.snapshots)
 
-    if not time_dependent_attrs:
+    if time_dependent_attrs is None:
         # copy all time-dependent attributes if none specified
         comp_list = ['generators_t', 'loads_t', 'storage_units_t', 'links_t', 'lines_t', 'transformers_t']
         for comp in comp_list:
