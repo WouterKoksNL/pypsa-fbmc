@@ -200,3 +200,5 @@ cython_debug/
 .claude/worktrees/elastic-feistel-1a2e81/
 .claude/worktrees/elated-ride-696653/
 .claude/worktrees/epic-chaum-6d44de/
+/.vscode
+/output_results
