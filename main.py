@@ -4,7 +4,7 @@ import pandas as pd
 from logging import Logger 
 
 from src.fbmc.parameters.bridge_branches import find_bridges_network
-from src.configs.config import FBMCConfig
+from src.configs.config import FBMCConfig, coerce_enum_value, merge_config_overrides
 from src.fbmc.main import setup_fbmc_model, solve
 from src.fbmc.parameters.base_case import prepare_base_case, BaseCaseStrategy
 from src.post_processing.market_prices import calculate_zonal_prices
@@ -69,15 +69,13 @@ def fbmc_workflow(
         zonal_net: pypsa.Network = None,
         nodal_net: pypsa.Network = None,
         gsk: dict = None,
-        gsk_strategy: None | GSKStrategy = None,
-        base_case_strategy: None | BaseCaseStrategy = None,
-        advanced_hybrid_coupling_flag: None | bool = None,
-        config = FBMCConfig()
-         ) -> FBMCWorkflowResult:
+        config: FBMCConfig | None = None,
+        config_overrides: dict[str, Any] | None = None,
+    ) -> FBMCWorkflowResult:
     
     logger = Logger(__name__)
     
-    do_input_checks(nodal_net, zonal_net, gsk)
+    config = merge_config_overrides(config, config_overrides)
 
     if base_case_strategy is not None:
         config.base_case_strategy = base_case_strategy
@@ -87,13 +85,13 @@ def fbmc_workflow(
     logger.info(f"Preparing base case with strategy {config.base_case_strategy}")
     base_case = prepare_base_case(
         nodal_net, 
-        strategy=base_case_strategy, 
+        strategy=config.base_case_strategy,
         base_case_kwargs={'marginal_cost_load_shedding': config.marginal_cost_load_shedding}
         )
     logger.info("Base case prepared.")
 
     if gsk is None:
-        gsk_strategy = gsk_strategy if gsk_strategy is not None else config.gsk_method
+        gsk_strategy = coerce_enum_value(config.gsk_method, GSKStrategy, "gsk_method")
         gsk = calculate_gsk(base_case, gsk_strategy, config)
 
     if nodal_net.sub_networks.empty:
@@ -124,14 +122,20 @@ def main(
         nodal_net: pypsa.Network = None,
         load_case_flag: bool = False,
         save_case_flag: bool = False,
-        case_kwargs={},
+        case_kwargs: dict[str, Any] | None = None,
         case_name=Cases.BASIC_THREE_NODE,
         gsk_strategy: None | GSKStrategy = None,
         base_case_strategy: None | BaseCaseStrategy = None,
         advanced_hybrid_coupling_flag: None | bool = None,
         config = FBMCConfig()
 ):
-    
+    case_kwargs = case_kwargs or {}
+    merged_config_overrides = {
+        **(config_overrides or {}),
+        **config_kwargs,
+    }
+    config = merge_config_overrides(config, merged_config_overrides)
+
     zonal_net, nodal_net, gsk = input_getter(zonal_net, nodal_net, case_name, load_case_flag, save_case_flag, **case_kwargs)
     zonal_net.remove("Link", zonal_net.links.index)  # remove links if they exist, as they will be re-created in the FBMC model setup based on the base case flows
     nodal_net.remove("Link", nodal_net.links.index)  # remove links if they exist, as they will be re-created in the FBMC model setup based on the base case flows
@@ -161,15 +165,22 @@ def main(
     
 
 if __name__ == "__main__":
-    obj3 = main(
-        case_name=Cases.PYPSA_EUR_UA, 
-        gsk_strategy=GSKStrategy.P_NOM,
-        base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
-        advanced_hybrid_coupling_flag=False,
-        load_case_flag=False,
-        case_kwargs={
-            'snapshot_i_range': slice(0, 3),
-            # 'drop_countries': ["UA"]
+    rm_list = [0.0, 0.1, 0.2, 0.3]
+    for r in rm_list:
+        obj3 = main(
+            case_name=Cases.PYPSA_EUR_UA, 
+            config_overrides={
+                "gsk_method": GSKStrategy.P_NOM,
+                "base_case_strategy": BaseCaseStrategy.ZERO_FLOWS,
+                "advanced_hybrid_coupling_flag": False,
+                "reliability_margin_factor": r,
+                "add_security_constraints": False,
+                "security_constrained_redispatch": False,
+            },
+            load_case_flag=False,
+            case_kwargs={
+                'snapshot_i_range': slice(0, 24),
+                # 'drop_countries': ["UA"]
             },
         )  
 
