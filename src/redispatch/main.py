@@ -22,7 +22,7 @@ def run_redispatch(
         nodal_net:pypsa.Network, 
         dispatch_results:DispatchResults, 
         adjustable_carriers=None, 
-        with_security_constraints=True, 
+        security_constrained_flag=True, 
         branch_outages=None,
         load_shedding_cost=1000,
         rt_deviation_factor=1.0,
@@ -34,7 +34,7 @@ def run_redispatch(
         nodal_net (pypsa.Network): _description_
         dispatch_results (DispatchResults): _description_
         adjustable_carriers (_type_, optional): _description_. Defaults to None.
-        with_security_constraints (bool, optional): _description_. Defaults to True.
+        security_constrained_flag (bool, optional): _description_. Defaults to True.
         branch_outages (_type_, optional): _description_. Defaults to None.
         load_shedding_cost (int, optional): _description_. Defaults to 1000.
 
@@ -58,7 +58,7 @@ def run_redispatch(
     nodal_net.lines.loc[:, 'sub_network'] = pd.NA
     nodal_net.transformers.loc[:, 'sub_network'] = pd.NA
     _set_nodal_objective(nodal_net, dispatch_results, flex_gens_up, rt_deviation_factor)
-    if with_security_constraints:
+    if security_constrained_flag:
         add_security_constraints(nodal_net, branch_outages)
     logging.info("Solving redispatch optimization...")
     
