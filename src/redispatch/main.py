@@ -61,7 +61,13 @@ def run_redispatch(
     nodal_net.buses.loc[:, 'sub_network'] = pd.NA
     nodal_net.lines.loc[:, 'sub_network'] = pd.NA
     nodal_net.transformers.loc[:, 'sub_network'] = pd.NA
-    _set_nodal_objective(nodal_net, dispatch_results, flex_gens_up, rt_deviation_factor)
+    _set_nodal_objective(
+        nodal_net,
+        dispatch_results,
+        flex_gens_up,
+        rt_deviation_factor,
+        create_model_kwargs=create_model_kwargs,
+    )
     if security_constrained_flag:
         add_security_constraints(nodal_net, branch_outages)
     logging.info("Solving redispatch optimization...")
