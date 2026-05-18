@@ -56,9 +56,11 @@ def _default_config_values() -> dict[str, Any]:
         "marginal_cost_load_shedding": 1e5,
         "add_security_constraints": True,
         "advanced_hybrid_coupling_flag": False,
+        "fbmc_solver_kwargs": {"solver_name": "gurobi"},
         "run_redispatch": True,
         "security_constrained_redispatch": False,
         "deviation_factor_redispatch": 0.9,
+        "rd_solver_kwargs": {"solver_name": "gurobi"},
     }
 
 
@@ -221,9 +223,12 @@ class FBMCConfig:
 
     advanced_hybrid_coupling_flag: bool = False
 
+    fbmc_solver_kwargs: dict[str, Any] = field(default_factory=lambda: {"solver_name": "gurobi"})
+
     run_redispatch: bool = True
     security_constrained_redispatch: bool = False
     deviation_factor_redispatch: float = 0.9
+    rd_solver_kwargs: dict[str, Any] = field(default_factory=lambda: {"solver_name": "gurobi"})
 
     @classmethod
     def from_base_yaml(cls, path: Path = BASE_CONFIG_PATH) -> "FBMCConfig":

@@ -25,7 +25,8 @@ def run_redispatch(
         with_security_constraints=True, 
         branch_outages=None,
         load_shedding_cost=1000,
-        rt_deviation_factor=1.0
+        rt_deviation_factor=1.0,
+        solver_kwargs: dict[str, str] = None
         ) -> pypsa.Network:
     """Run redispatch either with or without N-1 security constraint. 
 
@@ -43,6 +44,9 @@ def run_redispatch(
     Returns:
         pypsa.Network: _description_
     """
+    if solver_kwargs is None:
+        solver_kwargs = {}
+
     if adjustable_carriers is None:
         adjustable_carriers = nodal_net.generators.carrier.unique()
 
@@ -58,7 +62,7 @@ def run_redispatch(
         add_security_constraints(nodal_net, branch_outages)
     logging.info("Solving redispatch optimization...")
     
-    nodal_net.optimize.solve_model(solver_name="gurobi")
+    nodal_net.optimize.solve_model(**solver_kwargs)
     cost = get_costs(nodal_net)
 
     if nodal_net.model.termination_condition != 'optimal':

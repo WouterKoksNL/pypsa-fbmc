@@ -187,6 +187,7 @@ def add_fbmc_constraints_loop(
 def solve(
         zonal_net: pypsa.Network, 
         advanced_hybrid_flag: bool = False,
+        solver_kwargs: dict[str, str] = None
         ) -> tuple[pypsa.Network, pd.DataFrame]:
     """
     Run the FBMC process on the given networks.
@@ -205,10 +206,11 @@ def solve(
     pypsa.Network
         The updated zonal network after FBMC.
     """
-
+    if solver_kwargs is None:
+        solver_kwargs = {}
 
     # Run the optimization and save the results to the nodal network
-    zonal_net.model.solve(solver_name="gurobi")
+    zonal_net.model.solve(**solver_kwargs)
     if zonal_net.model.termination_condition != 'optimal':
         raise ValueError("FBMC optimization did not solve to optimality.")
     extract_model_results(zonal_net)

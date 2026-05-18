@@ -57,11 +57,12 @@ def input_getter(zonal_net: pypsa.Network = None, nodal_net: pypsa.Network = Non
     return zonal_net, nodal_net, gsk
 
 
-def redispatch_workflow(nodal_net: pypsa.Network, dispatch_results: DispatchResults, **redispatch_kwargs: dict) -> tuple[pypsa.Network, float, DispatchResults]:
+def redispatch_workflow(nodal_net: pypsa.Network, dispatch_results: DispatchResults, rd_solver_kwargs: dict[str, str] = None, **redispatch_kwargs: dict) -> tuple[pypsa.Network, float, DispatchResults]:
 
     nodal_net, cost = run_redispatch(
         nodal_net, 
         dispatch_results=dispatch_results, 
+        solver_kwargs=rd_solver_kwargs,
         **redispatch_kwargs
     )
 
@@ -107,7 +108,7 @@ def fbmc_workflow(
     )
 
     logger.info("Solving FBMC model.")
-    zonal_net, net_positions = solve(zonal_net, advanced_hybrid_flag=config.advanced_hybrid_coupling_flag)
+    zonal_net, net_positions = solve(zonal_net, advanced_hybrid_flag=config.advanced_hybrid_coupling_flag, solver_kwargs=config.fbmc_solver_kwargs)
     dispatch_results = DispatchResults(zonal_net)
     return FBMCWorkflowResult(
         zonal_net=zonal_net,
@@ -156,7 +157,7 @@ def main(
             'rt_deviation_factor': config.deviation_factor_redispatch,  # allow 20% deviation from base case flows in redispatch
         }
 
-        nodal_net, rd_cost, rd_dispatch = redispatch_workflow(nodal_net, fbmc_result.dispatch_results, **redispatch_kwargs)
+        nodal_net, rd_cost, rd_dispatch = redispatch_workflow(nodal_net, fbmc_result.dispatch_results, rd_solver_kwargs=config.rd_solver_kwargs, **redispatch_kwargs)
   
     # do_lpf_contingency_check(nodal_net, rd_dispatch, fbmc_result.fbmc_parameters)
     

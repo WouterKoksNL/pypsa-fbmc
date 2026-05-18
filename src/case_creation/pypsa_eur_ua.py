@@ -2,6 +2,8 @@
 
 
 import pypsa
+import pandas as pd
+from pathlib import Path
 from src.paths import get_case_input_dir
 from .network_conversion import copy_net, nodal_to_zonal
 
@@ -19,6 +21,28 @@ def _remove_buses_and_connected_components(net: pypsa.Network, buses_to_remove):
     net.remove('Transformer', transformers_to_remove)
     # remove the buses
     net.remove('Bus', buses_to_remove)
+
+
+def _apply_unit_commitment_data(nodal_net: pypsa.Network) -> None:
+    """Apply per-carrier unit-commitment parameters to nodal generators."""
+    unit_commitment_path = Path(__file__).resolve().parent / "data" / "unit_commitment.csv"
+    uc_df = pd.read_csv(unit_commitment_path, index_col="attribute")
+
+    carrier_set = set(nodal_net.generators.carrier.astype(str))
+    available_carriers = [carrier for carrier in uc_df.columns if carrier in carrier_set]
+    if not available_carriers:
+        return
+
+    for carrier in available_carriers:
+        generator_mask = nodal_net.generators.carrier.astype(str) == carrier
+        if not generator_mask.any():
+            continue
+
+        # UC attributes only have an effect when committable is enabled.
+        nodal_net.generators.loc[generator_mask, "committable"] = True
+
+        for attribute, value in uc_df[carrier].items():
+            nodal_net.generators.loc[generator_mask, attribute] = value
 
 
 def create_pypsa_eur_ua_case(keep_countries=None, drop_countries=None):
@@ -43,6 +67,7 @@ def create_pypsa_eur_ua_case(keep_countries=None, drop_countries=None):
         })  # since we used another pypsa version for creating the case, we need to copy the net to get it to the current version. 
 
     # if zonal exists, use it, otherwise create it from the nodal net
+    _apply_unit_commitment_data(nodal_net)
     if (case_dir / "zonal.nc").exists():
         zonal_net = pypsa.Network(case_dir / "zonal.nc")
     else:

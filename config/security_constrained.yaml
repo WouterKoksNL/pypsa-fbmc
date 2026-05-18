@@ -5,7 +5,7 @@ cne_setting: all
 line_usage_threshold: 0.2
 cne_list: null
 cne_reference_case_flows: NODAL_OPTIMUM
-security_constraint_bodf_size_threshold: 0.2
+security_constraint_bodf_size_threshold: 0.05
 security_constraint_bodf_columnwise_matrix_size_limit: 5000000
 
 gsk_strategy: CURRENT_GENERATION
@@ -31,15 +31,9 @@ gsk_kwargs:
 base_case_strategy: ZERO_FLOWS
 marginal_cost_load_shedding: 100000.0
 
-add_security_constraints: false
+add_security_constraints: true
 advanced_hybrid_coupling_flag: false
-fbmc_solver_kwargs:
-  solver_name: gurobi
-  linearized_unit_commitment=true
 
 run_redispatch: true
-security_constrained_redispatch: false
+security_constrained_redispatch: true
 deviation_factor_redispatch: 0.9
-rd_solver_kwargs:
-  solver_name: gurobi
-  linearized_unit_commitment=true
