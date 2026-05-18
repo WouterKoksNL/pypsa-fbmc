@@ -27,7 +27,7 @@ from src.fbmc.parameters.gsk import (
     calculate_generation_difference,
     process_generation_difference
 )
-from src.configs.config import FBMCConfig
+from src.config import FBMCConfig
 
 
 class TestGskAdjustableCap(unittest.TestCase):
@@ -321,9 +321,9 @@ class TestCalculateGsk(unittest.TestCase):
         self.network.add("Generator", "gen3", bus="bus3", carrier="coal", p_nom=300)
         
         # Create config objects
-        self.hydro_config = FBMCConfig(gsk_method="ADJUSTABLE_CAP")
+        self.hydro_config = FBMCConfig(gsk_strategy="ADJUSTABLE_CAP")
         self.iterative_config = FBMCConfig(
-            gsk_method="ITERATIVE_UNCERTAINTY",
+            gsk_strategy="ITERATIVE_UNCERTAINTY",
             uncertain_carriers=["offshore-wind"],
             num_scenarios=2
         )
@@ -365,7 +365,7 @@ class TestCalculateGsk(unittest.TestCase):
 
     def test_calculate_gsk_unknown_method(self):
         """Test that calculate_gsk raises an error for unknown methods."""
-        invalid_config = FBMCConfig(gsk_method="UNKNOWN_METHOD")
+        invalid_config = FBMCConfig(gsk_strategy="UNKNOWN_METHOD")
         
         with self.assertRaises(ValueError) as context:
             calculate_gsk(self.network, invalid_config)
@@ -543,7 +543,7 @@ class TestGskCurrentGeneration(unittest.TestCase):
         network.generators_t.p = self.generators_t_p
         
         # Create GSK config
-        current_gen_config = FBMCConfig(gsk_method="CURRENT_GENERATION")
+        current_gen_config = FBMCConfig(gsk_strategy="CURRENT_GENERATION")
         
         # Calculate GSK with the calculate_gsk function
         gsk_result = calculate_gsk(network, current_gen_config)

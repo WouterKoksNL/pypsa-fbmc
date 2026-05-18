@@ -5,7 +5,7 @@ from logging import Logger
 from typing import Any
 
 from src.fbmc.parameters.bridge_branches import find_bridges_network
-from src.configs.config import FBMCConfig, coerce_enum_value, merge_config_overrides
+from src.config import FBMCConfig, coerce_enum_value, merge_config_overrides
 from src.fbmc.main import setup_fbmc_model, solve
 from src.fbmc.parameters.base_case import prepare_base_case, BaseCaseStrategy
 
@@ -92,7 +92,7 @@ def fbmc_workflow(
     logger.info("Base case prepared.")
 
     if gsk is None:
-        gsk_strategy = coerce_enum_value(config.gsk_method, GSKStrategy, "gsk_method")
+        gsk_strategy = coerce_enum_value(config.gsk_strategy, GSKStrategy, "gsk_strategy")
         gsk = calculate_gsk(base_case, gsk_strategy, config)
 
     if nodal_net.sub_networks.empty:
@@ -166,6 +166,7 @@ def main(
         rd_cost=rd_cost,
         rd_dispatch=rd_dispatch,
         save_path=Path(get_case_results_dir(case_name.value)) / f"n-0_RM_{str(config.reliability_margin_factor)}",
+        config=config,
     )
 
     
@@ -179,7 +180,7 @@ if __name__ == "__main__":
         obj3 = main(
             case_name=Cases.PYPSA_EUR_UA, 
             config_overrides={
-                "gsk_method": GSKStrategy.P_NOM,
+                "gsk_strategy": GSKStrategy.P_NOM,
                 "base_case_strategy": BaseCaseStrategy.ZERO_FLOWS,
                 "advanced_hybrid_coupling_flag": False,
                 "reliability_margin_factor": r,

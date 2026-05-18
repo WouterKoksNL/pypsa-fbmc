@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 import pypsa 
 
 from src.case_creation.main import Cases
-from src.configs.config import FBMCConfig
+from src.config import FBMCConfig
 from src.fbmc.parameters.base_case import BaseCaseStrategy
 from src.fbmc.parameters.gsk import GSKStrategy
 from src.types import FBMCWorkflowResult
@@ -45,10 +45,12 @@ def run_workflow_test(
         zonal_net=test_case.zonal_net,
         nodal_net=test_case.nodal_net,
         gsk=test_case.gsk,
-        gsk_strategy=test_case.gsk_strategy,
-        base_case_strategy=test_case.base_case_strategy,
-        advanced_hybrid_coupling_flag=test_case.advanced_hybrid_coupling_flag,
         config=test_case.config,
+        config_overrides={
+            "gsk_strategy": test_case.gsk_strategy,
+            "base_case_strategy": test_case.base_case_strategy,
+            "advanced_hybrid_coupling_flag": test_case.advanced_hybrid_coupling_flag,
+        }
     )
     redispatch_kwargs = {
         'with_security_constraints': test_case.config.security_constrained_redispatch, 

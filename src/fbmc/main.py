@@ -15,7 +15,7 @@ from ..types import SubnetFBMCParameters
 from .parameters.cnec import define_cne_reference_case_flows
 from .constraints.main import create_zonal_generation
 from .constraints.main import add_fbmc_constraints, remove_original_constraints, remove_original_constraints_by_bus
-from ..configs.config import FBMCConfig
+from ..config import FBMCConfig
 from .results_extraction import extract_model_results, get_net_positions
 from .parameters.base_case import calc_base_net_positions, get_base_flows
 logging.basicConfig(level=logging.INFO)

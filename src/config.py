@@ -3,10 +3,76 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import dataclass, field, fields
+from dataclasses import asdict, dataclass, field, fields
 from enum import Enum
+from pathlib import Path
 from typing import Any
+
+import yaml
+
 from src.enums import BaseCaseStrategy, GSKStrategy
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+BASE_CONFIG_PATH = PROJECT_ROOT / "config" / "base_config.yaml"
+
+
+def _default_config_values() -> dict[str, Any]:
+    """Built-in fallback defaults used if YAML is absent or incomplete."""
+    return {
+        "reliability_margin_factor": 0.0,
+        "min_ram": 0.0,
+        "cne_setting": "all",
+        "line_usage_threshold": 0.2,
+        "cne_list": None,
+        "cne_reference_case_flows": BaseCaseStrategy.NODAL_OPTIMUM,
+        "security_constraint_bodf_size_threshold": 0.2,
+        "security_constraint_bodf_columnwise_matrix_size_limit": 5_000_000,
+        "gsk_strategy": GSKStrategy.CURRENT_GENERATION,
+        "gsk_kwargs": {
+            "ADJUSTABLE_CAP": {
+                "adjustable_carriers": ("CCGT", "coal", "lignite", "OCGT", "oil"),
+            },
+            "ITERATIVE_UNCERTAINTY": {
+                "uncertain_carriers": ("offshore-wind", "onshore-wind"),
+                "num_scenarios": 100,
+                "gen_variation_std_dev": 0.5,
+                "load_variation_std_dev": 0.5,
+            },
+            "ITERATIVE_FBMC": {
+                "uncertain_carriers": ("offshore-wind", "onshore-wind"),
+                "num_scenarios": 100,
+                "max_gsk_iterations": 5,
+                "initial_gsk_strategy": "BUS_P",
+                "gen_variation_std_dev": 0.5,
+                "load_variation_std_dev": 0.5,
+            },
+            "MERIT_ORDER": {
+                "standard_deviation": 5,
+            },
+            "BUS_P": {},
+        },
+        "base_case_strategy": BaseCaseStrategy.ZERO_FLOWS,
+        "marginal_cost_load_shedding": 1e5,
+        "add_security_constraints": True,
+        "advanced_hybrid_coupling_flag": False,
+        "run_redispatch": True,
+        "security_constrained_redispatch": False,
+        "deviation_factor_redispatch": 0.9,
+    }
+
+
+def load_base_config_yaml(path: Path = BASE_CONFIG_PATH) -> dict[str, Any]:
+    """Load default config values from YAML and validate top-level keys."""
+    if not path.exists():
+        return {}
+    with open(path, "r", encoding="utf-8") as f:
+        loaded = yaml.safe_load(f)
+    if loaded is None:
+        return {}
+    if not isinstance(loaded, dict):
+        raise ValueError(f"Expected mapping in base config YAML, got: {type(loaded).__name__}.")
+    return loaded
 
 
 def merge_config_overrides(
@@ -72,7 +138,7 @@ def _normalize_config_enums_in_place(config_values: dict[str, Any]) -> None:
     enum_fields: dict[str, type[Enum]] = {
         "base_case_strategy": BaseCaseStrategy,
         "cne_reference_case_flows": BaseCaseStrategy,
-        "gsk_method": GSKStrategy,
+        "gsk_strategy": GSKStrategy,
     }
     for key, enum_type in enum_fields.items():
         if key in config_values and config_values[key] is not None:
@@ -83,6 +149,22 @@ def field_list(config_type: type["FBMCConfig"]):
     return fields(config_type)
 
 
+def _to_jsonable(value: Any) -> Any:
+    """Recursively convert config values into JSON-serializable primitives."""
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, dict):
+        return {key: _to_jsonable(inner_value) for key, inner_value in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_to_jsonable(inner_value) for inner_value in value]
+    return value
+
+
+def config_to_dict(config: "FBMCConfig") -> dict[str, Any]:
+    """Return a JSON-friendly representation of the config."""
+    return _to_jsonable(asdict(config))
+
+
 
 @dataclass
 class FBMCConfig:
@@ -90,7 +172,7 @@ class FBMCConfig:
     reliability_margin_factor: float = 0.0
     min_ram: float = 0.0
 
-    cne_setting: str = "all"  
+    cne_setting: str = "all"
     line_usage_threshold: float = 0.2
     cne_list: list[str] = None
     cne_reference_case_flows: BaseCaseStrategy = BaseCaseStrategy.NODAL_OPTIMUM
@@ -103,30 +185,30 @@ class FBMCConfig:
     # "ITERATIVE_UNCERTAINTY" - Iterative Uncertainty
     # "ITERATIVE_FBMC" - Iterative FBMC
     
-    # use the GSKStrategy class 
-    gsk_method: str = 'CURRENT_GENERATION'
+    # use the GSKStrategy class
+    gsk_strategy: str = "CURRENT_GENERATION"
     gsk_kwargs: dict[str, dict[str, Any]] = field(default_factory=lambda: {
-        'ADJUSTABLE_CAP': {
-            "adjustable_carriers": ("CCGT", 'coal', 'lignite', 'OCGT', 'oil'),
+        "ADJUSTABLE_CAP": {
+            "adjustable_carriers": ("CCGT", "coal", "lignite", "OCGT", "oil"),
         },
-        'ITERATIVE_UNCERTAINTY': {
+        "ITERATIVE_UNCERTAINTY": {
             "uncertain_carriers": ("offshore-wind", "onshore-wind"),
             "num_scenarios": 100,
             "gen_variation_std_dev": 0.5,
             "load_variation_std_dev": 0.5,
         },
-        'ITERATIVE_FBMC': {
+        "ITERATIVE_FBMC": {
             "uncertain_carriers": ("offshore-wind", "onshore-wind"),
             "num_scenarios": 100,
             "max_gsk_iterations": 5,
-            "initial_gsk_method": 'BUS_P',
+            "initial_gsk_strategy": "BUS_P",
             "gen_variation_std_dev": 0.5,
             "load_variation_std_dev": 0.5,
         },
-        'MERIT_ORDER': {
+        "MERIT_ORDER": {
             "standard_deviation": 5,
         },
-        'BUS_P': {},
+        "BUS_P": {},
     })
     
 
@@ -142,3 +224,27 @@ class FBMCConfig:
     run_redispatch: bool = True
     security_constrained_redispatch: bool = False
     deviation_factor_redispatch: float = 0.9
+
+    @classmethod
+    def from_base_yaml(cls, path: Path = BASE_CONFIG_PATH) -> "FBMCConfig":
+        """Construct config by overlaying base YAML on top of built-in defaults."""
+        merged_values = deepcopy(_default_config_values())
+        yaml_values = load_base_config_yaml(path)
+
+        valid_fields = {field.name for field in field_list(cls)}
+        unknown_fields = sorted(set(yaml_values) - valid_fields)
+        if unknown_fields:
+            raise ValueError(
+                "Unknown base config field(s): "
+                f"{', '.join(unknown_fields)}. "
+                f"Valid fields are: {', '.join(sorted(valid_fields))}."
+            )
+
+        for key, value in yaml_values.items():
+            if isinstance(value, dict) and isinstance(merged_values.get(key), dict):
+                merged_values[key] = _deep_merge_dicts(merged_values[key], value)
+            else:
+                merged_values[key] = value
+
+        _normalize_config_enums_in_place(merged_values)
+        return cls(**merged_values)

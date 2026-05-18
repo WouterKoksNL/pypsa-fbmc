@@ -13,7 +13,7 @@ class TestFBMCResults(unittest.TestCase):
     def mock_config(self):
         config = FBMCConfig()
         config.reliability_margin_factor = 0.0
-        config.gsk_method = GSKStrategy.ADJUSTABLE_CAP
+        config.gsk_strategy = GSKStrategy.ADJUSTABLE_CAP
         config.add_security_constraints = False
         return config
 
@@ -39,7 +39,7 @@ class TestFBMCResults(unittest.TestCase):
         config = FBMCConfig()
 
         config.reliability_margin_factor = 0.0
-        config.gsk_method = GSKStrategy.ADJUSTABLE_CAP
+        config.gsk_strategy = GSKStrategy.ADJUSTABLE_CAP
         zonal_net.loads_t.p_set = zonal_net.loads_t.p_set * (18/15)
 
         gsk = pd.DataFrame(0., index=zonal_net.buses.index, columns=nodal_net.buses.index)

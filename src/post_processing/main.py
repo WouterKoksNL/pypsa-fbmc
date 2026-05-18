@@ -2,6 +2,7 @@ from pathlib import Path
 import json
 from typing import Any
 
+from src.config import FBMCConfig, config_to_dict
 from src.types import FBMCWorkflowResult
 
 from .market_prices import calculate_zonal_prices
@@ -11,7 +12,8 @@ def process_results(
         fbmc_results: FBMCWorkflowResult, 
         rd_cost: float | None,
         rd_dispatch: Any,
-        save_path: Path
+    save_path: Path,
+    config: FBMCConfig | None = None,
     ) -> dict[str, Path]:
     """
     Save:
@@ -57,6 +59,11 @@ def process_results(
     summary_path = save_path / "summary.json"
     summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     outputs["summary"] = summary_path
+
+    if config is not None:
+        config_path = save_path / "config.json"
+        config_path.write_text(json.dumps(config_to_dict(config), indent=2), encoding="utf-8")
+        outputs["config"] = config_path
 
     if rd_dispatch is not None:
         if getattr(rd_dispatch, "generators_p", None) is not None:

@@ -12,7 +12,7 @@ from .helpers import (
     silence_output,
 )
 
-from ...configs.config import FBMCConfig
+from ...config import FBMCConfig
 from ...enums import GSKStrategy
 
 
@@ -274,7 +274,7 @@ def gsk_iterative_fbmc(
     max_gsk_iterations: int = 5,
     gen_variation_std_dev: float = 0.1,
     load_variation_std_dev: float = 0.1,
-    initial_gsk_method: str = "CURRENT_GENERATION"
+    initial_gsk_strategy: str = "CURRENT_GENERATION"
 ) -> dict[pd.Timestamp, pd.DataFrame]:
     """
     Calculate GSK using an iterative FBMC approach for multiple iterations.
@@ -303,7 +303,7 @@ def gsk_iterative_fbmc(
         Standard deviation for generator variation as fraction of nominal power
     load_variation_std_dev : float
         Standard deviation for load variation as fraction of nominal power
-    initial_gsk_method : str
+    initial_gsk_strategy : str
         Method to use for initial GSK calculation
         
     Returns
@@ -320,7 +320,7 @@ def gsk_iterative_fbmc(
         raise ValueError("Number of GSK iterations must be at least 1")
 
     # Get initial GSK
-    current_gsk = _get_initial_gsk(network, initial_gsk_method)
+    current_gsk = _get_initial_gsk(network, initial_gsk_strategy)
     
     # Prepare tracking arrays for GSK iterations
     all_gsks = [current_gsk]

@@ -10,7 +10,7 @@ import unittest
 from copy import deepcopy
 
 from src.case_creation.main import Cases
-from src.configs.config import FBMCConfig
+from src.config import FBMCConfig
 from src.enums import BaseCaseStrategy
 
 from tests.workflow_test_case import FBMCWorkflowTestCase, run_workflow_test
@@ -26,7 +26,7 @@ EXPLICIT_TEST_CONFIG_DEFAULTS = {
     "cne_reference_case_flows": BaseCaseStrategy.NODAL_OPTIMUM,
     "security_constraint_bodf_size_threshold": 0.2,
     "security_constraint_bodf_columnwise_matrix_size_limit": 5_000_000,
-    "gsk_method": "CURRENT_GENERATION",
+    "gsk_strategy": "CURRENT_GENERATION",
     "gsk_kwargs": {
         "ADJUSTABLE_CAP": {
             "adjustable_carriers": ("CCGT", "coal", "lignite", "OCGT", "oil"),
@@ -41,7 +41,7 @@ EXPLICIT_TEST_CONFIG_DEFAULTS = {
             "uncertain_carriers": ("offshore-wind", "onshore-wind"),
             "num_scenarios": 100,
             "max_gsk_iterations": 5,
-            "initial_gsk_method": "BUS_P",
+            "initial_gsk_strategy": "BUS_P",
             "gen_variation_std_dev": 0.5,
             "load_variation_std_dev": 0.5,
         },
