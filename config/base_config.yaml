@@ -33,13 +33,18 @@ marginal_cost_load_shedding: 100000.0
 
 add_security_constraints: false
 advanced_hybrid_coupling_flag: false
+fbmc_create_model_kwargs:
+  linearized_unit_commitment: true
 fbmc_solver_kwargs:
   solver_name: gurobi
-  linearized_unit_commitment=true
 
 run_redispatch: true
 security_constrained_redispatch: false
 deviation_factor_redispatch: 0.9
+rd_create_model_kwargs:
+  linearized_unit_commitment: true
 rd_solver_kwargs:
   solver_name: gurobi
-  linearized_unit_commitment=true
+
+use_unit_commitment: true
+unit_commitment_path: src/case_creation/data/unit_commitment.csv

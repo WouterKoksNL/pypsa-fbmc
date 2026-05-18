@@ -1,7 +1,7 @@
 import pypsa
 import pickle
 from enum import Enum 
-
+import logging
 
 
 from .scigrid_de import create_scigrid_case
@@ -19,7 +19,9 @@ from .custom import create_custom_case
 from src.case_creation.advanced_hybrid_check import create_advanced_hybrid_check
 from src.paths import get_case_input_dir
 from .utils import select_snapshot
+from .unit_commitment import apply_unit_commitment_data
 
+logging.basicConfig(level=logging.INFO)
 
 class Cases(Enum):
     SCIGRID_DE = 'scigrid-de'
@@ -59,7 +61,11 @@ def create_case(case, load_case_flag=True, save_case_flag=True, **kwargs):
 
     case_name = case.value + (f"-{kwargs.get('variation', '')}" if 'variation' in kwargs else '')
     snapshot_i_range = kwargs.get('snapshot_i_range', None)
+    use_unit_commitment = kwargs.get('use_unit_commitment', False)
+    unit_commitment_path = kwargs.get('unit_commitment_path', None)
     kwargs.pop('snapshot_i_range', None)
+    kwargs.pop('use_unit_commitment', None)
+    kwargs.pop('unit_commitment_path', None)
     if load_case_flag:
         output = load_case(case_name)
     else:
@@ -70,6 +76,18 @@ def create_case(case, load_case_flag=True, save_case_flag=True, **kwargs):
         select_snapshot(output['nodal_net'], snapshot_i_range)
         if 'gsk_dict' in output and output['gsk_dict'] is not None:
                 output['gsk_dict'] = {snapshot: output['gsk_dict'][snapshot] for snapshot in output['zonal_net'].snapshots}
+
+    if use_unit_commitment:
+        logging.info(f"Applying unit commitment data from {unit_commitment_path} to networks.")
+        apply_unit_commitment_data(
+            output['nodal_net'],
+            unit_commitment_path=unit_commitment_path,
+        )
+        apply_unit_commitment_data(
+            output['zonal_net'],
+            unit_commitment_path=unit_commitment_path,
+        )
+    
     if save_case_flag:
         save_case(case_name, output)
     return output
