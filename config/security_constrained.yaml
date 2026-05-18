@@ -8,7 +8,7 @@ cne_reference_case_flows: NODAL_OPTIMUM
 security_constraint_bodf_size_threshold: 0.05
 security_constraint_bodf_columnwise_matrix_size_limit: 5000000
 
-gsk_strategy: CURRENT_GENERATION
+gsk_strategy: P_NOM
 gsk_kwargs:
   ADJUSTABLE_CAP:
     adjustable_carriers: [CCGT, coal, lignite, OCGT, oil]
