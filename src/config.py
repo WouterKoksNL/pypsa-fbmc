@@ -235,6 +235,15 @@ class FBMCConfig:
     rd_create_model_kwargs: dict[str, Any] = field(default_factory=dict)
     rd_solver_kwargs: dict[str, Any] = field(default_factory=lambda: {"solver_name": "gurobi"})
 
+    use_unit_commitment: bool = True
+    unit_commitment_path: str = "src/case_creation/data/unit_commitment.csv"
+
+    def __str__(self) -> str:
+        """Return a readable multi-line view of the effective configuration."""
+        config_dump = yaml.safe_dump(
+            config_to_dict(self),
+            sort_keys=False,
+            default_flow_style=False,
         ).rstrip()
         return f"FBMCConfig:\n{config_dump}"
 

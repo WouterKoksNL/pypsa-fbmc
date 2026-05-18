@@ -189,10 +189,11 @@ def main(
     
 
 if __name__ == "__main__":
-    config_path = Path("configs/base_config.yaml")
-    config = FBMCConfig().from_base_yaml(config_path)
+    config_path = Path("config/base_config.yaml")
+    config = FBMCConfig.from_base_yaml(config_path)
     obj3 = main(
         case_name=Cases.PYPSA_EUR_UA, 
+        config=config,
         config_overrides={
             "gsk_strategy": GSKStrategy.P_NOM,
             "base_case_strategy": BaseCaseStrategy.ZERO_FLOWS,
