@@ -204,6 +204,8 @@ if __name__ == "__main__":
         load_case_flag=False,
         case_kwargs={
             'snapshot_i_range': slice(0, 2),
+            'use_unit_commitment': True,
+            'unit_commitment_path': "data/unit_commitment_halve_su_sd.csv",
             # 'drop_countries': ["UA"]
         },
     )  
