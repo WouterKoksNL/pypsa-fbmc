@@ -12,8 +12,8 @@ def process_results(
         fbmc_results: FBMCWorkflowResult, 
         rd_cost: float | None,
         rd_dispatch: Any,
-    save_path: Path,
-    config: FBMCConfig | None = None,
+        save_path: Path,
+        config: FBMCConfig | None = None,
     ) -> dict[str, Path]:
     """
     Save:
