@@ -21,9 +21,12 @@ from .parameters.base_case import calc_base_net_positions, get_base_flows
 logging.basicConfig(level=logging.INFO)
 
 
-def _create_model_without_meshed_split(network: pypsa.Network) -> lp.Model:
+def _create_model_without_meshed_split(network: pypsa.Network, create_model_kwargs: dict = None) -> lp.Model:
     """Create PyPSA model without separate meshed/weakly-meshed nodal balance."""
     from pypsa.optimization import optimize as optimize_module
+
+    if create_model_kwargs is None:
+        create_model_kwargs = {}
 
     original_get_meshed = optimize_module.get_strongly_meshed_buses
 
@@ -32,7 +35,7 @@ def _create_model_without_meshed_split(network: pypsa.Network) -> lp.Model:
 
     optimize_module.get_strongly_meshed_buses = _no_meshed_buses
 
-    model = network.optimize.create_model()
+    model = network.optimize.create_model(**create_model_kwargs)
     logging.info("Created optimization model without meshed split.")
 
     optimize_module.get_strongly_meshed_buses = original_get_meshed
@@ -120,7 +123,7 @@ def setup_fbmc_model(
     fbmc_parameters = calculate_fbmc_parameters(basecase_nodal_network, gsk, config=config)
 
     if zonal_net.model is None:
-        model = _create_model_without_meshed_split(zonal_net)
+        model = _create_model_without_meshed_split(zonal_net, create_model_kwargs=config.fbmc_create_model_kwargs)
 
     create_zonal_generation(zonal_net)
     remove_original_constraints_loop(zonal_net, basecase_nodal_network)

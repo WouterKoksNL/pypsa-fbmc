@@ -26,6 +26,7 @@ def run_redispatch(
         branch_outages=None,
         load_shedding_cost=1000,
         rt_deviation_factor=1.0,
+    create_model_kwargs: dict[str, str] = None,
         solver_kwargs: dict[str, str] = None
         ) -> pypsa.Network:
     """Run redispatch either with or without N-1 security constraint. 
@@ -46,6 +47,9 @@ def run_redispatch(
     """
     if solver_kwargs is None:
         solver_kwargs = {}
+
+    if create_model_kwargs is None:
+        create_model_kwargs = {}
 
     if adjustable_carriers is None:
         adjustable_carriers = nodal_net.generators.carrier.unique()
@@ -82,12 +86,19 @@ def add_load_shedding(net: pypsa.Network, load_shedding_cost: float) -> None:
 
 
 
-def _set_nodal_objective(net, dispatch_results, redispatchable_gen_inds, rt_deviation_factor, load_shedding_cost=1000) -> None:
+def _set_nodal_objective(
+        net,
+        dispatch_results,
+        redispatchable_gen_inds,
+        rt_deviation_factor,
+        load_shedding_cost=1000,
+        create_model_kwargs=None,
+    ) -> None:
     '''Create a model instance and alter its objective from the standard PyPSA formulation.'''
     if net.model is None:
         # model = net.optimize.create_model()
         from src.fbmc.main import _create_model_without_meshed_split
-        model = _create_model_without_meshed_split(net)
+        model = _create_model_without_meshed_split(net, create_model_kwargs=create_model_kwargs)
     else:
         model = net.model
 

@@ -57,11 +57,18 @@ def input_getter(zonal_net: pypsa.Network = None, nodal_net: pypsa.Network = Non
     return zonal_net, nodal_net, gsk
 
 
-def redispatch_workflow(nodal_net: pypsa.Network, dispatch_results: DispatchResults, rd_solver_kwargs: dict[str, str] = None, **redispatch_kwargs: dict) -> tuple[pypsa.Network, float, DispatchResults]:
+def redispatch_workflow(
+        nodal_net: pypsa.Network,
+        dispatch_results: DispatchResults,
+        rd_solver_kwargs: dict[str, str] = None,
+        rd_create_model_kwargs: dict[str, Any] = None,
+        **redispatch_kwargs: dict,
+    ) -> tuple[pypsa.Network, float, DispatchResults]:
 
     nodal_net, cost = run_redispatch(
         nodal_net, 
         dispatch_results=dispatch_results, 
+        create_model_kwargs=rd_create_model_kwargs,
         solver_kwargs=rd_solver_kwargs,
         **redispatch_kwargs
     )
@@ -152,12 +159,18 @@ def main(
         find_bridges_network(nodal_net)
         # outaged_lines = nodal_net.lines.index.difference(bridges)
         redispatch_kwargs = {
-            'with_security_constraints': config.security_constrained_redispatch,
+            'security_constrained_flag': config.security_constrained_redispatch,
             # 'branch_outages': outaged_lines,
             'rt_deviation_factor': config.deviation_factor_redispatch,  # allow 20% deviation from base case flows in redispatch
         }
 
-        nodal_net, rd_cost, rd_dispatch = redispatch_workflow(nodal_net, fbmc_result.dispatch_results, rd_solver_kwargs=config.rd_solver_kwargs, **redispatch_kwargs)
+        nodal_net, rd_cost, rd_dispatch = redispatch_workflow(
+            nodal_net,
+            fbmc_result.dispatch_results,
+            rd_solver_kwargs=config.rd_solver_kwargs,
+            rd_create_model_kwargs=config.rd_create_model_kwargs,
+            **redispatch_kwargs,
+        )
   
     # do_lpf_contingency_check(nodal_net, rd_dispatch, fbmc_result.fbmc_parameters)
     
