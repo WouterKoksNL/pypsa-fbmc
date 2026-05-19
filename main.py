@@ -116,6 +116,7 @@ def fbmc_workflow(
 
     logger.info("Solving FBMC model.")
     zonal_net, net_positions = solve(zonal_net, advanced_hybrid_flag=config.advanced_hybrid_coupling_flag, solver_kwargs=config.fbmc_solver_kwargs)
+    
     dispatch_results = DispatchResults(zonal_net)
     return FBMCWorkflowResult(
         zonal_net=zonal_net,
@@ -127,6 +128,7 @@ def fbmc_workflow(
 
 
 def main(
+        save_path: Path,
         zonal_net: pypsa.Network = None,
         nodal_net: pypsa.Network = None,
         load_case_flag: bool = False,
@@ -179,7 +181,7 @@ def main(
         fbmc_results=fbmc_result,
         rd_cost=rd_cost,
         rd_dispatch=rd_dispatch,
-        save_path=Path(get_case_results_dir(case_name.value)) / f"n-0_RM_{str(config.reliability_margin_factor)}",
+        save_path=save_path,
         config=config,
     )
 
@@ -191,7 +193,9 @@ def main(
 if __name__ == "__main__":
     config_path = Path("config/base_config.yaml")
     config = FBMCConfig.from_base_yaml(config_path)
+    save_path = Path(get_case_results_dir(Cases.PYPSA_EUR_UA.value)) # / f"n-0_RM_{str(config.reliability_margin_factor)}"
     obj3 = main(
+        save_path=save_path,
         case_name=Cases.PYPSA_EUR_UA, 
         config=config,
         config_overrides={
