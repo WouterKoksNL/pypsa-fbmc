@@ -66,6 +66,8 @@ def create_case(case, load_case_flag=True, save_case_flag=True, **kwargs):
     kwargs.pop('snapshot_i_range', None)
     kwargs.pop('use_unit_commitment', None)
     kwargs.pop('unit_commitment_path', None)
+    load_water_values = kwargs.pop('load_water_values', False)
+    water_values_path = kwargs.pop('water_values_path', None)
     if load_case_flag:
         output = load_case(case_name)
     else:
@@ -88,6 +90,19 @@ def create_case(case, load_case_flag=True, save_case_flag=True, **kwargs):
             unit_commitment_path=unit_commitment_path,
         )
     
+
+
+    # Optionally load water values if specified in case_kwargs
+
+    if load_water_values and water_values_path:
+        import pandas as pd
+        try:
+            water_values = pd.read_csv(water_values_path, index_col=0)
+            
+            logging.info(f"Loaded water values from {water_values_path}")
+        except Exception as e:
+            logging.warning(f"Failed to load water values from {water_values_path}: {e}")
+        breakpoint()
     if save_case_flag:
         save_case(case_name, output)
     return output
