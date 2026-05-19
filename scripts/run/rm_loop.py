@@ -3,12 +3,13 @@ from pathlib import Path
 from src.config import FBMCConfig
 from src.fbmc import main
 from src.case_creation.main import Cases
-from src.types import GSKStrategy, BaseCaseStrategy
-
+from src.enums import GSKStrategy, BaseCaseStrategy
+from src.paths import get_case_results_dir
 
 rm_list = [0.0, 0.1, 0.2, 0.3]
 config_path = Path("config/base_config.yaml")
 config = FBMCConfig.from_base_yaml(config_path)
+
 for r in rm_list:
     save_path = Path(get_case_results_dir(Cases.PYPSA_EUR_UA.value))  / f"n-0_RM_{str(config.reliability_margin_factor)}"
     obj3 = main(
