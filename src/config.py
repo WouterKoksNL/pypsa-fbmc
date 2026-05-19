@@ -237,6 +237,9 @@ class FBMCConfig:
 
     use_unit_commitment: bool = True
     unit_commitment_path: str = "src/case_creation/data/unit_commitment.csv"
+    # Water values config
+    load_water_values: bool = False  # Whether to load water values in case creation
+    water_values_path: str = None  # Optional: path to water values file
 
     def __str__(self) -> str:
         """Return a readable multi-line view of the effective configuration."""
