@@ -235,11 +235,13 @@ class FBMCConfig:
     rd_create_model_kwargs: dict[str, Any] = field(default_factory=dict)
     rd_solver_kwargs: dict[str, Any] = field(default_factory=lambda: {"solver_name": "gurobi"})
 
-    use_unit_commitment: bool = True
-    unit_commitment_path: str = "src/case_creation/data/unit_commitment.csv"
+    use_unit_commitment: bool = False
+    unit_commitment_path: str = "data/unit_commitment.csv"
+
     # Water values config
     load_water_values: bool = False  # Whether to load water values in case creation
     water_values_path: str = None  # Optional: path to water values file
+
 
     def __str__(self) -> str:
         """Return a readable multi-line view of the effective configuration."""
