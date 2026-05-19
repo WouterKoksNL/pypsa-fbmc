@@ -48,8 +48,8 @@ It is also possible to choose another optimiser, but you will have to update the
 
 6. **Run the code:**
 
-You can now import and use the module in your Python scripts or Jupyter notebooks. For example, start with one of the jupyter notebooks.
-
+Scripts for running different setups can be found under /scripts. Run a minimal example using
+´python -m scripts.run.minimal_example´
 ## Input Network Location
 
 Input network folders are configured centrally in `src/paths.py`.
