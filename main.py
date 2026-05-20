@@ -10,13 +10,14 @@ from src.fbmc.main import setup_fbmc_model, solve
 from src.fbmc.parameters.base_case import prepare_base_case, BaseCaseStrategy
 
 from src.case_creation.main import create_case, Cases
-
+from src.case_creation.main import alter_case_workflow
 from src.redispatch.main import run_redispatch
 
 from src.post_processing.lpf import do_lpf_contingency_check
 from src.types import DispatchResults, FBMCWorkflowResult
 from src.fbmc.parameters.gsk import calculate_gsk, GSKStrategy
 from src.fbmc.input_checks import do_input_checks
+
 
 from src.post_processing.main import process_results
 from src.paths import get_case_results_dir
@@ -125,7 +126,7 @@ def fbmc_workflow(
 
     logger.info("Solving FBMC model.")
     zonal_net, net_positions = solve(zonal_net, advanced_hybrid_flag=config.advanced_hybrid_coupling_flag, solver_kwargs=config.fbmc_solver_kwargs)
-    
+
     dispatch_results = DispatchResults(zonal_net)
     return FBMCWorkflowResult(
         zonal_net=zonal_net,
@@ -135,6 +136,8 @@ def fbmc_workflow(
         base_case=base_case,
     )
 
+
+    
 
 def main(
         save_path: Path,
@@ -146,6 +149,7 @@ def main(
         case_name=Cases.BASIC_THREE_NODE,
         config: FBMCConfig | None = None,
         config_overrides: dict[str, Any] | None = None,
+        case_alteration_kwargs: dict[str, Any] | None = None,
         **config_kwargs: Any,
 ):
     case_kwargs = case_kwargs or {}
@@ -225,8 +229,7 @@ if __name__ == "__main__":
             'snapshot_i_range': slice(0, 2),
             'use_unit_commitment': True,
             'unit_commitment_path': "data/unit_commitment_halve_su_sd.csv",
-            # 'drop_countries': ["UA"]
-        },
+        }
     )  
 
 
