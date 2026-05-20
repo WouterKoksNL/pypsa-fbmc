@@ -22,7 +22,9 @@ from src.post_processing.main import process_results
 from src.paths import get_case_results_dir
 
 
-def input_getter(zonal_net: pypsa.Network = None, nodal_net: pypsa.Network = None, case_name: Cases = Cases.BASIC_THREE_NODE, load_case_flag: bool = False, save_case_flag: bool = False, **case_kwargs):
+
+
+def input_getter(zonal_net: pypsa.Network = None, nodal_net: pypsa.Network = None, case_name: str | Cases = Cases.BASIC_THREE_NODE, load_case_flag: bool = False, save_case_flag: bool = False, **case_kwargs):
     """_summary_
 
     Args:
@@ -44,17 +46,24 @@ def input_getter(zonal_net: pypsa.Network = None, nodal_net: pypsa.Network = Non
     gsk = None
     if zonal_net is None and nodal_net is None:
         case_data = create_case(case_name, load_case_flag=load_case_flag, save_case_flag=save_case_flag, **case_kwargs)
-        logger.info(f"Running case: {case_name}")
+        logger.info(f"Loading case data for case: {case_name}")
         nodal_net: pypsa.Network = case_data['nodal_net']
         zonal_net: pypsa.Network = case_data['zonal_net']
         gsk: dict[pd.Timestamp, pd.DataFrame] | None = case_data.get('gsk_dict', None)
     # if only one is none, raise an error
     if nodal_net is not None and zonal_net is None:
+        logger.info("Only nodal net provided, converting to zonal net.")
         from src.case_creation.network_conversion import nodal_to_zonal
         zonal_net = nodal_to_zonal(nodal_net, bus_zone_map=nodal_net.buses.zone_name)
     if zonal_net is not None and nodal_net is None:
         raise ValueError("Nodal net must be provided if zonal net is provided. ")
-    return zonal_net, nodal_net, gsk
+    
+    case_data = {
+        'zonal_net': zonal_net,
+        'nodal_net': nodal_net,
+        'gsk_dict': gsk
+    }
+    return case_data
 
 
 def redispatch_workflow(
@@ -146,9 +155,11 @@ def main(
     }
     config = merge_config_overrides(config, merged_config_overrides)
 
-    zonal_net, nodal_net, gsk = input_getter(zonal_net, nodal_net, case_name, load_case_flag, save_case_flag, **case_kwargs)
-    zonal_net.remove("Link", zonal_net.links.index)  # remove links if they exist, as they will be re-created in the FBMC model setup based on the base case flows
-    nodal_net.remove("Link", nodal_net.links.index)  # remove links if they exist, as they will be re-created in the FBMC model setup based on the base case flows
+    case_data = input_getter(zonal_net, nodal_net, case_name, load_case_flag, save_case_flag, **case_kwargs)
+    case_data = alter_case_workflow(case_data, case_alteration_kwargs or {})
+    zonal_net = case_data['zonal_net']
+    nodal_net = case_data['nodal_net']
+    gsk = case_data.get('gsk_dict', None)
     fbmc_result = fbmc_workflow(
             zonal_net=zonal_net,
             nodal_net=nodal_net,
@@ -208,6 +219,9 @@ if __name__ == "__main__":
         },
         load_case_flag=False,
         case_kwargs={
+            # 'drop_countries': ["UA"]
+        },
+        case_alteration_kwargs={
             'snapshot_i_range': slice(0, 2),
             'use_unit_commitment': True,
             'unit_commitment_path': "data/unit_commitment_halve_su_sd.csv",

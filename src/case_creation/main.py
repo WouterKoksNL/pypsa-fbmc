@@ -2,7 +2,7 @@ import pypsa
 import pickle
 from enum import Enum 
 import logging
-
+from typing import Any
 
 from .scigrid_de import create_scigrid_case
 from .basic_three_node import create_basic_three_node_case
@@ -18,8 +18,7 @@ from .three_node_redispatch import create_three_node_redispatch_case
 from .custom import create_custom_case
 from src.case_creation.advanced_hybrid_check import create_advanced_hybrid_check
 from src.paths import get_case_input_dir
-from .utils import select_snapshot
-from .unit_commitment import apply_unit_commitment_data
+
 
 logging.basicConfig(level=logging.INFO)
 
@@ -58,51 +57,13 @@ CASE_FUNCTION_MAP = {
 
 
 def create_case(case, load_case_flag=True, save_case_flag=True, **kwargs):
-
     case_name = case.value + (f"-{kwargs.get('variation', '')}" if 'variation' in kwargs else '')
-    snapshot_i_range = kwargs.get('snapshot_i_range', None)
-    use_unit_commitment = kwargs.get('use_unit_commitment', False)
-    unit_commitment_path = kwargs.get('unit_commitment_path', None)
-    kwargs.pop('snapshot_i_range', None)
-    kwargs.pop('use_unit_commitment', None)
-    kwargs.pop('unit_commitment_path', None)
-    load_water_values = kwargs.pop('load_water_values', False)
-    water_values_path = kwargs.pop('water_values_path', None)
+
     if load_case_flag:
         output = load_case(case_name)
     else:
         output = _create_case(case, **kwargs)
 
-    if snapshot_i_range is not None:
-        select_snapshot(output['zonal_net'], snapshot_i_range)
-        select_snapshot(output['nodal_net'], snapshot_i_range)
-        if 'gsk_dict' in output and output['gsk_dict'] is not None:
-                output['gsk_dict'] = {snapshot: output['gsk_dict'][snapshot] for snapshot in output['zonal_net'].snapshots}
-
-    if use_unit_commitment:
-        logging.info(f"Applying unit commitment data from {unit_commitment_path} to networks.")
-        apply_unit_commitment_data(
-            output['nodal_net'],
-            unit_commitment_path=unit_commitment_path,
-        )
-        apply_unit_commitment_data(
-            output['zonal_net'],
-            unit_commitment_path=unit_commitment_path,
-        )
-    
-
-
-    # Optionally load water values if specified in case_kwargs
-
-    if load_water_values and water_values_path:
-        import pandas as pd
-        try:
-            water_values = pd.read_csv(water_values_path, index_col=0)
-            
-            logging.info(f"Loaded water values from {water_values_path}")
-        except Exception as e:
-            logging.warning(f"Failed to load water values from {water_values_path}: {e}")
-        breakpoint()
     if save_case_flag:
         save_case(case_name, output)
     return output
@@ -149,3 +110,26 @@ def save_case(case_name, output,
     if 'gsk_dict' in output.keys():
         with open(export_path / 'gsk.pkl', 'wb') as f:
             pickle.dump(output['gsk_dict'], f)
+
+
+
+def alter_case_workflow(output: dict[str, Any], case_alteration_kwargs: dict[str, Any]):
+    from src.case_creation.case_alteration import select_snapshots, apply_uc, remove_links
+    snapshots = case_alteration_kwargs.get('snapshot_i_range', None)
+    if snapshots is not None:
+        select_snapshots(
+            output,
+            case_alteration_kwargs.get('snapshot_i_range', None)
+        )
+    if case_alteration_kwargs.get('use_unit_commitment', False):
+        apply_uc(
+            output=output,
+            use_unit_commitment=True,
+            unit_commitment_path=case_alteration_kwargs.get('unit_commitment_path')
+        )
+    # Remove links if requested
+    if case_alteration_kwargs.get('remove_links', False):
+        remove_zonal = case_alteration_kwargs.get('remove_zonal_links', False)
+        remove_nodal = case_alteration_kwargs.get('remove_nodal_links', False)
+        remove_links(output, remove_zonal_links=remove_zonal, remove_nodal_links=remove_nodal)
+    return output
