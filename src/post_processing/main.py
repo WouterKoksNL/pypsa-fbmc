@@ -49,7 +49,7 @@ def process_results(
 
     objective_value = None
     if getattr(fbmc_results.zonal_net, "model", None) is not None:
-        objective = fbmc_results.zonal_net.objective
+        objective = fbmc_results.zonal_net.model.objective
         objective_value = float(objective.value) 
 
     summary = {
@@ -82,9 +82,8 @@ def process_results(
             outputs["redispatch_links_p0"] = rd_links_path
 
         # Save water values if available
-        if getattr(fbmc_results.dispatch_results, "water_values", None):
+        if hasattr(fbmc_results.dispatch_results, "water_values"):
             water_values_path = save_path / "water_values.csv"
-            # Convert xarray DataArray to DataFrame for CSV saving
             water_values_df = fbmc_results.dispatch_results.water_values.to_pandas()
             water_values_df.to_csv(water_values_path)
 
