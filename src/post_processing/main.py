@@ -1,12 +1,30 @@
 from pathlib import Path
 import json
 from typing import Any
+import pandas as pd
 
 from src.config import FBMCConfig, config_to_dict
 from src.types import FBMCWorkflowResult
 
 from .market_prices import calculate_zonal_prices
 
+
+def get_slack_zones(nodal_buses: pd.DataFrame) -> pd.Series:
+    """Create a mapping of sub_networks to their respective slack buses.
+
+    Args:
+        nodal_buses (pd.DataFrame): DataFrame containing the nodal bus information, including 'control', 'sub_network', and 'zone_name' columns.
+
+    Returns:
+        pd.Series: A Series with sub_network as index and zone_name as value, representing the slack zone for each sub_network.
+    """
+    slack_buses = pd.DataFrame(nodal_buses[nodal_buses.control == 'Slack'])
+    # If only one subnetwork, ensure output is still a Series with sub_network as index
+    if slack_buses.shape[0] == 1:
+        sub_network = slack_buses.iloc[0]['sub_network']
+        zone_name = slack_buses.iloc[0]['zone_name']
+        return pd.Series({sub_network: zone_name}, name='zone_name')
+    return slack_buses.loc[:, ['sub_network', 'zone_name']].reset_index(drop=True).set_index('sub_network')['zone_name']
 
 def process_results(
         fbmc_results: FBMCWorkflowResult, 
@@ -34,11 +52,14 @@ def process_results(
         for subnet_name, params in fbmc_results.fbmc_parameters.items()
     }
 
+
+    sn_slack_zone_map = get_slack_zones(fbmc_results.base_case.buses)
     zonal_prices = calculate_zonal_prices(
         fbmc_results.zonal_net.buses.index, 
         fbmc_results.zonal_net.snapshots,
         z_ptdf_by_subnet,
-        fbmc_results.zonal_net.model
+        fbmc_results.zonal_net.model,
+        sn_slack_zone_map
         )
 
     outputs: dict[str, Path] = {}
