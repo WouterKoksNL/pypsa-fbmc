@@ -39,6 +39,9 @@ def process_results(
     - fbmc objective
     - redispatch costs 
     - redispatch dispatch results
+    - linopy model
+    - Zone-p net positions (if available)
+    - fbmc link flows (if links exist)
     - fbmc network
 
     Returns:
@@ -80,6 +83,23 @@ def process_results(
     summary_path = save_path / "summary.json"
     summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     outputs["summary"] = summary_path
+
+    model = getattr(fbmc_results.zonal_net, "model", None)
+    if model is not None:
+        linopy_model_path = save_path / "linopy_model.nc"
+        model.to_netcdf(linopy_model_path)
+        outputs["linopy_model"] = linopy_model_path
+
+    if model is not None and hasattr(model, "solution") and "Zone-p" in model.solution:
+        net_positions_zone_p = model.solution["Zone-p"].to_pandas()
+        net_positions_path = save_path / "net_positions_zone_p.csv"
+        net_positions_zone_p.to_csv(net_positions_path)
+        outputs["net_positions_zone_p"] = net_positions_path
+
+    if not fbmc_results.zonal_net.links.empty and getattr(fbmc_results.zonal_net.links_t, "p0", None) is not None:
+        fbmc_links_path = save_path / "fbmc_links_p0.csv"
+        fbmc_results.zonal_net.links_t.p0.to_csv(fbmc_links_path)
+        outputs["fbmc_links_p0"] = fbmc_links_path
 
     if config is not None:
         config_path = save_path / "config.json"
