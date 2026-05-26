@@ -74,6 +74,11 @@ param_dict = {
         "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "disconnected",
         "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-disconnected" / "nodal.nc"),
         "prep_func": prep_disconnected_case,
+     },
+     "np-limit": {
+         "case_name": None,
+         "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "np-limit",
+         "prep_func": prep_base_case,
      }
 }
 
@@ -118,6 +123,9 @@ for case, params_base in deepcopy(param_dict).items():
     if case == "ntc-2450":
         config.transfer_limit_UA_MD_flag = True
         config.transfer_limit_UA_MD = 2450 
+    if case == "np-limit":
+        config.net_position_limit_UA_MD_flag = True
+        config.net_position_limit_UA_MD = 2450
     # config.fbmc_create_model_kwargs["linearized_unit_commitment"] = False
     # config.use_unit_commitment = False
     # config.add_security_constraints
