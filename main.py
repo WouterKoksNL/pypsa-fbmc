@@ -1,7 +1,8 @@
 import pypsa
 import pandas as pd
 from pathlib import Path
-from logging import Logger 
+from datetime import datetime
+import logging
 from typing import Any
 
 from src.fbmc.parameters.bridge_branches import find_bridges_network
@@ -21,6 +22,44 @@ from src.fbmc.input_checks import do_input_checks
 
 from src.post_processing.main import process_results
 from src.paths import get_case_results_dir
+
+
+RUN_FILE_HANDLER_NAME = "pypsa_fbmc_run_file"
+
+
+def _configure_run_logging(save_path: Path) -> Path:
+    """Attach a per-run file handler while keeping console logging enabled."""
+    save_path = Path(save_path)
+    save_path.mkdir(parents=True, exist_ok=True)
+
+    log_path = save_path / f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+    formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+
+    has_stream_handler = any(
+        isinstance(handler, logging.StreamHandler) and not isinstance(handler, logging.FileHandler)
+        for handler in root_logger.handlers
+    )
+    if not has_stream_handler:
+        stream_handler = logging.StreamHandler()
+        stream_handler.setLevel(logging.INFO)
+        stream_handler.setFormatter(formatter)
+        root_logger.addHandler(stream_handler)
+
+    for handler in list(root_logger.handlers):
+        if isinstance(handler, logging.FileHandler) and handler.get_name() == RUN_FILE_HANDLER_NAME:
+            root_logger.removeHandler(handler)
+            handler.close()
+
+    file_handler = logging.FileHandler(log_path, encoding="utf-8")
+    file_handler.set_name(RUN_FILE_HANDLER_NAME)
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+    root_logger.addHandler(file_handler)
+
+    return log_path
 
 
 
@@ -43,7 +82,7 @@ def input_getter(zonal_net: pypsa.Network = None, nodal_net: pypsa.Network = Non
         pypsa.Network: Nodal net
         dict: GSK dict (if exists, else None)
     """
-    logger = Logger(__name__)
+    logger = logging.getLogger(__name__)
     gsk = None
     if zonal_net is None and nodal_net is None:
         case_data = create_case(case_name, load_case_flag=load_case_flag, save_case_flag=save_case_flag, **case_kwargs)
@@ -95,7 +134,7 @@ def fbmc_workflow(
         config_overrides: dict[str, Any] | None = None,
     ) -> FBMCWorkflowResult:
     
-    logger = Logger(__name__)
+    logger = logging.getLogger(__name__)
     
     config = merge_config_overrides(config, config_overrides)
 
@@ -152,6 +191,9 @@ def main(
         case_alteration_kwargs: dict[str, Any] | None = None,
         **config_kwargs: Any,
 ):
+    run_log_path = _configure_run_logging(save_path)
+    logging.getLogger(__name__).info("Writing run logs to %s", run_log_path)
+
     case_kwargs = case_kwargs or {}
     merged_config_overrides = {
         **(config_overrides or {}),
