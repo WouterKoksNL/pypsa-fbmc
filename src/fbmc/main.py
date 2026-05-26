@@ -42,6 +42,15 @@ def _create_model_without_meshed_split(network: pypsa.Network, create_model_kwar
 
     return model
 
+def post_model_creation_workflow(zonal_net: pypsa.Network, config: FBMCConfig):
+    if config.transfer_limit_UA_MD_flag:
+        logging.info(f"Applying upper limit of {config.transfer_limit_UA_MD} on total transfer to UA/MD.")
+        zonal_net.model.add_constraints(zonal_net.model.variables["Link-p"].sum(dim="Link") <= config.transfer_limit_UA_MD, name="total_transfer_upper_limit_UA_MD")
+
+    if config.net_position_limit_UA_MD_flag:
+        logging.info(f"Applying limit of {config.net_position_limit_UA_MD} on net position of UA/MD.")
+        # zonal_net.model.add_constraints(zonal_net.model.variables["NetPosition-p"].sel(zone_name="UA/MD").sum(dim="zone_name") <= config.net_position_limit_UA_MD, name="net_position_upper_limit_UA_MD")
+        zonal_net.model.add_constraints(zonal_net.model.variables["Zone-p"].sel(zone_name="UA/MD").sum(dim="zone_name") >= -config.net_position_limit_UA_MD, name="net_position_lower_limit_UA_MD")
 
 def calculate_fbmc_parameters(
         basecase_nodal_network: pypsa.Network, 
@@ -126,9 +135,7 @@ def setup_fbmc_model(
     if zonal_net.model is None:
         model = _create_model_without_meshed_split(zonal_net, create_model_kwargs=config.fbmc_create_model_kwargs)
     
-    if config.transfer_limit_UA_MD_flag:
-        logging.info(f"Applying upper limit of {config.transfer_limit_UA_MD} on total transfer to UA/MD.")
-        model.add_constraints(model.variables["Link-p"].sum(dim="Link") <= config.transfer_limit_UA_MD, name="total_transfer_upper_limit_UA_MD")
+    post_model_creation_workflow(zonal_net, config)
 
     create_zonal_generation(zonal_net)
     remove_original_constraints_loop(zonal_net, basecase_nodal_network)

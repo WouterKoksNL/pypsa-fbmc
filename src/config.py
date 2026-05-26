@@ -216,7 +216,8 @@ class FBMCConfig:
         },
         "BUS_P": {},
     })
-    
+    net_position_limit_UA_MD_flag: bool = False
+    net_position_limit_UA_MD: float = None
 
     base_case_strategy: BaseCaseStrategy = BaseCaseStrategy.ZERO_FLOWS
     marginal_cost_load_shedding: float = 1e5
@@ -247,6 +248,8 @@ class FBMCConfig:
     transfer_limit_UA_MD_flag: bool = False  # Whether to apply an upper limit on total transfer in UA market design
     transfer_limit_UA_MD: float = None  # Value for upper limit on total transfer in UA market design (if flag is True)
 
+    net_position_limit_UA_MD_flag: bool = False  # Whether to apply a limit on net position in UA market design
+    net_position_limit_UA_MD: float = None  # Value for limit on net position
 
     def __str__(self) -> str:
         """Return a readable multi-line view of the effective configuration."""
