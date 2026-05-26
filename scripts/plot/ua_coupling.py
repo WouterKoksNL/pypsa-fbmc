@@ -89,27 +89,33 @@ def _plot_prices_map(
 	case_name: str,
 	source: str,
 	output_path: Path,
+	minx: float = -12.0,
+	maxx: float = 41.0,
+	miny: float = 34.0,
+	maxy: float = 59.0,
+	price_limits: tuple[float, float] | None = (0.0, 110.0),
 ) -> None:
 	fig, ax = plt.subplots(figsize=(13, 8), dpi=150)
 
 	merged.plot(ax=ax, color="#eceff1", edgecolor="white", linewidth=0.3)
-	merged.dropna(subset=["avg_price"]).plot(
-		ax=ax,
-		column="avg_price",
-		cmap="viridis",
-		linewidth=0.45,
-		edgecolor="#1f2937",
-		legend=True,
-		legend_kwds={"label": "Market price [EUR/MWh]", "shrink": 0.7},
-	)
+	plot_kwargs = {
+		"ax": ax,
+		"column": "avg_price",
+		"cmap": "YlOrRd",
+		"linewidth": 0.45,
+		"edgecolor": "#1f2937",
+		"legend": True,
+		"legend_kwds": {"label": "Market price [EUR/MWh]", "shrink": 0.7},
+	}
+	if price_limits is not None:
+		plot_kwargs["vmin"], plot_kwargs["vmax"] = price_limits
+
+	merged.dropna(subset=["avg_price"]).plot(**plot_kwargs)
 
 	plotted = merged.dropna(subset=["avg_price"])
-	if not plotted.empty:
-		minx, miny, maxx, maxy = plotted.total_bounds
-		x_pad = max((maxx - minx) * 0.08, 1.0)
-		y_pad = max((maxy - miny) * 0.12, 1.0)
-		ax.set_xlim(minx - x_pad, maxx + x_pad)
-		ax.set_ylim(miny - y_pad, maxy + y_pad)
+
+	ax.set_xlim(minx, maxx)
+	ax.set_ylim(miny, maxy)
 
 	missing_zones = sorted(set(avg_prices["country_code"]) - set(plotted["country_code"]))
 
@@ -139,6 +145,7 @@ def run_plot(
 	analysis_dir: Path | None = None,
 	output_path: Path | None = None,
 	geojson_path: Path | None = None,
+	price_limits: tuple[float, float] | None = (0.0, 110.0),
 ) -> Path:
 	analysis = Path(analysis_dir) if analysis_dir is not None else _default_analysis_dir(case_name, results_root)
 	prices = _load_prices(analysis, source=source)
@@ -153,15 +160,22 @@ def run_plot(
 	else:
 		out_plot = Path(output_path)
 
-	_plot_prices_map(merged=merged, avg_prices=normalized_avg, case_name=case_name, source=source, output_path=out_plot)
+	_plot_prices_map(
+		merged=merged,
+		avg_prices=normalized_avg,
+		case_name=case_name,
+		source=source,
+		output_path=out_plot,
+		price_limits=price_limits,
+	)
 	normalized_avg.to_csv(analysis / f"{source}_market_prices_temporal_average.csv", index=False)
 	return out_plot
 
 
-def main() -> None:
+def main(case_name: str = "pypsa-eur-ua/base") -> None:
 	parser = argparse.ArgumentParser(description="Plot temporally averaged UA coupling market prices on a country map")
-	parser.add_argument("--case-name", default="pypsa-eur-ua/base")
-	parser.add_argument("--source", choices=["clearing", "water_valuation"], default="clearing")
+
+	# parser.add_argument("--source", choices=["clearing", "water_valuation"], default="clearing")
 	parser.add_argument("--results-root", default=None)
 	parser.add_argument("--analysis-dir", default=None)
 	parser.add_argument("--output-path", default=None)
@@ -169,8 +183,8 @@ def main() -> None:
 	args = parser.parse_args()
 
 	out_plot = run_plot(
-		case_name=args.case_name,
-		source=args.source,
+		case_name=case_name,
+		source="clearing",
 		results_root=Path(args.results_root) if args.results_root else None,
 		analysis_dir=Path(args.analysis_dir) if args.analysis_dir else None,
 		output_path=Path(args.output_path) if args.output_path else None,
@@ -181,4 +195,12 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-	main()
+	case_names = [
+		# "pypsa-eur-ua/base",
+		# "pypsa-eur-ua/ntc-max",
+		"pypsa-eur-ua/ntc-2450",
+		# "pypsa-eur-ua/disconnected",
+	]
+	for case_name in case_names:
+		main(case_name=case_name)
+
