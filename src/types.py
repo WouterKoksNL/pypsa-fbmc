@@ -98,12 +98,12 @@ class DispatchResults:
         self.storage_units_p: pd.DataFrame = net.storage_units_t.p
 
         self.links_p0: pd.DataFrame = net.links_t.p0
-        self.storage_units_soc: pd.DataFrame | None = None
+        self.storage_levels: pd.DataFrame | None = None
         self.water_values: xr.DataArray | None = None
         if not net.storage_units.empty:
-            self.storage_units_soc: pd.DataFrame = net.storage_units_t.state_of_charge
-        if "StorageUnit-energy_balance" in net.model.dual: # needs seperate check as dual is not returned in case the problem is a MILP
-            self.water_values: xr.DataArray = net.model.dual["StorageUnit-energy_balance"]
+            self.storage_levels = net.storage_units_t.state_of_charge
+            if "StorageUnit-energy_balance" in net.model.dual: # needs seperate check as dual is not returned in case the problem is a MILP
+                self.water_values: xr.DataArray = net.model.dual["StorageUnit-energy_balance"]
 
 
 

@@ -102,11 +102,18 @@ def process_results(
             rd_dispatch.links_p0.to_csv(rd_links_path)
             outputs["redispatch_links_p0"] = rd_links_path
 
+        # Save storage levels if available
+        if getattr(fbmc_results.dispatch_results, "storage_levels", None) is not None:
+            storage_levels_path = save_path / "storage_levels.csv"
+            fbmc_results.dispatch_results.storage_levels.to_csv(storage_levels_path)
+            outputs["storage_levels"] = storage_levels_path
+
         # Save water values if available
         if hasattr(fbmc_results.dispatch_results, "water_values"):
             water_values_path = save_path / "water_values.csv"
             water_values_df = fbmc_results.dispatch_results.water_values.to_pandas()
             water_values_df.to_csv(water_values_path)
+            outputs["water_values"] = water_values_path
 
 
     network_path = save_path / "fbmc_network.nc"
