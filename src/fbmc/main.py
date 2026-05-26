@@ -117,7 +117,8 @@ def setup_fbmc_model(
         config (FBMCConfig, optional): _description_. Defaults to FBMCConfig().
 
     Returns:
-        lp.Model: _description_
+        lp.Model: linopy model with FBMC constraints added
+        dict[str, SubnetFBMCParameters]: dict of FBMC parameters for each sub-network
     """
 
     fbmc_parameters = calculate_fbmc_parameters(basecase_nodal_network, gsk, config=config)
