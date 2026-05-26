@@ -63,6 +63,8 @@ def _default_config_values() -> dict[str, Any]:
         "deviation_factor_redispatch": 0.9,
         "rd_create_model_kwargs": {},
         "rd_solver_kwargs": {"solver_name": "gurobi"},
+        "transfer_limit_UA_MD_flag": False,
+        "transfer_limit_UA_MD": None,
     }
 
 
@@ -241,6 +243,9 @@ class FBMCConfig:
     # Water values config
     load_water_values: bool = False  # Whether to load water values in case creation
     water_values_path: str = None  # Optional: path to water values file
+
+    transfer_limit_UA_MD_flag: bool = False  # Whether to apply an upper limit on total transfer in UA market design
+    transfer_limit_UA_MD: float = None  # Value for upper limit on total transfer in UA market design (if flag is True)
 
 
     def __str__(self) -> str:
