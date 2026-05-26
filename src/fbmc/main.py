@@ -128,7 +128,7 @@ def setup_fbmc_model(
     
     if config.transfer_limit_UA_MD_flag:
         logging.info(f"Applying upper limit of {config.transfer_limit_UA_MD} on total transfer to UA/MD.")
-        model.add_constraint(model.variables["Link-p"].sum(dim="Link") <= config.transfer_limit_UA_MD, name="total_transfer_upper_limit_UA_MD")
+        model.add_constraints(model.variables["Link-p"].sum(dim="Link") <= config.transfer_limit_UA_MD, name="total_transfer_upper_limit_UA_MD")
 
     create_zonal_generation(zonal_net)
     remove_original_constraints_loop(zonal_net, basecase_nodal_network)
