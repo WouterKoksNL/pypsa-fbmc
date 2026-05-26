@@ -145,7 +145,7 @@ for case, params_base in deepcopy(param_dict).items():
             case_kwargs={},
             case_alteration_kwargs={
                 'snapshot_i_range': slice(N_TIMESTEPS_MARKET*i_clearing, N_TIMESTEPS_MARKET*(i_clearing+1)),
-                'use_unit_commitment': True,
+                'use_unit_commitment': False,
                 'unit_commitment_path': "data/unit_commitment_halve_su_sd.csv",
             }
         )  
