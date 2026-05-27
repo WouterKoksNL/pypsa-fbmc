@@ -85,6 +85,8 @@ def input_getter(zonal_net: pypsa.Network = None, nodal_net: pypsa.Network = Non
     logger = logging.getLogger(__name__)
     gsk = None
     if zonal_net is None and nodal_net is None:
+        if case_name is None:
+            raise ValueError("Either zonal_net and nodal_net or case_name must be provided.")
         case_data = create_case(case_name, load_case_flag=load_case_flag, save_case_flag=save_case_flag, **case_kwargs)
         logger.info(f"Loading case data for case: {case_name}")
         nodal_net: pypsa.Network = case_data['nodal_net']
@@ -175,8 +177,6 @@ def fbmc_workflow(
         base_case=base_case,
     )
 
-
-    
 
 def main(
         save_path: Path,
