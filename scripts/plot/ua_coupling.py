@@ -138,6 +138,27 @@ def _plot_prices_map(
 	plt.close(fig)
 
 
+
+def plot_timeseries(
+	prices, 
+	output_path: Path,
+	countries: list[str],
+	ls: dict[str, str],
+	colors: dict[str, str],
+	):
+
+	plt.figure()
+	for country in countries:
+		plt.plot(prices.loc[:, country], label=country, ls=ls[country], color=colors[country])
+	plt.xlabel("Time [h]")
+	plt.ylabel("Market price [EUR/MWh]")
+	
+
+	output_path.parent.mkdir(parents=True, exist_ok=True)
+	plt.legend()
+	plt.savefig(output_path, bbox_inches="tight")
+	plt.close()
+
 def run_plot(
 	case_name: str = "pypsa-eur-ua/base",
 	source: str = "clearing",
@@ -149,6 +170,7 @@ def run_plot(
 ) -> Path:
 	analysis = Path(analysis_dir) if analysis_dir is not None else _default_analysis_dir(case_name, results_root)
 	prices = _load_prices(analysis, source=source)
+	
 	avg_prices = _temporal_average(prices)
 
 	shapes_path = _ensure_countries_geojson(Path(geojson_path) if geojson_path is not None else COUNTRIES_GEOJSON_PATH)
@@ -169,6 +191,22 @@ def run_plot(
 		price_limits=price_limits,
 	)
 	normalized_avg.to_csv(analysis / f"{source}_market_prices_temporal_average.csv", index=False)
+	
+	countries = ["DE", "PL", "HU", "UA"]
+	ls = {country: "-" if country == "UA" else "--" for country in countries}
+	colors = {
+		"DE": "#6b7280",
+		"PL": "#10b981",
+		"HU": "#8b5cf6",
+		"UA": "#ef4444",
+	}
+	plot_timeseries(
+		prices=prices,
+		output_path=analysis / f"plots/{source}_market_prices_timeseries.png",
+		countries=countries,
+		ls=ls,
+		colors=colors,
+	)
 	return out_plot
 
 
@@ -196,10 +234,10 @@ def main(case_name: str = "pypsa-eur-ua/base") -> None:
 
 if __name__ == "__main__":
 	case_names = [
-		# "pypsa-eur-ua/base",
+		"pypsa-eur-ua/base",
 		# "pypsa-eur-ua/ntc-max",
 		"pypsa-eur-ua/ntc-2450",
-		# "pypsa-eur-ua/disconnected",
+		"pypsa-eur-ua/disconnected",
 	]
 	for case_name in case_names:
 		main(case_name=case_name)
