@@ -53,31 +53,31 @@ def prep_disconnected_case(params):
 
 param_dict = {
     "base": {
-        "case_name": Cases.PYPSA_EUR_UA,
-        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "base",
+        "case_name": "pypsa-eur-ua/red",
+        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "base" / "red",
         "prep_func": prep_base_case,
      },
      "ntc-max": {
          "case_name": None, 
-         "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value)  / "ntc-max",
-         "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-ntc" / "nodal.nc"),
+         "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value)  / "ntc-max" / "red",
+         "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-ntc" / "red"/ "nodal.nc"),
          "prep_func": prep_ntc_case, 
      },
      "ntc-2450": {
          "case_name": None, 
-         "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value)  / "ntc-2450",
-         "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-ntc" / "nodal.nc"),
+         "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value)  / "ntc-2450" / "red",
+         "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-ntc" / "red"/ "nodal.nc"),
          "prep_func": prep_ntc_case, 
      },
     "disconnected": {
         "case_name": None, 
-        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "disconnected",
-        "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-disconnected" / "nodal.nc"),
+        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "disconnected" / "red",
+        "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-disconnected" / "red" / "nodal.nc"),
         "prep_func": prep_disconnected_case,
      },
      "np-limit": {
-         "case_name": Cases.PYPSA_EUR_UA,
-         "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "np-limit",
+         "case_name": "pypsa-eur-ua/red",
+         "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "red" / "np-limit",
          "prep_func": prep_base_case,
      }
 }
