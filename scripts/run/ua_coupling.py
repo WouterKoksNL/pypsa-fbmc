@@ -53,21 +53,22 @@ def prep_disconnected_case(params):
 
 param_dict = {
     "base": {
-        "case_name": "pypsa-eur-ua/red",
+        "case_name": None,
+        "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua" / "red"/ "nodal.nc"),
         "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "base" / "red",
         "prep_func": prep_base_case,
      },
      "ntc-max": {
-         "case_name": None, 
-         "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value)  / "ntc-max" / "red",
-         "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-ntc" / "red"/ "nodal.nc"),
-         "prep_func": prep_ntc_case, 
+        "case_name": None, 
+        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value)  / "ntc-max" / "red",
+        "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-ntc" / "red"/ "nodal.nc"),
+        "prep_func": prep_ntc_case, 
      },
      "ntc-2450": {
-         "case_name": None, 
-         "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value)  / "ntc-2450" / "red",
-         "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-ntc" / "red"/ "nodal.nc"),
-         "prep_func": prep_ntc_case, 
+        "case_name": None, 
+        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value)  / "ntc-2450" / "red",
+        "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-ntc" / "red"/ "nodal.nc"),
+        "prep_func": prep_ntc_case, 
      },
     "disconnected": {
         "case_name": None, 
@@ -76,9 +77,10 @@ param_dict = {
         "prep_func": prep_disconnected_case,
      },
      "np-limit": {
-         "case_name": "pypsa-eur-ua/red",
-         "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "red" / "np-limit",
-         "prep_func": prep_base_case,
+        "case_name": None,
+        "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua" / "red"/ "nodal.nc"),
+        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "red" / "np-limit",
+        "prep_func": prep_base_case,
      }
 }
 
