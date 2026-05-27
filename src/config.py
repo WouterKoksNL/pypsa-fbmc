@@ -64,7 +64,11 @@ def _default_config_values() -> dict[str, Any]:
         "rd_create_model_kwargs": {},
         "rd_solver_kwargs": {"solver_name": "gurobi"},
         "transfer_limit_UA_MD_flag": False,
-        "transfer_limit_UA_MD": None,
+        "transfer_limit_EUR_UA": None,
+        "transfer_limit_UA_EUR": None,
+        "net_position_limit_UA_MD_flag": False,
+        "net_position_UA_lower_limit": None,
+        "net_position_UA_upper_limit": None,
     }
 
 
@@ -249,7 +253,8 @@ class FBMCConfig:
     transfer_limit_UA_MD: float = None  # Value for upper limit on total transfer in UA market design (if flag is True)
 
     net_position_limit_UA_MD_flag: bool = False  # Whether to apply a limit on net position in UA market design
-    net_position_limit_UA_MD: float = None  # Value for limit on net position
+    net_position_UA_lower_limit: float = None  # Value for lower limit on net position of Ukraine
+    net_position_UA_upper_limit: float = None  # Value for upper limit on net position of Ukraine
 
     def __str__(self) -> str:
         """Return a readable multi-line view of the effective configuration."""

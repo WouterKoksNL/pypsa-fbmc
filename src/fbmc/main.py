@@ -45,15 +45,20 @@ def _create_model_without_meshed_split(network: pypsa.Network, create_model_kwar
 def post_model_creation_workflow(zonal_net: pypsa.Network, config: FBMCConfig):
     if config.transfer_limit_UA_MD_flag:
         logging.info(f"Applying upper limit of {config.transfer_limit_UA_MD} on total transfer to UA/MD.")
-        zonal_net.model.add_constraints(zonal_net.model.variables["Link-p"].sum(dim="Link") <= config.transfer_limit_UA_MD, name="total_transfer_upper_limit_UA_MD")
+        zonal_net.model.add_constraints(zonal_net.model.variables["Link-p"].sum(dim="Link") <= config.transfer_limit_EUR_UA, name="total_transfer_limit_EUR_UA")
+        zonal_net.model.add_constraints(-zonal_net.model.variables["Link-p"].sum(dim="Link") <= config.transfer_limit_UA_EUR, name="total_transfer_limit_UA_EUR")
+        
 
     if config.net_position_limit_UA_MD_flag:
         logging.info(f"Applying limit of {config.net_position_limit_UA_MD} on net position of UA/MD.")
         # zonal_net.model.add_constraints(zonal_net.model.variables["NetPosition-p"].sel(zone_name="UA/MD").sum(dim="zone_name") <= config.net_position_limit_UA_MD, name="net_position_upper_limit_UA_MD")
         zonal_net.model.add_constraints(
-            zonal_net.model.variables["Zone-p"].sel(Zone=["UA", "MD"]).sum(dim="Zone") >= -config.net_position_limit_UA_MD, name="net_position_lower_limit_UA_MD"
+            zonal_net.model.variables["Zone-p"].sel(Zone=["UA", "MD"]).sum(dim="Zone") >= -config.net_position_UA_lower_limit, name="net_position_lower_limit_UA"
             )
-
+        zonal_net.model.add_constraints(
+            zonal_net.model.variables["Zone-p"].sel(Zone=["UA", "MD"]).sum(dim="Zone") <= config.net_position_UA_upper_limit, name="net_position_upper_limit_UA"
+            )
+        
 def calculate_fbmc_parameters(
         basecase_nodal_network: pypsa.Network, 
         gsk: pd.DataFrame | dict[pd.Timestamp, pd.DataFrame], 
