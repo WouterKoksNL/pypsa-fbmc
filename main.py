@@ -205,6 +205,7 @@ def main(
     case_data = alter_case_workflow(case_data, case_alteration_kwargs or {})
     zonal_net = case_data['zonal_net']
     nodal_net = case_data['nodal_net']
+
     gsk = case_data.get('gsk_dict', None)
     fbmc_result = fbmc_workflow(
             zonal_net=zonal_net,

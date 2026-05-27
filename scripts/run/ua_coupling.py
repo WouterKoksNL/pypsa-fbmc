@@ -146,7 +146,7 @@ for case, params_base in deepcopy(param_dict).items():
             config_overrides={
                 "gsk_strategy": GSKStrategy.P_NOM,
                 "base_case_strategy": BaseCaseStrategy.ZERO_FLOWS,
-                "reliability_margin_factor": 0.3,
+                "reliability_margin_factor": 0.1,
                 "run_redispatch": False,
             },
             load_case_flag=False,
