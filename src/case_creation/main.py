@@ -56,7 +56,9 @@ CASE_FUNCTION_MAP = {
 
 
 
-def create_case(case, load_case_flag=True, save_case_flag=True, **kwargs):
+def create_case(case: str | Cases, load_case_flag=True, save_case_flag=True, **kwargs):
+    if type(case) is str:
+        case = Cases(case)
     case_name = case.value + (f"-{kwargs.get('variation', '')}" if 'variation' in kwargs else '')
 
     if load_case_flag:
@@ -68,7 +70,7 @@ def create_case(case, load_case_flag=True, save_case_flag=True, **kwargs):
         save_case(case_name, output)
     return output
 
-def _create_case(case, **kwargs):
+def _create_case(case: Cases, **kwargs):
     if case in CASE_FUNCTION_MAP:
         case_creation_function = CASE_FUNCTION_MAP[case]
         output = case_creation_function(**kwargs)
