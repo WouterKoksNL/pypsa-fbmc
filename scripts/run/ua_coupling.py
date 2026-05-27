@@ -76,7 +76,7 @@ param_dict = {
         "prep_func": prep_disconnected_case,
      },
      "np-limit": {
-         "case_name": None,
+         "case_name": Cases.PYPSA_EUR_UA,
          "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "np-limit",
          "prep_func": prep_base_case,
      }
