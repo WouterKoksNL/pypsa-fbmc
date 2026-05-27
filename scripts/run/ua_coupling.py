@@ -32,6 +32,8 @@ else:
 n_market_clearings = int(N_TIMESTEPS_LONG_TERM / N_TIMESTEPS_MARKET)
 
 def prep_base_case(params):
+    params["nodal_net"].buses.loc[:, 'zone_name'] = params["nodal_net"].buses.country
+    params["zonal_net"] = nodal_to_zonal(params["nodal_net"], bus_zone_map=params["nodal_net"].buses.zone_name)
     return 
 
 def prep_ntc_case(params):
