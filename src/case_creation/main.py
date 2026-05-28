@@ -18,6 +18,9 @@ from .three_node_redispatch import create_three_node_redispatch_case
 from .custom import create_custom_case
 from src.case_creation.advanced_hybrid_check import create_advanced_hybrid_check
 from src.paths import get_case_input_dir
+from src.config import FBMCConfig
+
+from .utils import add_load_shedding
 
 
 logging.basicConfig(level=logging.INFO)
@@ -76,6 +79,7 @@ def _create_case(case: Cases, **kwargs):
         output = case_creation_function(**kwargs)
     else:
         raise ValueError(f"Unknown case: {case}")
+
     return output
 
 
@@ -160,4 +164,10 @@ def alter_case_workflow(output: dict[str, Any], case_alteration_kwargs: dict[str
                 nodal_net.storage_units_t.state_of_charge_set.loc[first_and_last, soc.columns] = soc.loc[first_and_last].values
                 zonal_net.storage_units.loc[soc.columns, 'state_of_charge_initial'] = soc.loc[fsn].values
                 nodal_net.storage_units.loc[soc.columns, 'state_of_charge_initial'] = soc.loc[fsn].values
+    
+    if case_alteration_kwargs.get('add_zonal_load_shedding', False):
+        load_shedding_cost = case_alteration_kwargs.get("load_shedding_cost", None)
+        # add_load_shedding(output['nodal_net'], load_shedding_cost=load_shedding_cost)
+        add_load_shedding(output['zonal_net'], load_shedding_cost=load_shedding_cost)
+
     return output
