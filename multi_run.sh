@@ -49,7 +49,7 @@ for assignment in "${RUN_ASSIGNMENTS[@]}"; do
 	IFS=$'\t' read -r run_name node_name <<< "$assignment"
 
 	echo "Starting run '$run_name' on '$node_name'"
-	ssh "$node_name" "RUN_NAME='$run_name' bash -lc 'set -euo pipefail; cd pypsa-fbmc; module load Python/3.11.5-GCCcore-13.2.0; module load gurobi/9.5; module load Miniconda3/23.10.0-1; source .venv/bin/activate; python -m scripts.run.ua_coupling -r \"\$RUN_NAME\"'" &
+	ssh "$node_name" "RUN_NAME='$run_name' bash -lc 'set -euo pipefail; cd pypsa-fbmc; module load Python/3.11.5-GCCcore-13.2.0; module load gurobi/9.5; module load Miniconda3/23.10.0-1; source prepare.sh; python -m scripts.run.ua_coupling -r \"\$RUN_NAME\"'" &
 
 	PIDS+=("$!")
 	LABELS+=("$run_name@$node_name")
