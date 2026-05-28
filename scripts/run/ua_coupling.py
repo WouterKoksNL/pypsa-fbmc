@@ -1,8 +1,9 @@
-"""Usage: python -m scripts.run.ua_coupling [-t]"""
+"""Usage: python -m scripts.run.ua_coupling [-t] [-r RUN]"""
 
 
 from pathlib import Path
 import sys
+import argparse
 import pandas as pd
 import pypsa
 from copy import deepcopy
@@ -15,8 +16,28 @@ from src.paths import get_case_results_dir, get_results_dir, get_input_networks_
 from src.case_creation.network_conversion import nodal_to_zonal
 
 
-# test bool should be enabled if adding a -t flag
-test_bool = len(sys.argv) > 1 and sys.argv[1] == "-t"
+def parse_args(argv):
+    parser = argparse.ArgumentParser(
+        description="Run UA coupling scenarios.",
+    )
+    parser.add_argument(
+        "-t",
+        "--test",
+        action="store_true",
+        help="Run a short test horizon instead of the full horizon.",
+    )
+    parser.add_argument(
+        "-r",
+        "--run",
+        default=None,
+        help="Run only one scenario key from param_dict (default: run all).",
+    )
+    return parser.parse_args(argv)
+
+
+args = parse_args(sys.argv[1:])
+test_bool = args.test
+selected_run = args.run
 
 print(f"Running with test_bool={test_bool}")
 
@@ -86,6 +107,17 @@ param_dict = {
      }
 }
 
+if selected_run is not None:
+    if selected_run not in param_dict:
+        available_runs = ", ".join(param_dict.keys())
+        raise ValueError(
+            f"Unknown run '{selected_run}'. Available runs: {available_runs}"
+        )
+    runs_to_execute = {selected_run: param_dict[selected_run]}
+    print(f"Running selected run='{selected_run}'")
+else:
+    runs_to_execute = param_dict
+
 # water valuation
 
 # for case, params in deepcopy(param_dict).items():
@@ -120,7 +152,7 @@ param_dict = {
 #     )  
 
 
-for case, params_base in deepcopy(param_dict).items():
+for case, params_base in deepcopy(runs_to_execute).items():
     config_path = Path("config/base_config.yaml")
     config = FBMCConfig.from_base_yaml(config_path)
     config.add_security_constraints = True
