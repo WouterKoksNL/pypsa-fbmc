@@ -1,7 +1,4 @@
 {
   "base": "compute-6-42",
-  "ntc-max": "compute-6-43",
-  "disconnected": "compute-6-44",
-  "np-limit": "compute-6-45",
-  "ntc-2450": "compute-6-46"
+  "ntc-max": "compute-6-43"
 }
