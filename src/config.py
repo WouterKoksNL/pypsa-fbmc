@@ -250,7 +250,8 @@ class FBMCConfig:
     water_values_path: str = None  # Optional: path to water values file
 
     transfer_limit_UA_MD_flag: bool = False  # Whether to apply an upper limit on total transfer in UA market design
-    transfer_limit_UA_MD: float = None  # Value for upper limit on total transfer in UA market design (if flag is True)
+    transfer_limit_EUR_UA: float = None  # Value for upper limit on total transfer in UA market design (if flag is True)
+    transfer_limit_UA_EUR: float = None  # Value for upper limit on total transfer in UA market design (if flag is True)
 
     net_position_limit_UA_MD_flag: bool = False  # Whether to apply a limit on net position in UA market design
     net_position_UA_lower_limit: float = None  # Value for lower limit on net position of Ukraine
