@@ -102,7 +102,7 @@ param_dict = {
      "np-limit": {
         "case_name": None,
         "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua" / "red" / "nodal.nc"),
-        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "red" / "np-limit",
+        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "np-limit" / "red",
         "prep_func": prep_base_case,
      }
 }
@@ -194,6 +194,6 @@ for case, params_base in deepcopy(runs_to_execute).items():
                 'use_unit_commitment': False,
                 'unit_commitment_path': "data/unit_commitment_halve_su_sd.csv",
                 'add_zonal_load_shedding': True,
-                'load_shedding_cost': 100_000,
+                'load_shedding_cost': 5000,
             }
         )  

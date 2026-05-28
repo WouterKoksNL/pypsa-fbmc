@@ -63,10 +63,10 @@ def _default_config_values() -> dict[str, Any]:
         "deviation_factor_redispatch": 0.9,
         "rd_create_model_kwargs": {},
         "rd_solver_kwargs": {"solver_name": "gurobi"},
-        "transfer_limit_UA_MD_flag": False,
+        "transfer_limit_UA_flag": False,
         "transfer_limit_EUR_UA": None,
         "transfer_limit_UA_EUR": None,
-        "net_position_limit_UA_MD_flag": False,
+        "net_position_limit_UA_flag": False,
         "net_position_UA_lower_limit": None,
         "net_position_UA_upper_limit": None,
     }
@@ -220,8 +220,6 @@ class FBMCConfig:
         },
         "BUS_P": {},
     })
-    net_position_limit_UA_MD_flag: bool = False
-    net_position_limit_UA_MD: float = None
 
     base_case_strategy: BaseCaseStrategy = BaseCaseStrategy.ZERO_FLOWS
     marginal_cost_load_shedding: float = 1e5
@@ -249,11 +247,11 @@ class FBMCConfig:
     load_water_values: bool = False  # Whether to load water values in case creation
     water_values_path: str = None  # Optional: path to water values file
 
-    transfer_limit_UA_MD_flag: bool = False  # Whether to apply an upper limit on total transfer in UA market design
+    transfer_limit_UA_flag: bool = False  # Whether to apply an upper limit on total transfer in UA market design
     transfer_limit_EUR_UA: float = None  # Value for upper limit on total transfer in UA market design (if flag is True)
     transfer_limit_UA_EUR: float = None  # Value for upper limit on total transfer in UA market design (if flag is True)
 
-    net_position_limit_UA_MD_flag: bool = False  # Whether to apply a limit on net position in UA market design
+    net_position_limit_UA_flag: bool = False  # Whether to apply a limit on net position in UA market design
     net_position_UA_lower_limit: float = None  # Value for lower limit on net position of Ukraine
     net_position_UA_upper_limit: float = None  # Value for upper limit on net position of Ukraine
 
