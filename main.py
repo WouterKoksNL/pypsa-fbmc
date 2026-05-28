@@ -239,6 +239,8 @@ if __name__ == "__main__":
             'snapshot_i_range': slice(0, 2),
             'use_unit_commitment': True,
             'unit_commitment_path': "data/unit_commitment_halve_su_sd.csv",
+            'add_zonal_load_shedding': False,
+            'load_shedding_cost': 100_000,
         }
     )  
 
