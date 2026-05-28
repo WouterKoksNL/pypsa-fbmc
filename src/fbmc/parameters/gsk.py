@@ -16,6 +16,18 @@ from ...config import FBMCConfig
 from ...enums import GSKStrategy
 
 
+LOAD_SHEDDING_CARRIER = "load-shedding"
+
+
+def _filter_generators_for_gsk(
+    generators: pd.DataFrame,
+    excluded_carrier: str = LOAD_SHEDDING_CARRIER,
+) -> pd.DataFrame:
+    if 'carrier' not in generators.columns:
+        return generators
+    return generators.loc[~(generators['carrier'] == excluded_carrier)].copy()
+
+
 def calculate_gsk(nodal_net: pypsa.Network, 
                   gsk_strategy: GSKStrategy,
                   config,) -> dict[pd.Timestamp, pd.DataFrame]:
@@ -78,7 +90,8 @@ def calculate_gsk(nodal_net: pypsa.Network,
     elif gsk_strategy == GSKStrategy.BUS_P:
         gsk = gsk_bus_p(nodal_net)
     elif gsk_strategy == GSKStrategy.P_NOM:
-        gsk = gsk_p_nom(nodal_net.generators, nodal_net.buses)
+        gsk_generators = _filter_generators_for_gsk(nodal_net.generators)
+        gsk = gsk_p_nom(gsk_generators, nodal_net.buses)
     else:
         raise ValueError(f"Unknown method: {gsk_strategy}. Supported methods are: 'MERIT_ORDER','ADJUSTABLE_CAP', 'ITERATIVE_UNCERTAINTY', 'CURRENT_GENERATION', 'ITERATIVE_FBMC'.")
     
@@ -750,6 +763,14 @@ def gsk_p_nom(generators: pd.DataFrame, buses: pd.DataFrame) -> pd.DataFrame:
     for (bus, zone), p_nom in p_nom_per_node.itertuples():
         if total_p_nom_per_zone[zone] > 0:
             gsk_matrix.at[zone, bus] = p_nom / total_p_nom_per_zone[zone]
+
+    # Fallback: if no eligible generation remains in a zone, distribute equally across zone buses.
+    zone_names = buses['zone_name']
+    for zone in zone_names.unique():
+        if np.isclose(gsk_matrix.loc[zone].sum(), 0.0):
+            buses_in_zone = zone_names[zone_names == zone].index
+            if len(buses_in_zone) > 0:
+                gsk_matrix.loc[zone, buses_in_zone] = 1.0 / len(buses_in_zone)
     
     gsk_matrix.index.name = None
     return gsk_matrix
