@@ -53,7 +53,7 @@ def post_model_creation_workflow(zonal_net: pypsa.Network, config: FBMCConfig):
         logging.info(f"Applying limits of {config.net_position_UA_lower_limit} and {config.net_position_UA_upper_limit} on net position of UA/MD.")
         # zonal_net.model.add_constraints(zonal_net.model.variables["NetPosition-p"].sel(zone_name="UA/MD").sum(dim="zone_name") <= config.net_position_limit_UA_MD, name="net_position_upper_limit_UA_MD")
         zonal_net.model.add_constraints(
-            zonal_net.model.variables["Zone-p"].sel(Zone=["UA", "MD"]).sum(dim="Zone") >= -config.net_position_UA_lower_limit, name="net_position_lower_limit_UA"
+            zonal_net.model.variables["Zone-p"].sel(Zone=["UA", "MD"]).sum(dim="Zone") >= config.net_position_UA_lower_limit, name="net_position_lower_limit_UA"
             )
         zonal_net.model.add_constraints(
             zonal_net.model.variables["Zone-p"].sel(Zone=["UA", "MD"]).sum(dim="Zone") <= config.net_position_UA_upper_limit, name="net_position_upper_limit_UA"
