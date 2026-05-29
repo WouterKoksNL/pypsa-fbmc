@@ -45,7 +45,7 @@ def _create_model_without_meshed_split(network: pypsa.Network, create_model_kwar
 def post_model_creation_workflow(zonal_net: pypsa.Network, config: FBMCConfig):
     if config.transfer_limit_UA_flag:
         logging.info(f"Applying limit of {config.transfer_limit_EUR_UA} (EUR->UA) and {config.transfer_limit_UA_EUR} (UA->EUR) on total transfer to UA/MD.")
-        ua_links = zonal_net.links.index[(zonal_net.links.bus0 == "UA") | (zonal_net.links.bus1 == "UA")].index
+        ua_links = zonal_net.links.index[(zonal_net.links.bus0 == "UA") | (zonal_net.links.bus1 == "UA")]
         zonal_net.model.add_constraints(zonal_net.model.variables["Link-p"].sel(Link=ua_links).sum(dim="Link") <= config.transfer_limit_EUR_UA, name="total_transfer_limit_EUR_UA")
         zonal_net.model.add_constraints(-zonal_net.model.variables["Link-p"].sel(Link=ua_links).sum(dim="Link") <= config.transfer_limit_UA_EUR, name="total_transfer_limit_UA_EUR")
         
