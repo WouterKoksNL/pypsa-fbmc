@@ -69,6 +69,7 @@ def _default_config_values() -> dict[str, Any]:
         "net_position_limit_UA_flag": False,
         "net_position_UA_lower_limit": None,
         "net_position_UA_upper_limit": None,
+        "upper_ram_only_flag": True,
     }
 
 
@@ -254,6 +255,8 @@ class FBMCConfig:
     net_position_limit_UA_flag: bool = False  # Whether to apply a limit on net position in UA market design
     net_position_UA_lower_limit: float = None  # Value for lower limit on net position of Ukraine
     net_position_UA_upper_limit: float = None  # Value for upper limit on net position of Ukraine
+
+    upper_ram_only_flag: bool = False  # Whether to only apply upper RAM constraints in advanced hybrid coupling
 
     def __str__(self) -> str:
         """Return a readable multi-line view of the effective configuration."""
