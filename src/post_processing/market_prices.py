@@ -30,8 +30,13 @@ def calculate_zonal_prices(zones, snapshots, z_ptdf_dict: dict[str], model: lp.M
         # Get the dual variables for the constraints
         # zonal_balance_dual = model.constraints[f'Zonal_balance-subnet-{sub_network}'].dual
         cnec_upper_ram_dual = model.constraints[f'CNEC-upper-RAM-subnet-{sub_network}'].dual
-        cnec_lower_ram_dual = model.constraints[f'CNEC-lower-RAM-subnet-{sub_network}'].dual
-        zonal_price =- slack_zone_dual_ser + (z_ptdf * cnec_upper_ram_dual).sum(dim='cnec') + (z_ptdf * cnec_lower_ram_dual).sum(dim='cnec')
+        cnec_lower_ram_dual = None
+        zonal_price = - slack_zone_dual_ser + (z_ptdf * cnec_upper_ram_dual).sum(dim='cnec')
+        if f'CNEC-lower-RAM-subnet-{sub_network}' in model.constraints:
+            cnec_lower_ram_dual = model.constraints[f'CNEC-lower-RAM-subnet-{sub_network}'].dual
+            zonal_price += (z_ptdf * cnec_lower_ram_dual).sum(dim='cnec')
+        
+        
         zonal_prices_full.loc[:, subnet_zones] = zonal_price.to_pandas()
 
     return zonal_prices_full
