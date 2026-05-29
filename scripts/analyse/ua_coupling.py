@@ -36,12 +36,25 @@ def _read_market_prices(case_dir: Path) -> pd.DataFrame:
 	return pd.read_csv(prices_path, index_col=0)
 
 
+def _read_net_positions(case_dir: Path) -> pd.DataFrame:
+	net_positions_path = case_dir / "net_positions_zone_p.csv"
+	return pd.read_csv(net_positions_path, index_col=0)
+
+
 def _load_run_prices(run_dirs: Iterable[Path]) -> pd.DataFrame:
 	price_frames = [_read_market_prices(run_dir) for run_dir in run_dirs]
 	if not price_frames:
 		return pd.DataFrame()
 	combined_prices = pd.concat(price_frames, axis=0)
 	return combined_prices.sort_index()
+
+
+def _load_run_net_positions(run_dirs: Iterable[Path]) -> pd.DataFrame:
+	net_position_frames = [_read_net_positions(run_dir) for run_dir in run_dirs]
+	if not net_position_frames:
+		return pd.DataFrame()
+	combined_net_positions = pd.concat(net_position_frames, axis=0)
+	return combined_net_positions.sort_index()
 
 
 def _load_run_summaries(run_dirs: Iterable[Path]) -> pd.DataFrame:
@@ -58,14 +71,14 @@ def _load_run_summaries(run_dirs: Iterable[Path]) -> pd.DataFrame:
 
 
 def _load_case_bundle(case_dir: Path) -> dict[str, pd.DataFrame | dict]:
-	water_valuation_dir = case_dir / WATER_VALUATION_RUN_NAME
 	clearing_runs = _list_clearing_runs(case_dir)
 
 	return {
-		"water_valuation_summary": _read_summary(water_valuation_dir),
-		"water_valuation_prices": _read_market_prices(water_valuation_dir),
+		# "water_valuation_summary": _read_summary(water_valuation_dir),
+		# "water_valuation_pricess": _read_market_prices(water_valuation_dir),
 		"clearing_summaries": _load_run_summaries(clearing_runs),
 		"clearing_prices": _load_run_prices(clearing_runs),
+		"net_positions_zone_p": _load_run_net_positions(clearing_runs),
 	}
 
 
@@ -86,57 +99,63 @@ def run_analysis(
 
 	bundle["clearing_prices"].to_csv(out / "clearing_prices.csv")
 	bundle["clearing_summaries"].to_csv(out / "clearing_summaries.csv")
-	bundle["water_valuation_prices"].to_csv(out / "water_valuation_prices.csv")
+	bundle["net_positions_zone_p"].to_csv(out / "net_positions_zone_p.csv")
+	# bundle["water_valuation_prices"].to_csv(out / "water_valuation_prices.csv")
 	clearing_avg_prices = bundle["clearing_prices"].apply(pd.to_numeric, errors="coerce").mean(axis=0).to_frame("avg_price")
-	water_valuation_avg_prices = (
-		bundle["water_valuation_prices"].apply(pd.to_numeric, errors="coerce").mean(axis=0).to_frame("avg_price")
-	)
+	# water_valuation_avg_prices = (
+	# 	bundle["water_valuation_prices"].apply(pd.to_numeric, errors="coerce").mean(axis=0).to_frame("avg_price")
+	# )
 	clearing_avg_prices.to_csv(out / "clearing_prices_temporal_average.csv")
-	water_valuation_avg_prices.to_csv(out / "water_valuation_prices_temporal_average.csv")
-	(out / "water_valuation_summary.json").write_text(
-		json.dumps(bundle["water_valuation_summary"], indent=2),
-		encoding="utf-8",
-	)
+	# water_valuation_avg_prices.to_csv(out / "water_valuation_prices_temporal_average.csv")
+	# (out / "water_valuation_summary.json").write_text(
+	# 	json.dumps(bundle["water_valuation_summary"], indent=2),
+	# 	encoding="utf-8",
+	# )
 
 	return {
 		"case_name": pd.DataFrame({"case_name": [case_name]}),
 		"clearing_prices": bundle["clearing_prices"],
 		"clearing_prices_temporal_average": clearing_avg_prices,
 		"clearing_summaries": bundle["clearing_summaries"],
-		"water_valuation_prices": bundle["water_valuation_prices"],
-		"water_valuation_prices_temporal_average": water_valuation_avg_prices,
-		"water_valuation_summary": pd.DataFrame([bundle["water_valuation_summary"]]),
+		"net_positions_zone_p": bundle["net_positions_zone_p"],
+		# "water_valuation_prices": bundle["water_valuation_prices"],
+		# "water_valuation_prices_temporal_average": water_valuation_avg_prices,
+		# "water_valuation_summary": pd.DataFrame([bundle["water_valuation_summary"]]),
 	}
 
 
-def main() -> None:
-	parser = argparse.ArgumentParser(description="Analyze split UA coupling results for one or more cases.")
-	parser.add_argument("cases", nargs="*", default=[
-		# "pypsa-eur-ua/base", 
-		"pypsa-eur-ua/disconnected"
-		])
-	parser.add_argument("--results-root", default=None)
-	parser.add_argument("--output-dir", default=None)
-	args = parser.parse_args()
+def main(case_name, results_root, output_dir) -> None:
 
-	for case_name in args.cases:
-		case_output_dir = None
-		if args.output_dir:
-			case_output_dir = Path(args.output_dir) / case_name
+	case_output_dir = None
+	if output_dir:
+		case_output_dir = Path(output_dir) / case_name
 
-		results = run_analysis(
-			case_name=case_name,
-			results_root=Path(args.results_root) if args.results_root else None,
-			output_dir=case_output_dir,
-		)
+	results = run_analysis(
+		case_name=case_name,
+		results_root=Path(results_root) if results_root else None,
+		output_dir=case_output_dir,
+	)
 
-		print(f"Case: {case_name}")
-		print("Clearing prices:")
-		print(results["clearing_prices"])
-		print()
-		print(results["water_valuation_summary"])
-		print()
+	print(f"Case: {case_name}")
+	print("Clearing prices:")
+	print(results["clearing_prices"])
+	print()
+	# print(results["water_valuation_summary"])
+	print()
 
 
 if __name__ == "__main__":
-	main()
+	parser = argparse.ArgumentParser(description="Analyze split UA coupling results for one or more cases.")
+	
+	parser.add_argument("--results-root", default=None)
+	parser.add_argument("--output-dir", default=None)
+	args = parser.parse_args()
+	cases = [
+		"pypsa-eur-ua/base/red", 
+		"pypsa-eur-ua/disconnected/red",
+		"pypsa-eur-ua/ntc-max/red",
+		"pypsa-eur-ua/ntc-2450/red",
+		"pypsa-eur-ua/np-limit/red",
+		]
+	for case_name in cases:
+		main(case_name, results_root=args.results_root, output_dir=args.output_dir)
