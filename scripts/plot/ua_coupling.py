@@ -40,9 +40,13 @@ def _load_prices(analysis_dir: Path, source: str) -> pd.DataFrame:
 	return pd.read_csv(analysis_dir / source_file, index_col=0)
 
 
-def _temporal_average(prices: pd.DataFrame) -> pd.DataFrame:
-	average_prices = prices.apply(pd.to_numeric, errors="coerce").mean(axis=0).dropna()
-	out = average_prices.rename("avg_price").to_frame()
+def _load_net_positions(analysis_dir: Path) -> pd.DataFrame:
+	return pd.read_csv(analysis_dir / "net_positions_zone_p.csv", index_col=0)
+
+
+def _temporal_average_by_zone(data: pd.DataFrame, value_name: str) -> pd.DataFrame:
+	average_values = data.apply(pd.to_numeric, errors="coerce").mean(axis=0).dropna()
+	out = average_values.rename(value_name).to_frame()
 	out.index.name = "zone"
 	return out.reset_index()
 
@@ -66,7 +70,11 @@ def _normalize_zone_code(zone: str) -> str:
 	return str(zone).strip().upper()
 
 
-def _merge_prices_with_shapes(countries: gpd.GeoDataFrame, avg_prices: pd.DataFrame) -> tuple[gpd.GeoDataFrame, pd.DataFrame]:
+def _merge_values_with_shapes(
+	countries: gpd.GeoDataFrame,
+	zone_values: pd.DataFrame,
+	value_col: str,
+) -> tuple[gpd.GeoDataFrame, pd.DataFrame]:
 	country_code_col = _select_country_code_column(countries)
 	countries = countries.copy()
 	countries["country_code"] = countries[country_code_col].astype(str).str.upper()
@@ -76,61 +84,48 @@ def _merge_prices_with_shapes(countries: gpd.GeoDataFrame, avg_prices: pd.DataFr
 			is_country = country_names.str.contains(country_name, regex=False)
 			countries.loc[is_country, "country_code"] = country_code
 
-	avg_prices = avg_prices.copy()
-	avg_prices["country_code"] = avg_prices["zone"].map(_normalize_zone_code)
+	zone_values = zone_values.copy()
+	zone_values["country_code"] = zone_values["zone"].map(_normalize_zone_code)
 
-	merged = countries.merge(avg_prices[["country_code", "avg_price"]], on="country_code", how="left")
-	return merged, avg_prices
+	merged = countries.merge(zone_values[["country_code", value_col]], on="country_code", how="left")
+	return merged, zone_values
 
 
-def _plot_prices_map(
+def _plot_metric_map(
 	merged: gpd.GeoDataFrame,
-	avg_prices: pd.DataFrame,
-	case_name: str,
-	source: str,
+	value_col: str,
+	title: str,
+	legend_label: str,
 	output_path: Path,
+	cmap: str = "YlOrRd",
 	minx: float = -12.0,
 	maxx: float = 41.0,
 	miny: float = 34.0,
 	maxy: float = 59.0,
-	price_limits: tuple[float, float] | None = (0.0, 110.0),
+	value_limits: tuple[float, float] | None = None,
 ) -> None:
 	fig, ax = plt.subplots(figsize=(13, 8), dpi=150)
 
 	merged.plot(ax=ax, color="#eceff1", edgecolor="white", linewidth=0.3)
 	plot_kwargs = {
 		"ax": ax,
-		"column": "avg_price",
-		"cmap": "YlOrRd",
+		"column": value_col,
+		"cmap": cmap,
 		"linewidth": 0.45,
 		"edgecolor": "#1f2937",
 		"legend": True,
-		"legend_kwds": {"label": "Market price [EUR/MWh]", "shrink": 0.7},
+		"legend_kwds": {"label": legend_label, "shrink": 0.7},
 	}
-	if price_limits is not None:
-		plot_kwargs["vmin"], plot_kwargs["vmax"] = price_limits
+	if value_limits is not None:
+		plot_kwargs["vmin"], plot_kwargs["vmax"] = value_limits
 
-	merged.dropna(subset=["avg_price"]).plot(**plot_kwargs)
-
-	plotted = merged.dropna(subset=["avg_price"])
+	merged.dropna(subset=[value_col]).plot(**plot_kwargs)
 
 	ax.set_xlim(minx, maxx)
 	ax.set_ylim(miny, maxy)
 
-	missing_zones = sorted(set(avg_prices["country_code"]) - set(plotted["country_code"]))
-
 	ax.set_axis_off()
-	ax.set_title(f"UA coupling {source.replace('_', ' ')} market prices\n{case_name}", fontsize=14, pad=16)
-
-	if missing_zones:
-		fig.text(
-			0.5,
-			0.03,
-			f"Unmapped zones: {', '.join(missing_zones)}",
-			ha="center",
-			fontsize=8,
-			color="#6b7280",
-		)
+	ax.set_title(title, fontsize=14, pad=16)
 
 	output_path.parent.mkdir(parents=True, exist_ok=True)
 	fig.tight_layout()
@@ -165,32 +160,56 @@ def run_plot(
 	results_root: Path | None = None,
 	analysis_dir: Path | None = None,
 	output_path: Path | None = None,
+	net_position_output_path: Path | None = None,
 	geojson_path: Path | None = None,
 	price_limits: tuple[float, float] | None = (0.0, 110.0),
+	z_limits: tuple[float, float] | None = (-3000.0, 3000.0),
 ) -> Path:
 	analysis = Path(analysis_dir) if analysis_dir is not None else _default_analysis_dir(case_name, results_root)
 	prices = _load_prices(analysis, source=source)
-	
-	avg_prices = _temporal_average(prices)
+	net_positions = _load_net_positions(analysis)
+
+	avg_prices = _temporal_average_by_zone(prices, value_name="avg_price")
+	avg_net_positions = _temporal_average_by_zone(net_positions, value_name="avg_net_position")
 
 	shapes_path = _ensure_countries_geojson(Path(geojson_path) if geojson_path is not None else COUNTRIES_GEOJSON_PATH)
 	countries = gpd.read_file(shapes_path)
-	merged, normalized_avg = _merge_prices_with_shapes(countries, avg_prices)
+	prices_merged, normalized_avg_prices = _merge_values_with_shapes(countries, avg_prices, value_col="avg_price")
+	net_positions_merged, normalized_avg_net_positions = _merge_values_with_shapes(
+		countries,
+		avg_net_positions,
+		value_col="avg_net_position",
+	)
 
 	if output_path is None:
 		out_plot = analysis / "plots" / f"{source}_market_prices_map.png"
 	else:
 		out_plot = Path(output_path)
+	if net_position_output_path is None:
+		net_position_out_plot = analysis / "plots" / "net_positions_map.png"
+	else:
+		net_position_out_plot = Path(net_position_output_path)
 
-	_plot_prices_map(
-		merged=merged,
-		avg_prices=normalized_avg,
-		case_name=case_name,
-		source=source,
+	_plot_metric_map(
+		merged=prices_merged,
+		value_col="avg_price",
+		title=f"UA coupling {source.replace('_', ' ')} market prices\n{case_name}",
+		legend_label="Market price [EUR/MWh]",
 		output_path=out_plot,
-		price_limits=price_limits,
+		cmap="YlOrRd",
+		value_limits=price_limits,
 	)
-	normalized_avg.to_csv(analysis / f"{source}_market_prices_temporal_average.csv", index=False)
+	_plot_metric_map(
+		merged=net_positions_merged,
+		value_col="avg_net_position",
+		title=f"UA coupling net positions\n{case_name}",
+		legend_label="Net position [MW]",
+		output_path=net_position_out_plot,
+		cmap="RdBu_r",
+		value_limits=z_limits,
+	)
+	normalized_avg_prices.to_csv(analysis / f"{source}_market_prices_temporal_average.csv", index=False)
+	normalized_avg_net_positions.to_csv(analysis / "net_positions_temporal_average.csv", index=False)
 	
 	countries = ["DE", "PL", "HU", "UA"]
 	ls = {country: "-" if country == "UA" else "--" for country in countries}
@@ -233,12 +252,13 @@ def main(case_name: str = "pypsa-eur-ua/base") -> None:
 
 
 if __name__ == "__main__":
-	case_names = [
-		"pypsa-eur-ua/base",
-		# "pypsa-eur-ua/ntc-max",
-		"pypsa-eur-ua/ntc-2450",
-		"pypsa-eur-ua/disconnected",
-	]
-	for case_name in case_names:
-		main(case_name=case_name)
+	cases = [
+		"pypsa-eur-ua/base/red", 
+		"pypsa-eur-ua/disconnected/red",
+		"pypsa-eur-ua/ntc-max/red",
+		"pypsa-eur-ua/ntc-2450/red",
+		"pypsa-eur-ua/np-limit/red",
+		]
+	for case in cases:
+		main(case_name=case)
 
