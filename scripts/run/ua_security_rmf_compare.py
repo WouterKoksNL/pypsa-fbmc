@@ -167,13 +167,13 @@ def main_cli() -> None:
         rmf=0.1,
     )
 
-    print("Running scenario: security constraints OFF, RMF=0.4")
+    print("Running scenario: security constraints OFF, RMF=0.5")
     prices_sec_off, np_sec_off = run_case(
         base_nodal_net,
         sec_off_dir,
         snapshot_slice,
         security_constraints=False,
-        rmf=0.4,
+        rmf=0.5,
     )
 
     prices_diff, prices_summary = summarize_diff(sec_on_label, sec_off_label, prices_sec_on, prices_sec_off)
