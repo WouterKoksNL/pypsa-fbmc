@@ -161,7 +161,7 @@ for case, params_base in deepcopy(runs_to_execute).items():
     config = FBMCConfig.from_base_yaml(config_path)
     config.add_security_constraints = SECURITY_CONSTRAINTS_FLAG
     if case == "ntc-2450":
-        config.transfer_limit_UA_MD_flag = True
+        config.transfer_limit_UA_flag = True
         config.transfer_limit_EUR_UA = 2450 
         config.transfer_limit_UA_EUR = 900
     if case == "np-limit":
