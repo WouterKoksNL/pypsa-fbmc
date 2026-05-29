@@ -49,8 +49,8 @@ if test_bool:
 else:
     N_TIMESTEPS_LONG_TERM = 24*7
     N_TIMESTEPS_MARKET = 24*7
-    SECURITY_CONSTRAINTS_FLAG = False
-    RMF = 0.4
+    SECURITY_CONSTRAINTS_FLAG = True
+    RMF = 0.1
 TS_START = 24*4*4
 
 
