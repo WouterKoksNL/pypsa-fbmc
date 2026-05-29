@@ -206,7 +206,7 @@ def run_plot(
 		title=f"UA coupling net positions\n{case_name}",
 		legend_label="Net position [MW]",
 		output_path=net_position_out_plot,
-		cmap="RdBu_r",
+		cmap="RdBu",
 		value_limits=z_limits,
 	)
 	normalized_avg_prices.to_csv(analysis / f"{source}_market_prices_temporal_average.csv", index=False)
