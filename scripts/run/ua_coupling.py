@@ -44,10 +44,14 @@ print(f"Running with test_bool={test_bool}")
 if test_bool:
     N_TIMESTEPS_LONG_TERM = 6
     N_TIMESTEPS_MARKET = 2
+    SECURITY_CONSTRAINTS_FLAG = False
+    RMF = 0.4
 else:
     N_TIMESTEPS_LONG_TERM = 24*7
     N_TIMESTEPS_MARKET = 24
-
+    SECURITY_CONSTRAINTS_FLAG = True
+    RMF = 0.1
+TS_START = 24*4*4
 
 
 n_market_clearings = int(N_TIMESTEPS_LONG_TERM / N_TIMESTEPS_MARKET)
@@ -155,7 +159,7 @@ else:
 for case, params_base in deepcopy(runs_to_execute).items():
     config_path = Path("config/base_config.yaml")
     config = FBMCConfig.from_base_yaml(config_path)
-    config.add_security_constraints = True
+    config.add_security_constraints = SECURITY_CONSTRAINTS_FLAG
     if case == "ntc-2450":
         config.transfer_limit_UA_MD_flag = True
         config.transfer_limit_EUR_UA = 2450 
@@ -184,13 +188,13 @@ for case, params_base in deepcopy(runs_to_execute).items():
             config_overrides={
                 "gsk_strategy": GSKStrategy.P_NOM,
                 "base_case_strategy": BaseCaseStrategy.ZERO_FLOWS,
-                "reliability_margin_factor": 0.1,
+                "reliability_margin_factor": RMF,
                 "run_redispatch": False,
             },
             load_case_flag=False,
             case_kwargs={},
             case_alteration_kwargs={
-                'snapshot_i_range': slice(N_TIMESTEPS_MARKET*i_clearing, N_TIMESTEPS_MARKET*(i_clearing+1)),
+                'snapshot_i_range': slice(TS_START+N_TIMESTEPS_MARKET*i_clearing, TS_START+N_TIMESTEPS_MARKET*(i_clearing+1)),
                 'use_unit_commitment': False,
                 'unit_commitment_path': "data/unit_commitment_halve_su_sd.csv",
                 'add_zonal_load_shedding': True,
