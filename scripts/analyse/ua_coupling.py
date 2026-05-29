@@ -41,6 +41,13 @@ def _read_net_positions(case_dir: Path) -> pd.DataFrame:
 	return pd.read_csv(net_positions_path, index_col=0)
 
 
+def _read_load_shedding(case_dir: Path) -> pd.DataFrame:
+	load_shedding_path = case_dir / "load_shedding_zone_p.csv"
+	if not load_shedding_path.exists():
+		return pd.DataFrame()
+	return pd.read_csv(load_shedding_path, index_col=0)
+
+
 def _load_run_prices(run_dirs: Iterable[Path]) -> pd.DataFrame:
 	price_frames = [_read_market_prices(run_dir) for run_dir in run_dirs]
 	if not price_frames:
@@ -55,6 +62,15 @@ def _load_run_net_positions(run_dirs: Iterable[Path]) -> pd.DataFrame:
 		return pd.DataFrame()
 	combined_net_positions = pd.concat(net_position_frames, axis=0)
 	return combined_net_positions.sort_index()
+
+
+def _load_run_load_shedding(run_dirs: Iterable[Path]) -> pd.DataFrame:
+	load_shedding_frames = [_read_load_shedding(run_dir) for run_dir in run_dirs]
+	load_shedding_frames = [frame for frame in load_shedding_frames if not frame.empty]
+	if not load_shedding_frames:
+		return pd.DataFrame()
+	combined_load_shedding = pd.concat(load_shedding_frames, axis=0)
+	return combined_load_shedding.sort_index()
 
 
 def _load_run_summaries(run_dirs: Iterable[Path]) -> pd.DataFrame:
@@ -79,6 +95,7 @@ def _load_case_bundle(case_dir: Path) -> dict[str, pd.DataFrame | dict]:
 		"clearing_summaries": _load_run_summaries(clearing_runs),
 		"clearing_prices": _load_run_prices(clearing_runs),
 		"net_positions_zone_p": _load_run_net_positions(clearing_runs),
+		"load_shedding_zone_p": _load_run_load_shedding(clearing_runs),
 	}
 
 
@@ -100,12 +117,15 @@ def run_analysis(
 	bundle["clearing_prices"].to_csv(out / "clearing_prices.csv")
 	bundle["clearing_summaries"].to_csv(out / "clearing_summaries.csv")
 	bundle["net_positions_zone_p"].to_csv(out / "net_positions_zone_p.csv")
+	bundle["load_shedding_zone_p"].to_csv(out / "load_shedding_zone_p.csv")
 	# bundle["water_valuation_prices"].to_csv(out / "water_valuation_prices.csv")
 	clearing_avg_prices = bundle["clearing_prices"].apply(pd.to_numeric, errors="coerce").mean(axis=0).to_frame("avg_price")
+	load_shedding_avg = bundle["load_shedding_zone_p"].apply(pd.to_numeric, errors="coerce").mean(axis=0).to_frame("avg_load_shedding")
 	# water_valuation_avg_prices = (
 	# 	bundle["water_valuation_prices"].apply(pd.to_numeric, errors="coerce").mean(axis=0).to_frame("avg_price")
 	# )
 	clearing_avg_prices.to_csv(out / "clearing_prices_temporal_average.csv")
+	load_shedding_avg.to_csv(out / "load_shedding_temporal_average.csv")
 	# water_valuation_avg_prices.to_csv(out / "water_valuation_prices_temporal_average.csv")
 	# (out / "water_valuation_summary.json").write_text(
 	# 	json.dumps(bundle["water_valuation_summary"], indent=2),
@@ -118,6 +138,8 @@ def run_analysis(
 		"clearing_prices_temporal_average": clearing_avg_prices,
 		"clearing_summaries": bundle["clearing_summaries"],
 		"net_positions_zone_p": bundle["net_positions_zone_p"],
+		"load_shedding_zone_p": bundle["load_shedding_zone_p"],
+		"load_shedding_temporal_average": load_shedding_avg,
 		# "water_valuation_prices": bundle["water_valuation_prices"],
 		# "water_valuation_prices_temporal_average": water_valuation_avg_prices,
 		# "water_valuation_summary": pd.DataFrame([bundle["water_valuation_summary"]]),
@@ -152,9 +174,9 @@ if __name__ == "__main__":
 	args = parser.parse_args()
 	cases = [
 		"pypsa-eur-ua/base/red", 
-		"pypsa-eur-ua/disconnected/red",
-		"pypsa-eur-ua/ntc-max/red",
-		"pypsa-eur-ua/ntc-2450/red",
+		# "pypsa-eur-ua/disconnected/red",
+		# "pypsa-eur-ua/ntc-max/red",
+		# "pypsa-eur-ua/ntc-2450/red",
 		"pypsa-eur-ua/np-limit/red",
 		]
 	for case_name in cases:

@@ -44,6 +44,13 @@ def _load_net_positions(analysis_dir: Path) -> pd.DataFrame:
 	return pd.read_csv(analysis_dir / "net_positions_zone_p.csv", index_col=0)
 
 
+def _load_load_shedding(analysis_dir: Path) -> pd.DataFrame:
+	load_shedding_path = analysis_dir / "load_shedding_zone_p.csv"
+	if not load_shedding_path.exists():
+		return pd.DataFrame()
+	return pd.read_csv(load_shedding_path, index_col=0)
+
+
 def _temporal_average_by_zone(data: pd.DataFrame, value_name: str) -> pd.DataFrame:
 	average_values = data.apply(pd.to_numeric, errors="coerce").mean(axis=0).dropna()
 	out = average_values.rename(value_name).to_frame()
@@ -142,9 +149,12 @@ def plot_timeseries(
 	colors: dict[str, str],
 	y_label: str,
 	):
+	available_countries = [country for country in countries if country in prices.columns]
+	if not available_countries:
+		return
 
 	plt.figure()
-	for country in countries:
+	for country in available_countries:
 		plt.plot(prices.loc[:, country], label=country, ls=ls[country], color=colors[country])
 	plt.xlabel("Time [h]")
 	plt.ylabel(y_label)
@@ -169,6 +179,7 @@ def run_plot(
 	analysis = Path(analysis_dir) if analysis_dir is not None else _default_analysis_dir(case_name, results_root)
 	prices = _load_prices(analysis, source=source)
 	net_positions = _load_net_positions(analysis)
+	load_shedding = _load_load_shedding(analysis)
 
 	avg_prices = _temporal_average_by_zone(prices, value_name="avg_price")
 	avg_net_positions = _temporal_average_by_zone(net_positions, value_name="avg_net_position")
@@ -206,7 +217,7 @@ def run_plot(
 		title=f"UA coupling net positions\n{case_name}",
 		legend_label="Net position [MW]",
 		output_path=net_position_out_plot,
-		cmap="RdBu",
+		cmap="coolwarm_r",
 		value_limits=z_limits,
 	)
 	normalized_avg_prices.to_csv(analysis / f"{source}_market_prices_temporal_average.csv", index=False)
@@ -236,6 +247,15 @@ def run_plot(
 		colors=colors,
 		y_label="Net position [MW]",
 	)
+	if not load_shedding.empty:
+		plot_timeseries(
+			prices=load_shedding,
+			output_path=analysis / "plots/load_shedding_timeseries.png",
+			countries=countries,
+			ls=ls,
+			colors=colors,
+			y_label="Load shedding [MW]",
+		)
 	return out_plot
 
 
@@ -264,9 +284,9 @@ def main(case_name: str = "pypsa-eur-ua/base") -> None:
 if __name__ == "__main__":
 	cases = [
 		"pypsa-eur-ua/base/red", 
-		"pypsa-eur-ua/disconnected/red",
-		"pypsa-eur-ua/ntc-max/red",
-		"pypsa-eur-ua/ntc-2450/red",
+		# "pypsa-eur-ua/disconnected/red",
+		# "pypsa-eur-ua/ntc-max/red",
+		# "pypsa-eur-ua/ntc-2450/red",
 		"pypsa-eur-ua/np-limit/red",
 		]
 	for case in cases:

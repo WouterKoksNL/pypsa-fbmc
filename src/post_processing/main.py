@@ -9,6 +9,30 @@ from src.types import FBMCWorkflowResult
 from .market_prices import calculate_zonal_prices
 
 
+def calculate_zonal_load_shedding(fbmc_results: FBMCWorkflowResult) -> pd.DataFrame:
+    """Aggregate load-shedding generator dispatch to zonal totals per snapshot."""
+    zonal_net = fbmc_results.zonal_net
+    snapshots = zonal_net.snapshots
+    zones = zonal_net.buses.index
+
+    load_shedding_gens = zonal_net.generators.index[zonal_net.generators.carrier == "load-shedding"]
+    if len(load_shedding_gens) == 0:
+        return pd.DataFrame(0.0, index=snapshots, columns=zones)
+
+    generator_dispatch = fbmc_results.dispatch_results.generators_p
+    if generator_dispatch.empty:
+        return pd.DataFrame(0.0, index=snapshots, columns=zones)
+
+    existing_load_shedding_gens = [g for g in load_shedding_gens if g in generator_dispatch.columns]
+    if len(existing_load_shedding_gens) == 0:
+        return pd.DataFrame(0.0, index=snapshots, columns=zones)
+
+    load_shedding_dispatch = generator_dispatch.loc[:, existing_load_shedding_gens]
+    zone_map = zonal_net.generators.loc[existing_load_shedding_gens, "bus"]
+    zonal_load_shedding = load_shedding_dispatch.T.groupby(zone_map).sum().T
+    return zonal_load_shedding.reindex(columns=zones, fill_value=0.0)
+
+
 def get_slack_zones(nodal_buses: pd.DataFrame) -> pd.Series:
     """Create a mapping of sub_networks to their respective slack buses.
 
@@ -70,6 +94,11 @@ def process_results(
     prices_path = save_path / "zonal_market_prices.csv"
     zonal_prices.to_csv(prices_path)
     outputs["zonal_market_prices"] = prices_path
+
+    zonal_load_shedding = calculate_zonal_load_shedding(fbmc_results)
+    load_shedding_path = save_path / "load_shedding_zone_p.csv"
+    zonal_load_shedding.to_csv(load_shedding_path)
+    outputs["load_shedding_zone_p"] = load_shedding_path
 
     objective_value = None
     if getattr(fbmc_results.zonal_net, "model", None) is not None:
