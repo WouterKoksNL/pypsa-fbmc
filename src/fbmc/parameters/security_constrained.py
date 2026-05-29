@@ -70,15 +70,20 @@ def apply_bodf_columnwise(df: pd.DataFrame, bodf: pd.Series) -> pd.DataFrame:
     cnec_branches = bodf.index.get_level_values(0)
     outage_branches = bodf.index.get_level_values(1)
 
-    result_df = df.reindex(cnec_branches).copy()
+    cnec_idx = df.index.get_indexer(cnec_branches)
+    outage_idx = df.index.get_indexer(outage_branches)
+    if (cnec_idx < 0).any() or (outage_idx < 0).any():
+        raise KeyError("BODF contains branch/outage labels that are missing from df.index")
+
     bodf_values = bodf.to_numpy()
+    df_values = df.to_numpy(copy=False)
+    result_values = np.empty((len(bodf), df.shape[1]), dtype=np.result_type(df_values.dtype, bodf_values.dtype))
 
-    for column in result_df.columns:
-        outage_contribution = df[column].reindex(outage_branches).to_numpy() * bodf_values
-        result_df[column] = result_df[column].to_numpy() + outage_contribution
+    for col_i in range(df.shape[1]):
+        col_values = df_values[:, col_i]
+        result_values[:, col_i] = col_values[cnec_idx] + col_values[outage_idx] * bodf_values
 
-    result_df.index = bodf.index
-    return result_df
+    return pd.DataFrame(result_values, index=bodf.index, columns=df.columns)
 
 
 def apply_bodf(
