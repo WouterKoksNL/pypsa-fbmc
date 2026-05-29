@@ -32,7 +32,8 @@ def add_fbmc_constraints(
         lower_RAM_xr: xr.DataArray,
         advanced_hybrid_flag: bool,
         link_ptdf_bus0: pd.DataFrame | None = None,
-        link_ptdf_bus1: pd.DataFrame | None = None
+        link_ptdf_bus1: pd.DataFrame | None = None,
+        upper_ram_only_flag: bool = False,
     ) -> pypsa.Network:
     """
     Main function to add FBMC constraints to the network.
@@ -64,16 +65,17 @@ def add_fbmc_constraints(
     network.model.add_constraints(upper_cne_constraint, name=f"CNEC-upper-RAM-subnet-{sub_network_name}")
 
     # Restrict the load on CNEs by the Remaining Available Margin (RAM)
-    lower_cne_constraint = construct_cne_constraint_advanced_hybrid(
-        zPTDF_xr, 
-        network.model.variables["Zone-p"], 
-        lower_RAM_xr, 
-        upper_bool=False, 
-        advanced_hybrid_flag=advanced_hybrid_flag,
-        link_flows=link_flows,
-        link_ptdf_bus0=link_ptdf_bus0, 
-        link_ptdf_bus1=link_ptdf_bus1)
-    network.model.add_constraints(lower_cne_constraint, name=f"CNEC-lower-RAM-subnet-{sub_network_name}")
+    if not upper_ram_only_flag:
+        lower_cne_constraint = construct_cne_constraint_advanced_hybrid(
+            zPTDF_xr, 
+            network.model.variables["Zone-p"], 
+            lower_RAM_xr, 
+            upper_bool=False, 
+            advanced_hybrid_flag=advanced_hybrid_flag,
+            link_flows=link_flows,
+            link_ptdf_bus0=link_ptdf_bus0, 
+            link_ptdf_bus1=link_ptdf_bus1)
+        network.model.add_constraints(lower_cne_constraint, name=f"CNEC-lower-RAM-subnet-{sub_network_name}")
 
     # Ensure the Net Position of all zones adds up to 0
     zonal_balance_constraint = construct_zonal_balance_constraint(network.model.variables["Zone-p"].sel(Zone=zones))
