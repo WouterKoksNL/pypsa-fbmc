@@ -140,13 +140,14 @@ def plot_timeseries(
 	countries: list[str],
 	ls: dict[str, str],
 	colors: dict[str, str],
+	y_label: str,
 	):
 
 	plt.figure()
 	for country in countries:
 		plt.plot(prices.loc[:, country], label=country, ls=ls[country], color=colors[country])
 	plt.xlabel("Time [h]")
-	plt.ylabel("Market price [EUR/MWh]")
+	plt.ylabel(y_label)
 	
 
 	output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -225,6 +226,15 @@ def run_plot(
 		countries=countries,
 		ls=ls,
 		colors=colors,
+		y_label="Market price [EUR/MWh]",
+	)
+	plot_timeseries(
+		prices=net_positions,
+		output_path=analysis / "plots/net_positions_timeseries.png",
+		countries=countries,
+		ls=ls,
+		colors=colors,
+		y_label="Net position [MW]",
 	)
 	return out_plot
 
