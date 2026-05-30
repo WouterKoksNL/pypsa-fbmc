@@ -98,12 +98,12 @@ param_dict = {
         "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-ntc" / VERSION / "nodal.nc"),
         "prep_func": prep_ntc_case, 
      },
-    "disconnected": {
-        "case_name": None, 
-        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "disconnected" / VERSION,
-        "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-disconnected" / VERSION / "nodal.nc"),
-        "prep_func": prep_disconnected_case,
-     },
+    # "disconnected": {
+    #     "case_name": None, 
+    #     "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "disconnected" / VERSION,
+    #     "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-disconnected" / VERSION / "nodal.nc"),
+    #     "prep_func": prep_disconnected_case,
+    #  },
      "np-limit": {
         "case_name": None,
         "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua" / VERSION / "nodal.nc"),
