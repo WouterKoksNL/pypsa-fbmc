@@ -78,35 +78,36 @@ def prep_disconnected_case(params):
 
 ### BASE ###
 
+VERSION = "redload"
 param_dict = {
     "base": {
         "case_name": None,
-        "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua" / "red"/ "nodal.nc"),
-        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "base" / "red",
+        "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua" / VERSION / "nodal.nc"),
+        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "base" / VERSION,
         "prep_func": prep_base_case,
      },
      "ntc-max": {
         "case_name": None, 
-        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value)  / "ntc-max" / "red",
-        "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-ntc" / "red"/ "nodal.nc"),
+        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value)  / "ntc-max" / VERSION,
+        "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-ntc" / VERSION / "nodal.nc"),
         "prep_func": prep_ntc_case, 
      },
      "ntc-2450": {
         "case_name": None, 
-        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value)  / "ntc-2450" / "red",
-        "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-ntc" / "red"/ "nodal.nc"),
+        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value)  / "ntc-2450" / VERSION,
+        "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-ntc" / VERSION / "nodal.nc"),
         "prep_func": prep_ntc_case, 
      },
     "disconnected": {
         "case_name": None, 
-        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "disconnected" / "red",
-        "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-disconnected" / "red" / "nodal.nc"),
+        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "disconnected" / VERSION,
+        "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-disconnected" / VERSION / "nodal.nc"),
         "prep_func": prep_disconnected_case,
      },
      "np-limit": {
         "case_name": None,
-        "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua" / "red" / "nodal.nc"),
-        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "np-limit" / "red",
+        "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua" / VERSION / "nodal.nc"),
+        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "np-limit" / VERSION,
         "prep_func": prep_base_case,
      }
 }
