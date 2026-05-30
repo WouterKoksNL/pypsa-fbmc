@@ -55,7 +55,6 @@ def calculate_zonal_prices(
         if "net_position_lower_limit_UA" in model.constraints:
             lower_dual = model.constraints["net_position_lower_limit_UA"].dual
             zonal_price.loc[lower_dual.snapshot, lower_dual.Zone] += lower_dual
-            breakpoint()
 
         if "net_position_upper_limit_UA" in model.constraints:
             upper_dual = model.constraints["net_position_upper_limit_UA"].dual
