@@ -12,7 +12,7 @@ from src.config import FBMCConfig
 from src.case_creation.main import Cases
 from src.enums import GSKStrategy, BaseCaseStrategy
 from main import main
-from src.paths import get_case_results_dir, get_results_dir, get_input_networks_dir
+from src.paths import get_case_results_dir, get_input_networks_dir
 from src.case_creation.network_conversion import nodal_to_zonal
 
 
@@ -92,15 +92,16 @@ def prep_disconnected_case(params):
 
 ### BASE ###
 
+
 param_dict = {
     "base": {
         "case_name": None,
         "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua" / VERSION / "nodal.nc"),
+        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / RUNID / "base" / VERSION,
         "prep_func": prep_base_case,
      },
      "ntc-max": {
         "case_name": None, 
-        "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value)  / "ntc-max" / VERSION,
         "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / RUNID / "ntc-max" / VERSION,
         "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-ntc" / VERSION / "nodal.nc"),
         "prep_func": prep_ntc_case, 
@@ -113,7 +114,6 @@ param_dict = {
      },
     # "disconnected": {
     #     "case_name": None, 
-    #     "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / "disconnected" / VERSION,
     #     "save_path": get_case_results_dir(Cases.PYPSA_EUR_UA.value) / RUNID / "disconnected" / VERSION,
     #     "nodal_net": pypsa.Network(get_input_networks_dir() / "pypsa-eur-ua-disconnected" / VERSION / "nodal.nc"),
     #     "prep_func": prep_disconnected_case,
@@ -171,7 +171,14 @@ else:
 #     )  
 
 
-for case, params_base in deepcopy(runs_to_execute).items():
+for case, params_base in runs_to_execute.items():
+    if "save_path" not in params_base:
+        available_keys = ", ".join(params_base.keys())
+        raise KeyError(
+            f"Case '{case}' is missing required key 'save_path'. Available keys: {available_keys}"
+        )
+
+    case_save_path = params_base["save_path"]
     config_path = Path("config/base_config.yaml")
     config = FBMCConfig.from_base_yaml(config_path)
     config.add_security_constraints = SECURITY_CONSTRAINTS_FLAG
@@ -191,9 +198,10 @@ for case, params_base in deepcopy(runs_to_execute).items():
     for i_clearing in range(n_market_clearings):
         params = deepcopy(params_base)
         params["prep_func"](params)
-        save_path = params["save_path"] / f"clearing_{i_clearing}"
+        save_path = case_save_path / f"clearing_{i_clearing}"
         if not save_path.exists():
             save_path.mkdir(parents=True)
+        
         obj3 = main(
             save_path=save_path,
             case_name=params["case_name"], 
