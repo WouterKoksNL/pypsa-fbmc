@@ -43,7 +43,7 @@ def calculate_zonal_prices(
             f"CNEC-upper-RAM-subnet-{sub_network}"
         ].dual
         cnec_lower_ram_dual = None
-        zonal_price = -slack_zone_dual_ser + (z_ptdf * cnec_upper_ram_dual).sum(
+        zonal_price = -slack_zone_dual_ser - (z_ptdf * cnec_upper_ram_dual).sum(
             dim="cnec"
         )
         if f"CNEC-lower-RAM-subnet-{sub_network}" in model.constraints:
