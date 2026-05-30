@@ -2,7 +2,6 @@ import pypsa
 import pandas as pd
 import importlib
 from pathlib import Path
-from datetime import datetime
 import logging
 from typing import Any
 
@@ -27,6 +26,52 @@ from src.paths import get_case_results_dir
 
 configure_run_logging = importlib.import_module("src.fbmc.logging_setup").configure_run_logging
 
+
+def _extract_commitment_status(
+        zonal_net: pypsa.Network,
+        dispatch_results: DispatchResults,
+    ) -> pd.DataFrame:
+    """Return per-snapshot commitment status (True=on, False=off)."""
+    snapshots = zonal_net.snapshots
+    generators = zonal_net.generators.index
+    breakpoint()
+    if zonal_net.model is not None and hasattr(zonal_net.model, "solution") and "Generator-status" in zonal_net.model.solution:
+        status_raw = zonal_net.model.solution["Generator-status"].to_pandas()
+        if isinstance(status_raw, pd.Series):
+            if isinstance(status_raw.index, pd.MultiIndex):
+                status = status_raw.unstack()
+            else:
+                status = status_raw.to_frame().T
+        else:
+            status = status_raw
+        status = status.reindex(index=snapshots, columns=generators, fill_value=0.0)
+        return status > 0.5
+
+    # Fallback if status variable is not available: infer on/off from dispatch.
+    dispatch = dispatch_results.generators_p.reindex(index=snapshots, columns=generators, fill_value=0.0)
+    return dispatch > 1e-6
+
+
+def _fix_commitment_schedule_and_disable_uc(
+        zonal_net: pypsa.Network,
+        dispatch_results: DispatchResults,
+    ) -> None:
+    """Fix on/off schedule from UC run and disable UC binaries.
+
+    For generators that are off, set p_max_pu = 0 and p_min_pu = 0.
+    For generators that are on, keep p_max_pu and p_min_pu as in the UC parametrization.
+    Ramp-rate parameters are left unchanged and therefore still active in the LP rerun.
+    """
+    snapshots = zonal_net.snapshots
+    generators = zonal_net.generators.index
+    status_on = _extract_commitment_status(zonal_net, dispatch_results)
+
+    p_min_uc = zonal_net.get_switchable_as_dense("Generator", "p_min_pu").reindex(index=snapshots, columns=generators, fill_value=0.0)
+    p_max_uc = zonal_net.get_switchable_as_dense("Generator", "p_max_pu").reindex(index=snapshots, columns=generators, fill_value=1.0)
+
+    zonal_net.generators_t.p_min_pu = p_min_uc.where(status_on, 0.0)
+    zonal_net.generators_t.p_max_pu = p_max_uc.where(status_on, 0.0)
+    zonal_net.generators.loc[:, "committable"] = False
 
 
 
@@ -133,8 +178,8 @@ def fbmc_workflow(
 
     logger.info("Solving FBMC model.")
     zonal_net, net_positions = solve(zonal_net, advanced_hybrid_flag=config.advanced_hybrid_coupling_flag, solver_kwargs=config.fbmc_solver_kwargs)
-
     dispatch_results = DispatchResults(zonal_net)
+
     return FBMCWorkflowResult(
         zonal_net=zonal_net,
         net_positions=net_positions,
@@ -169,11 +214,32 @@ def main(
     config = merge_config_overrides(config, merged_config_overrides)
 
     case_data = input_getter(zonal_net, nodal_net, case_name, load_case_flag, save_case_flag, **case_kwargs)
-    case_data = alter_case_workflow(case_data, case_alteration_kwargs or {})
+    case_alteration_kwargs = case_alteration_kwargs or {}
+    case_data = alter_case_workflow(case_data, case_alteration_kwargs)
     zonal_net = case_data['zonal_net']
     nodal_net = case_data['nodal_net']
 
     gsk = case_data.get('gsk_dict', None)
+    # use_unit_commitment = case_alteration_kwargs.get("use_unit_commitment", False)
+    # if use_unit_commitment:
+    #     logger.info("Running initial UC solve before fixed-commitment LP rerun.")
+    #     uc_result = fbmc_workflow(
+    #         zonal_net=zonal_net,
+    #         nodal_net=nodal_net,
+    #         gsk=gsk,
+    #         config=config,
+    #     )
+    #     _fix_commitment_schedule_and_disable_uc(uc_result.zonal_net, uc_result.dispatch_results)
+    #     zonal_net_fixed_dispatch = uc_result.zonal_net.copy()
+
+    #     logger.info("Running fixed-commitment LP solve with committable=False for final prices/results.")
+    #     fbmc_result = fbmc_workflow(
+    #         zonal_net=zonal_net_fixed_dispatch,
+    #         nodal_net=nodal_net,
+    #         gsk=gsk,
+    #         config=config,
+    #     )
+    # else:
     fbmc_result = fbmc_workflow(
             zonal_net=zonal_net,
             nodal_net=nodal_net,
@@ -198,10 +264,9 @@ def main(
             rd_create_model_kwargs=config.rd_create_model_kwargs,
             **redispatch_kwargs,
         )
-  
+
     # do_lpf_contingency_check(nodal_net, rd_dispatch, fbmc_result.fbmc_parameters)
-    
-    
+
     process_results(
         fbmc_results=fbmc_result,
         rd_cost=rd_cost,
@@ -209,8 +274,6 @@ def main(
         save_path=save_path,
         config=config,
     )
-
-    
 
     return fbmc_result.zonal_net.model.objective.value
     
