@@ -53,6 +53,26 @@ def calculate_generation_mix(fbmc_results: FBMCWorkflowResult) -> pd.DataFrame:
     return generation_mix.sort_index(axis=1)
 
 
+def calculate_storage_mix(fbmc_results: FBMCWorkflowResult) -> pd.DataFrame:
+    """Aggregate storage-unit active power by bus and carrier for each snapshot."""
+    zonal_net = fbmc_results.zonal_net
+    storage_dispatch = fbmc_results.dispatch_results.storage_units_p
+
+    if storage_dispatch is None or storage_dispatch.empty:
+        return pd.DataFrame(index=zonal_net.snapshots)
+
+    existing_storage_units = [su for su in zonal_net.storage_units.index if su in storage_dispatch.columns]
+    if len(existing_storage_units) == 0:
+        return pd.DataFrame(index=storage_dispatch.index)
+
+    storage_dispatch = storage_dispatch.loc[:, existing_storage_units]
+    bus_labels = zonal_net.storage_units.loc[existing_storage_units, "bus"].astype(str)
+    carrier_labels = zonal_net.storage_units.loc[existing_storage_units, "carrier"].fillna("Unknown").astype(str)
+
+    storage_mix = storage_dispatch.T.groupby([bus_labels, carrier_labels]).sum().T
+    return storage_mix.sort_index(axis=1)
+
+
 def get_slack_zones(nodal_buses: pd.DataFrame) -> pd.Series:
     """Create a mapping of sub_networks to their respective slack buses.
 
@@ -124,6 +144,16 @@ def process_results(
     generation_mix_path = save_path / "generation_mix.csv"
     generation_mix.to_csv(generation_mix_path)
     outputs["generation_mix"] = generation_mix_path
+
+    storage_mix = calculate_storage_mix(fbmc_results)
+    storage_mix_path = save_path / "storage_mix.csv"
+    storage_mix.to_csv(storage_mix_path)
+    outputs["storage_mix"] = storage_mix_path
+
+    if getattr(fbmc_results.dispatch_results, "storage_units_p", None) is not None:
+        storage_units_p_path = save_path / "storage_units_p.csv"
+        fbmc_results.dispatch_results.storage_units_p.to_csv(storage_units_p_path)
+        outputs["storage_units_p"] = storage_units_p_path
 
     objective_value = None
     if getattr(fbmc_results.zonal_net, "model", None) is not None:
