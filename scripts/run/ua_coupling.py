@@ -221,6 +221,6 @@ for case, params_base in runs_to_execute.items():
                 'use_unit_commitment': False,
                 'unit_commitment_path': "data/unit_commitment_halve_su_sd.csv",
                 'add_zonal_load_shedding': True,
-                'load_shedding_cost': 1000,
+                'load_shedding_cost': 5000,
             }
         )  
