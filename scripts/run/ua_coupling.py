@@ -61,7 +61,7 @@ if test_bool:
     SECURITY_CONSTRAINTS_FLAG = False
     RMF = 0.4
 else:
-    N_TIMESTEPS_LONG_TERM = 24*7
+    N_TIMESTEPS_LONG_TERM = 24*7*52
     N_TIMESTEPS_MARKET = 24*7
     SECURITY_CONSTRAINTS_FLAG = True
     RMF = 0.1
@@ -81,7 +81,6 @@ def prep_ntc_case(params):
     # load ntc 
     ntc_path = get_input_networks_dir() / "pypsa-eur-ua-ntc" / "ntc_values.csv"
     ntc_df = pd.read_csv(ntc_path, index_col=0)
-
     params["zonal_net"].add("Link", ntc_df.index, bus0=ntc_df['zone0'], bus1=ntc_df['zone1'], p_nom=ntc_df['p_nom'], p_min_pu=-1)
     return 
 
