@@ -55,6 +55,13 @@ def _read_generation_mix(case_dir: Path) -> pd.DataFrame:
 	return pd.read_csv(generation_mix_path, index_col=0, header=[0, 1])
 
 
+def _read_storage_mix(case_dir: Path) -> pd.DataFrame:
+	storage_mix_path = case_dir / "storage_mix.csv"
+	if not storage_mix_path.exists():
+		return pd.DataFrame()
+	return pd.read_csv(storage_mix_path, index_col=0, header=[0, 1])
+
+
 def _load_run_prices(run_dirs: Iterable[Path]) -> pd.DataFrame:
 	price_frames = [_read_market_prices(run_dir) for run_dir in run_dirs]
 	if not price_frames:
@@ -89,6 +96,15 @@ def _load_run_generation_mix(run_dirs: Iterable[Path]) -> pd.DataFrame:
 	return combined_generation_mix.sort_index()
 
 
+def _load_run_storage_mix(run_dirs: Iterable[Path]) -> pd.DataFrame:
+	storage_mix_frames = [_read_storage_mix(run_dir) for run_dir in run_dirs]
+	storage_mix_frames = [frame for frame in storage_mix_frames if not frame.empty]
+	if not storage_mix_frames:
+		return pd.DataFrame()
+	combined_storage_mix = pd.concat(storage_mix_frames, axis=0)
+	return combined_storage_mix.sort_index()
+
+
 def _load_run_summaries(run_dirs: Iterable[Path]) -> pd.DataFrame:
 	summary_rows = []
 	for run_dir in run_dirs:
@@ -113,6 +129,7 @@ def _load_case_bundle(case_dir: Path) -> dict[str, pd.DataFrame | dict]:
 		"net_positions_zone_p": _load_run_net_positions(clearing_runs),
 		"load_shedding_zone_p": _load_run_load_shedding(clearing_runs),
 		"generation_mix": _load_run_generation_mix(clearing_runs),
+		"storage_mix": _load_run_storage_mix(clearing_runs),
 	}
 
 
@@ -136,16 +153,19 @@ def run_analysis(
 	bundle["net_positions_zone_p"].to_csv(out / "net_positions_zone_p.csv")
 	bundle["load_shedding_zone_p"].to_csv(out / "load_shedding_zone_p.csv")
 	bundle["generation_mix"].to_csv(out / "generation_mix.csv")
+	bundle["storage_mix"].to_csv(out / "storage_mix.csv")
 	# bundle["water_valuation_prices"].to_csv(out / "water_valuation_prices.csv")
 	clearing_avg_prices = bundle["clearing_prices"].apply(pd.to_numeric, errors="coerce").mean(axis=0).to_frame("avg_price")
 	load_shedding_avg = bundle["load_shedding_zone_p"].apply(pd.to_numeric, errors="coerce").mean(axis=0).to_frame("avg_load_shedding")
 	generation_mix_avg = bundle["generation_mix"].apply(pd.to_numeric, errors="coerce").mean(axis=0).to_frame("avg_generation")
+	storage_mix_avg = bundle["storage_mix"].apply(pd.to_numeric, errors="coerce").mean(axis=0).to_frame("avg_storage_power")
 	# water_valuation_avg_prices = (
 	# 	bundle["water_valuation_prices"].apply(pd.to_numeric, errors="coerce").mean(axis=0).to_frame("avg_price")
 	# )
 	clearing_avg_prices.to_csv(out / "clearing_prices_temporal_average.csv")
 	load_shedding_avg.to_csv(out / "load_shedding_temporal_average.csv")
 	generation_mix_avg.to_csv(out / "generation_mix_temporal_average.csv")
+	storage_mix_avg.to_csv(out / "storage_mix_temporal_average.csv")
 	# water_valuation_avg_prices.to_csv(out / "water_valuation_prices_temporal_average.csv")
 	# (out / "water_valuation_summary.json").write_text(
 	# 	json.dumps(bundle["water_valuation_summary"], indent=2),
@@ -161,7 +181,9 @@ def run_analysis(
 		"load_shedding_zone_p": bundle["load_shedding_zone_p"],
 		"load_shedding_temporal_average": load_shedding_avg,
 		"generation_mix": bundle["generation_mix"],
+		"storage_mix": bundle["storage_mix"],
 		"generation_mix_temporal_average": generation_mix_avg,
+		"storage_mix_temporal_average": storage_mix_avg,
 		# "water_valuation_prices": bundle["water_valuation_prices"],
 		# "water_valuation_prices_temporal_average": water_valuation_avg_prices,
 		# "water_valuation_summary": pd.DataFrame([bundle["water_valuation_summary"]]),
@@ -195,12 +217,12 @@ if __name__ == "__main__":
 	parser.add_argument("--output-dir", default=None)
 	args = parser.parse_args()
 	cases = [
-		# "pypsa-eur-ua/base/redload", 
+		# "pypsa-eur-ua/base/red", 
 		# "pypsa-eur-ua/disconnected/red",
 		# "pypsa-eur-ua/ntc-max/redload",
-		# "pypsa-eur-ua/ntc-2450/redload",
-		# "pypsa-eur-ua/np-limit/redload",
-		"pypsa-eur-ua/base/test",
+		"pypsa-eur-ua/ntc-2450/red",
+		# "pypsa-eur-ua/np-limit/red",
+		# "pypsa-eur-ua/base/test",
 		]
 	for case_name in cases:
 		main(case_name, results_root=args.results_root, output_dir=args.output_dir)
