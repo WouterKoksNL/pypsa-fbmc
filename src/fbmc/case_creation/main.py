@@ -16,9 +16,9 @@ from .pypsa_eur_ua import create_pypsa_eur_ua_case
 from .linear import create_linear_case
 from .three_node_redispatch import create_three_node_redispatch_case
 from .custom import create_custom_case
-from src.case_creation.advanced_hybrid_check import create_advanced_hybrid_check
-from src.paths import get_case_input_dir
-from src.config import FBMCConfig
+from fbmc.case_creation.advanced_hybrid_check import create_advanced_hybrid_check
+from fbmc.paths import get_case_input_dir
+from fbmc.settings import FBMCConfig
 
 from .utils import add_load_shedding
 
@@ -120,7 +120,7 @@ def save_case(case_name, output,
 
 
 def alter_case_workflow(output: dict[str, Any], case_alteration_kwargs: dict[str, Any]):
-    from src.case_creation.case_alteration import select_snapshots, apply_uc, remove_links
+    from fbmc.case_creation.case_alteration import select_snapshots, apply_uc, remove_links
     snapshots = case_alteration_kwargs.get('snapshot_i_range', None)
     if snapshots is not None:
         select_snapshots(

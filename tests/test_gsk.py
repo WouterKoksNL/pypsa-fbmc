@@ -16,7 +16,7 @@ sys.modules['src.utils'].suppress_warnings_and_info = MagicMock()
 sys.modules['src.fbmc.parameters.gsk.suppress_warnings_and_info'] = MagicMock()
 
 # Import the GSK module
-from src.fbmc.parameters.gsk import (
+from fbmc.core.parameters.gsk import (
     calculate_gsk, 
     gsk_adjustable_cap, 
     gsk_iterative_uncertainty,
@@ -27,7 +27,7 @@ from src.fbmc.parameters.gsk import (
     calculate_generation_difference,
     process_generation_difference
 )
-from src.config import FBMCConfig
+from fbmc.settings import FBMCConfig
 
 
 class TestGskAdjustableCap(unittest.TestCase):

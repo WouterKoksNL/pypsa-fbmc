@@ -1,10 +1,21 @@
-"""FBMC constraint implementation module."""
+"""Flow-Based Market Coupling (FBMC) extension for PyPSA."""
 
-from .main import setup_fbmc_model
-from ..post_processing.market_prices import calculate_zonal_prices
-from .input_checks import do_input_checks
-__all__ = ['setup_fbmc_model',
-           'run_fbmc',
-           'calculate_zonal_prices',
-           'do_input_checks'
-           ]
+from .api import fbmc_workflow, input_getter, redispatch_workflow, main
+from .settings import FBMCConfig, merge_config_overrides
+from .enums import GSKStrategy, BaseCaseStrategy
+from .case_creation.main import Cases
+from .types import FBMCWorkflowResult, DispatchResults
+
+__all__ = [
+    "fbmc_workflow",
+    "input_getter",
+    "redispatch_workflow",
+    "main",
+    "FBMCConfig",
+    "merge_config_overrides",
+    "GSKStrategy",
+    "BaseCaseStrategy",
+    "Cases",
+    "FBMCWorkflowResult",
+    "DispatchResults",
+]

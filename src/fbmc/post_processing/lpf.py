@@ -1,7 +1,7 @@
 import pypsa
 import pandas as pd
 
-from src.types import SubnetFBMCParameters, DispatchResults
+from fbmc.types import SubnetFBMCParameters, DispatchResults
 
 
 def do_lpf_contingency_check(

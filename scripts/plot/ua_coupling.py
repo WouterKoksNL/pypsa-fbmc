@@ -9,11 +9,12 @@ import numpy as np
 import pandas as pd
 import requests
 
-from src.paths import PROJECT_ROOT, get_results_dir
+from importlib.resources import files as _pkg_files
+from fbmc.paths import get_results_dir
 
 
 COUNTRIES_GEOJSON_URL = "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson"
-COUNTRIES_GEOJSON_PATH = PROJECT_ROOT / "data" / "geojsons" / "countries.geojson"
+COUNTRIES_GEOJSON_PATH = _pkg_files("fbmc") / "data" / "geojsons" / "countries.geojson"
 COUNTRY_NAME_CODE_OVERRIDES = {
 	"KOSOVO": "XK",
 	"FRANCE": "FR",

@@ -2,10 +2,10 @@ import pypsa
 import pandas as pd
 import unittest
 
-from src.case_creation.network_conversion import nodal_to_zonal
-from src.fbmc.pos_neg_method.main import FBMCConfig, run_fbmc
-from src.fbmc.parameters.gsk import GSKStrategy
-from src.post_processing.market_prices import calculate_zonal_prices
+from fbmc.case_creation.network_conversion import nodal_to_zonal
+from fbmc.core.pos_neg_method.main import FBMCConfig, run_fbmc
+from fbmc.core.parameters.gsk import GSKStrategy
+from fbmc.post_processing.market_prices import calculate_zonal_prices
 
 
 class TestFBMCResults(unittest.TestCase):

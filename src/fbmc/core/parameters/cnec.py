@@ -6,8 +6,8 @@ import networkx as nx
 import logging
 import pypsa
 
-from src.config import FBMCConfig
-from src.fbmc.parameters.base_case import get_base_flows, prepare_base_case
+from fbmc.settings import FBMCConfig
+from fbmc.core.parameters.base_case import get_base_flows, prepare_base_case
 
 from .bridge_branches import find_bridges_sub_network
 

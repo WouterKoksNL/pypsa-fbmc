@@ -1,0 +1,10 @@
+# Copy this file to paths.toml and fill in your local paths.
+# paths.toml is gitignored — never commit it.
+#
+# Paths can be absolute or relative to your working directory.
+# If omitted, defaults are ./inputs and ./results.
+
+[paths]
+input_networks_dir = "./inputs"
+unprocessed_input_networks_dir = "./inputs/unprocessed"
+results_dir = "./results"

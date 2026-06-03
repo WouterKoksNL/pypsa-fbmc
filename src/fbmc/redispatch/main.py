@@ -8,7 +8,7 @@ import xarray as xr
 import logging
 
 from .security_constraints import add_security_constraints
-from src.types import DispatchResults
+from fbmc.types import DispatchResults
 
 logging.basicConfig(level=logging.INFO)
 
@@ -103,7 +103,7 @@ def _set_nodal_objective(
     '''Create a model instance and alter its objective from the standard PyPSA formulation.'''
     if net.model is None:
         # model = net.optimize.create_model()
-        from src.fbmc.main import _create_model_without_meshed_split
+        from fbmc.core.main import _create_model_without_meshed_split
         model = _create_model_without_meshed_split(net, create_model_kwargs=create_model_kwargs)
     else:
         model = net.model

@@ -4,16 +4,16 @@ from functools import lru_cache
 from pathlib import Path
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-CONFIG_FILE = PROJECT_ROOT / "paths.toml"
+CONFIG_FILE = Path("paths.toml")
 
 
 @lru_cache(maxsize=1)
 def _load_paths_config() -> dict[str, str]:
-    if not CONFIG_FILE.exists():
+    config_path = Path.cwd() / "paths.toml"
+    if not config_path.exists():
         return {}
 
-    with open(CONFIG_FILE, "rb") as f:
+    with open(config_path, "rb") as f:
         config = tomllib.load(f)
 
     paths_config = config.get("paths", {})
@@ -24,26 +24,26 @@ def _load_paths_config() -> dict[str, str]:
     }
 
 
-def _resolve_from_project(path_value: str | Path, default: Path) -> Path:
+def _resolve_path(path_value: str | Path, default: Path) -> Path:
     if path_value is None:
         return default
 
     path = Path(path_value).expanduser()
     if not path.is_absolute():
-        path = PROJECT_ROOT / path
+        path = Path.cwd() / path
     return path
 
 
 def get_input_networks_dir() -> Path:
     file_path = _load_paths_config().get("input_networks_dir")
     env_path = os.getenv("PYPSA_FBMC_INPUT_NETWORKS_DIR")
-    return _resolve_from_project(env_path or file_path, PROJECT_ROOT / "input_networks")
+    return _resolve_path(env_path or file_path, Path.cwd() / "inputs")
 
 
 def get_unprocessed_input_networks_dir() -> Path:
     file_path = _load_paths_config().get("unprocessed_input_networks_dir")
     env_path = os.getenv("PYPSA_FBMC_UNPROCESSED_INPUT_NETWORKS_DIR")
-    return _resolve_from_project(env_path or file_path, PROJECT_ROOT / "unprocessed_input_networks")
+    return _resolve_path(env_path or file_path, Path.cwd() / "inputs" / "unprocessed")
 
 
 def get_case_input_dir(case_name: str) -> Path:
@@ -52,7 +52,7 @@ def get_case_input_dir(case_name: str) -> Path:
 def get_results_dir() -> Path:
     file_path = _load_paths_config().get("results_dir")
     env_path = os.getenv("PYPSA_FBMC_RESULTS_DIR")
-    return _resolve_from_project(env_path or file_path, PROJECT_ROOT / "results") 
+    return _resolve_path(env_path or file_path, Path.cwd() / "results")
 
 def get_case_results_dir(case_name: str) -> Path:
     return get_results_dir() / case_name

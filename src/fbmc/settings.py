@@ -5,16 +5,17 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import asdict, dataclass, field, fields
 from enum import Enum
+from importlib.resources import files as _pkg_files
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from src.enums import BaseCaseStrategy, GSKStrategy
+from fbmc.enums import BaseCaseStrategy, GSKStrategy
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-BASE_CONFIG_PATH = PROJECT_ROOT / "config" / "base_config.yaml"
+BASE_CONFIG_PATH = _pkg_files("fbmc") / "config" / "base_config.yaml"
+_DEFAULT_UC_PATH = _pkg_files("fbmc") / "data" / "unit_commitment.csv"
 
 
 def _default_config_values() -> dict[str, Any]:
@@ -242,7 +243,7 @@ class FBMCConfig:
     rd_solver_kwargs: dict[str, Any] = field(default_factory=lambda: {"solver_name": "gurobi"})
 
     use_unit_commitment: bool = False
-    unit_commitment_path: str = "data/unit_commitment.csv"
+    unit_commitment_path: str = field(default_factory=lambda: str(_DEFAULT_UC_PATH))
 
     # Water values config
     load_water_values: bool = False  # Whether to load water values in case creation

@@ -7,7 +7,7 @@ from typing import Iterable
 
 import pandas as pd
 
-from src.paths import get_results_dir
+from fbmc.paths import get_results_dir
 
 
 WATER_VALUATION_RUN_NAME = "water_valuation"

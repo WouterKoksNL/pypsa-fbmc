@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from src.config import FBMCConfig
-from main import main
-from src.case_creation.main import Cases
+from fbmc.settings import FBMCConfig
+from fbmc.api import main
+from fbmc.case_creation.main import Cases
 
 
 config_path = Path("config/base_config.yaml")

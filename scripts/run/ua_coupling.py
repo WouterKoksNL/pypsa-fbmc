@@ -8,12 +8,12 @@ import pandas as pd
 import pypsa
 from copy import deepcopy
 
-from src.config import FBMCConfig
-from src.case_creation.main import Cases
-from src.enums import GSKStrategy, BaseCaseStrategy
-from main import main
-from src.paths import get_case_results_dir, get_input_networks_dir
-from src.case_creation.network_conversion import nodal_to_zonal
+from fbmc.settings import FBMCConfig
+from fbmc.case_creation.main import Cases
+from fbmc.enums import GSKStrategy, BaseCaseStrategy
+from fbmc.api import main
+from fbmc.paths import get_case_results_dir, get_input_networks_dir
+from fbmc.case_creation.network_conversion import nodal_to_zonal
 
 
 def parse_args(argv):

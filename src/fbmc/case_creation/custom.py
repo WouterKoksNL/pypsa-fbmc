@@ -1,5 +1,5 @@
 import pypsa
-from src.paths import get_case_input_dir
+from fbmc.paths import get_case_input_dir
 
 
 def create_custom_case(case_name="custom"):

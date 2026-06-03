@@ -5,26 +5,26 @@ from pathlib import Path
 import logging
 from typing import Any
 
-from src.fbmc.parameters.bridge_branches import find_bridges_network
-from src.config import FBMCConfig, coerce_enum_value, merge_config_overrides
-from src.fbmc.main import setup_fbmc_model, solve
-from src.fbmc.parameters.base_case import prepare_base_case, BaseCaseStrategy
+from fbmc.core.parameters.bridge_branches import find_bridges_network
+from fbmc.settings import FBMCConfig, coerce_enum_value, merge_config_overrides
+from fbmc.core.main import setup_fbmc_model, solve
+from fbmc.core.parameters.base_case import prepare_base_case, BaseCaseStrategy
 
-from src.case_creation.main import create_case, Cases
-from src.case_creation.main import alter_case_workflow
-from src.redispatch.main import run_redispatch
+from fbmc.case_creation.main import create_case, Cases
+from fbmc.case_creation.main import alter_case_workflow
+from fbmc.redispatch.main import run_redispatch
 
-from src.post_processing.lpf import do_lpf_contingency_check
-from src.types import DispatchResults, FBMCWorkflowResult
-from src.fbmc.parameters.gsk import calculate_gsk, GSKStrategy
-from src.fbmc.input_checks import do_input_checks
-
-
-from src.post_processing.main import process_results
-from src.paths import get_case_results_dir
+from fbmc.post_processing.lpf import do_lpf_contingency_check
+from fbmc.types import DispatchResults, FBMCWorkflowResult
+from fbmc.core.parameters.gsk import calculate_gsk, GSKStrategy
+from fbmc.core.input_checks import do_input_checks
 
 
-configure_run_logging = importlib.import_module("src.fbmc.logging_setup").configure_run_logging
+from fbmc.post_processing.main import process_results
+from fbmc.paths import get_case_results_dir
+
+
+configure_run_logging = importlib.import_module("fbmc.core.logging_setup").configure_run_logging
 
 
 def _extract_commitment_status(
@@ -34,7 +34,6 @@ def _extract_commitment_status(
     """Return per-snapshot commitment status (True=on, False=off)."""
     snapshots = zonal_net.snapshots
     generators = zonal_net.generators.index
-    breakpoint()
     if zonal_net.model is not None and hasattr(zonal_net.model, "solution") and "Generator-status" in zonal_net.model.solution:
         status_raw = zonal_net.model.solution["Generator-status"].to_pandas()
         if isinstance(status_raw, pd.Series):
@@ -106,7 +105,7 @@ def input_getter(zonal_net: pypsa.Network = None, nodal_net: pypsa.Network = Non
     # if only one is none, raise an error
     if nodal_net is not None and zonal_net is None:
         logger.info("Only nodal net provided, converting to zonal net.")
-        from src.case_creation.network_conversion import nodal_to_zonal
+        from fbmc.case_creation.network_conversion import nodal_to_zonal
         zonal_net = nodal_to_zonal(nodal_net, bus_zone_map=nodal_net.buses.zone_name)
     if zonal_net is not None and nodal_net is None:
         raise ValueError("Nodal net must be provided if zonal net is provided. ")

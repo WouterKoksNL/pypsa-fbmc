@@ -9,9 +9,9 @@ To add a new test:
 import unittest
 from copy import deepcopy
 
-from src.case_creation.main import Cases
-from src.config import FBMCConfig
-from src.enums import BaseCaseStrategy
+from fbmc.case_creation.main import Cases
+from fbmc.settings import FBMCConfig
+from fbmc.enums import BaseCaseStrategy
 
 from tests.workflow_test_case import FBMCWorkflowTestCase, run_workflow_test
 
@@ -101,7 +101,7 @@ class TestFBMCWorkflow(unittest.TestCase):
     # ------------------------------------------------------------------
 
     # def test_linear(self):
-    #     from main import input_getter 
+    #     from fbmc.api import input_getter 
     #     zonal_net, nodal_net, gsk = input_getter(
     #         case_name=Cases.LINEAR,
     #     )
@@ -120,7 +120,7 @@ class TestFBMCWorkflow(unittest.TestCase):
         # self._assert_objective(test_case)
 
     def test_three_node_redispatch(self):
-        from main import input_getter
+        from fbmc.api import input_getter
         zonal_net, nodal_net, gsk_dict = input_getter(
             case_name=Cases.THREE_NODE_REDISPATCH,
         )
@@ -138,7 +138,7 @@ class TestFBMCWorkflow(unittest.TestCase):
         self._assert_objective(test_case)
 
     def test_three_node_redispatch_with_storage(self):
-        from main import input_getter
+        from fbmc.api import input_getter
         zonal_net, nodal_net, gsk_dict = input_getter(
             case_name=Cases.THREE_NODE_REDISPATCH,
         )
@@ -189,7 +189,7 @@ class TestFBMCWorkflow(unittest.TestCase):
         
         13.5 is the maximum flow from zone B to A in case of a flow from a single node (B1). 
         """
-        from main import input_getter
+        from fbmc.api import input_getter
         zonal_net, nodal_net, gsk_dict = input_getter(
             case_name=Cases.THREE_NODE_REDISPATCH,
         )

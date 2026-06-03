@@ -3,7 +3,7 @@ import unittest
 import pandas as pd
 from pandas.testing import assert_frame_equal
 
-from src.fbmc.parameters.security_constrained import apply_bodf
+from fbmc.core.parameters.security_constrained import apply_bodf
 
 
 class TestApplyBodfColumnwiseEquivalence(unittest.TestCase):

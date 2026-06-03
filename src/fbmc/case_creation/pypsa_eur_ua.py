@@ -4,7 +4,7 @@
 import pypsa
 import pandas as pd
 from pathlib import Path
-from src.paths import get_case_input_dir
+from fbmc.paths import get_case_input_dir
 from .network_conversion import copy_net, nodal_to_zonal
 
 def _remove_buses_and_connected_components(net: pypsa.Network, buses_to_remove):

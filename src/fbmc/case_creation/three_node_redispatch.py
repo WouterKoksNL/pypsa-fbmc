@@ -1,7 +1,7 @@
 import pypsa
 import pandas as pd
 
-from src.case_creation.network_conversion import nodal_to_zonal
+from fbmc.case_creation.network_conversion import nodal_to_zonal
 
 def create_three_node_redispatch_case():
         nodal_net = pypsa.Network()

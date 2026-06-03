@@ -1,10 +1,10 @@
 from pathlib import Path
 
-from src.config import FBMCConfig
-from src.fbmc import main
-from src.case_creation.main import Cases
-from src.enums import GSKStrategy, BaseCaseStrategy
-from src.paths import get_case_results_dir
+from fbmc.settings import FBMCConfig
+from fbmc.core import main
+from fbmc.case_creation.main import Cases
+from fbmc.enums import GSKStrategy, BaseCaseStrategy
+from fbmc.paths import get_case_results_dir
 
 rm_list = [0.0, 0.1, 0.2, 0.3]
 config_path = Path("config/base_config.yaml")

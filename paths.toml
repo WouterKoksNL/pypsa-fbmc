@@ -1,4 +1,0 @@
-[paths]
-input_networks_dir = "D:/NTNU/pypsa-fbmc-networks/input_networks"
-unprocessed_input_networks_dir = "D:/NTNU/pypsa-fbmc-networks/unprocessed_input_networks"
-results_dir = "D:/NTNU/pypsa-fbmc-networks/results"

@@ -1,7 +1,7 @@
 import pypsa
 import pandas as pd
 from .network_conversion import copy_net, nodal_to_zonal
-from src.paths import get_unprocessed_input_networks_dir
+from fbmc.paths import get_unprocessed_input_networks_dir
 
 
 def create_pypsa_eur_central_northern_case(day=0, max_snapshots=24):

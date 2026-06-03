@@ -3,11 +3,11 @@ from pathlib import Path
 import sys
 import pandas as pd
 
-from src.config import FBMCConfig
-from src.case_creation.main import Cases
-from src.enums import GSKStrategy, BaseCaseStrategy
-from main import main
-from src.paths import get_case_results_dir
+from fbmc.settings import FBMCConfig
+from fbmc.case_creation.main import Cases
+from fbmc.enums import GSKStrategy, BaseCaseStrategy
+from fbmc.api import main
+from fbmc.paths import get_case_results_dir
 
 N_TIMESTEPS = sys.argv[1] if len(sys.argv) > 1 else 24*7
 

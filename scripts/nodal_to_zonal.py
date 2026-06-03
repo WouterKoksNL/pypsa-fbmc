@@ -1,5 +1,5 @@
-from src.case_creation.network_conversion import nodal_to_zonal
-from src.paths import get_case_input_dir
+from fbmc.case_creation.network_conversion import nodal_to_zonal
+from fbmc.paths import get_case_input_dir
 import sys
 import pypsa
 

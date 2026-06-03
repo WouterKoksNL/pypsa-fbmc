@@ -2,7 +2,7 @@ import pypsa
 import pandas as pd
 import numpy as np
 
-from src.fbmc.parameters.ptdf import get_subnetwork_bodf, calculate_zonal_ptdf
+from fbmc.core.parameters.ptdf import get_subnetwork_bodf, calculate_zonal_ptdf
 
 
 BODF_COLUMNWISE_MATRIX_SIZE_LIMIT = 5_000_000

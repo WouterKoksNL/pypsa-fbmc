@@ -3,8 +3,8 @@ import json
 from typing import Any
 import pandas as pd
 
-from src.config import FBMCConfig, config_to_dict
-from src.types import FBMCWorkflowResult
+from fbmc.settings import FBMCConfig, config_to_dict
+from fbmc.types import FBMCWorkflowResult
 
 from .market_prices import calculate_zonal_prices
 

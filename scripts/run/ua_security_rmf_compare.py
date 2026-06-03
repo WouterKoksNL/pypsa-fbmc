@@ -17,12 +17,12 @@ from pathlib import Path
 import pandas as pd
 import pypsa
 
-from main import main
-from src.case_creation.main import Cases
-from src.case_creation.network_conversion import nodal_to_zonal
-from src.config import FBMCConfig
-from src.enums import BaseCaseStrategy, GSKStrategy
-from src.paths import get_case_results_dir, get_input_networks_dir
+from fbmc.api import main
+from fbmc.case_creation.main import Cases
+from fbmc.case_creation.network_conversion import nodal_to_zonal
+from fbmc.settings import FBMCConfig
+from fbmc.enums import BaseCaseStrategy, GSKStrategy
+from fbmc.paths import get_case_results_dir, get_input_networks_dir
 
 
 DEFAULT_START_INDEX = 24 * 4 * 4
