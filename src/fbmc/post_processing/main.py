@@ -213,9 +213,10 @@ def process_results(
             outputs["storage_levels"] = storage_levels_path
 
         # Save water values if available
-        if hasattr(fbmc_results.dispatch_results, "water_values"):
+        water_values = getattr(fbmc_results.dispatch_results, "water_values", None)
+        if water_values is not None:
             water_values_path = save_path / "water_values.csv"
-            water_values_df = fbmc_results.dispatch_results.water_values.to_pandas()
+            water_values_df = water_values.to_pandas()
             water_values_df.to_csv(water_values_path)
             outputs["water_values"] = water_values_path
 
