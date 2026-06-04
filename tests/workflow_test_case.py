@@ -9,7 +9,7 @@ from fbmc.case_creation.main import Cases
 from fbmc.settings import FBMCConfig
 from fbmc.core.parameters.base_case import BaseCaseStrategy
 from fbmc.core.parameters.gsk import GSKStrategy
-from fbmc.types import FBMCWorkflowResult
+from fbmc.types import FBMCResult
 
 
 @dataclass
@@ -32,11 +32,11 @@ class FBMCWorkflowTestCase:
 
 def run_workflow_test(
         test_case: FBMCWorkflowTestCase,
-) -> tuple[FBMCWorkflowResult, float]:
+) -> tuple[FBMCResult, float]:
     """
     Run the full FBMC (and optionally redispatch) workflow for the given test case.
 
-    Returns the FBMCWorkflowResult so callers can do additional assertions.
+    Returns the FBMCResult so callers can do additional assertions.
     """
     from fbmc.api import fbmc_workflow, redispatch_workflow
 

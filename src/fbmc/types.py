@@ -108,7 +108,7 @@ class DispatchResults:
 
 
 @dataclass
-class FBMCWorkflowResult:
+class FBMCResult:
     zonal_net: pypsa.Network
     net_positions: pd.DataFrame
     dispatch_results: DispatchResults

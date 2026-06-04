@@ -4,12 +4,12 @@ from typing import Any
 import pandas as pd
 
 from fbmc.settings import FBMCConfig, config_to_dict
-from fbmc.types import FBMCWorkflowResult
+from fbmc.types import FBMCResult
 
 from .market_prices import calculate_zonal_prices
 
 
-def calculate_zonal_load_shedding(fbmc_results: FBMCWorkflowResult) -> pd.DataFrame:
+def calculate_zonal_load_shedding(fbmc_results: FBMCResult) -> pd.DataFrame:
     """Aggregate load-shedding generator dispatch to zonal totals per snapshot."""
     zonal_net = fbmc_results.zonal_net
     snapshots = zonal_net.snapshots
@@ -33,7 +33,7 @@ def calculate_zonal_load_shedding(fbmc_results: FBMCWorkflowResult) -> pd.DataFr
     return zonal_load_shedding.reindex(columns=zones, fill_value=0.0)
 
 
-def calculate_generation_mix(fbmc_results: FBMCWorkflowResult) -> pd.DataFrame:
+def calculate_generation_mix(fbmc_results: FBMCResult) -> pd.DataFrame:
     """Aggregate generator dispatch by bus and carrier for each snapshot."""
     zonal_net = fbmc_results.zonal_net
     generator_dispatch = fbmc_results.dispatch_results.generators_p
@@ -53,7 +53,7 @@ def calculate_generation_mix(fbmc_results: FBMCWorkflowResult) -> pd.DataFrame:
     return generation_mix.sort_index(axis=1)
 
 
-def calculate_storage_mix(fbmc_results: FBMCWorkflowResult) -> pd.DataFrame:
+def calculate_storage_mix(fbmc_results: FBMCResult) -> pd.DataFrame:
     """Aggregate storage-unit active power by bus and carrier for each snapshot."""
     zonal_net = fbmc_results.zonal_net
     storage_dispatch = fbmc_results.dispatch_results.storage_units_p
@@ -91,7 +91,7 @@ def get_slack_zones(nodal_buses: pd.DataFrame) -> pd.Series:
     return slack_buses.loc[:, ['sub_network', 'zone_name']].reset_index(drop=True).set_index('sub_network')['zone_name']
 
 def process_results(
-        fbmc_results: FBMCWorkflowResult, 
+        fbmc_results: FBMCResult, 
         rd_cost: float | None,
         rd_dispatch: Any,
         save_path: Path,

@@ -15,7 +15,7 @@ from fbmc.case_creation.main import alter_case_workflow
 from fbmc.redispatch.main import run_redispatch
 
 from fbmc.post_processing.lpf import do_lpf_contingency_check
-from fbmc.types import DispatchResults, FBMCWorkflowResult
+from fbmc.types import DispatchResults, FBMCResult
 from fbmc.core.parameters.gsk import calculate_gsk, GSKStrategy
 from fbmc.core.input_checks import do_input_checks
 
@@ -138,18 +138,15 @@ def redispatch_workflow(
     return nodal_net, cost, dispatch_results
 
 
-def fbmc_workflow(
+def run_fbmc(
         zonal_net: pypsa.Network = None,
         nodal_net: pypsa.Network = None,
         gsk: dict = None,
         config: FBMCConfig | None = None,
-        config_overrides: dict[str, Any] | None = None,
-    ) -> FBMCWorkflowResult:
+
+    ) -> FBMCResult:
     
     logger = logging.getLogger(__name__)
-    
-    config = merge_config_overrides(config, config_overrides)
-
     do_input_checks(nodal_net, zonal_net, gsk)
 
     logger.info(f"Preparing base case with strategy {config.base_case_strategy}")
@@ -179,7 +176,7 @@ def fbmc_workflow(
     zonal_net, net_positions = solve(zonal_net, advanced_hybrid_flag=config.advanced_hybrid_coupling_flag, solver_kwargs=config.fbmc_solver_kwargs)
     dispatch_results = DispatchResults(zonal_net)
 
-    return FBMCWorkflowResult(
+    return FBMCResult(
         zonal_net=zonal_net,
         net_positions=net_positions,
         dispatch_results=dispatch_results,
@@ -239,7 +236,7 @@ def main(
     #         config=config,
     #     )
     # else:
-    fbmc_result = fbmc_workflow(
+    fbmc_result = run_fbmc(
             zonal_net=zonal_net,
             nodal_net=nodal_net,
             gsk=gsk,
