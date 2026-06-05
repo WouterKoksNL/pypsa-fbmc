@@ -5,6 +5,7 @@ from .settings import FBMCConfig, merge_config_overrides
 from .enums import GSKStrategy, BaseCaseStrategy
 from .case_creation.main import Cases
 from .types import FBMCResult, DispatchResults
+from .types import FBMCResult, DispatchResult
 
 __all__ = [
     "run_fbmc",
@@ -18,4 +19,5 @@ __all__ = [
     "Cases",
     "FBMCResult",
     "DispatchResults",
+    "DispatchResult",
 ]
