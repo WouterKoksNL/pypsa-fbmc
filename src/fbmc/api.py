@@ -134,8 +134,12 @@ def redispatch_workflow(
         **redispatch_kwargs
     )
 
-    dispatch_results = DispatchResults(nodal_net)  # override dispatch results
-    return nodal_net, cost, dispatch_results
+    dispatch_results = DispatchResult(nodal_net)  # override dispatch results
+    return RedispatchResult(
+        nodal_net=nodal_net,
+        cost=cost,
+        dispatch_results=dispatch_results,
+    )
 
 
 def run_fbmc(
@@ -179,7 +183,7 @@ def run_fbmc(
     return FBMCResult(
         zonal_net=zonal_net,
         net_positions=net_positions,
-        dispatch_results=dispatch_results,
+        dispatch_results=DispatchResult(zonal_net),
         fbmc_parameters=fbmc_parameters,
         base_case=base_case,
     )
