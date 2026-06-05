@@ -59,7 +59,7 @@ CASE_FUNCTION_MAP = {
 
 
 
-def create_case(case: str | Cases, load_case_flag=True, save_case_flag=True, **kwargs):
+def create_case(case: str | Cases, load_case_flag=False, save_case_flag=True, **kwargs):
     if type(case) is str:
         case = Cases(case)
     case_name = case.value + (f"-{kwargs.get('variation', '')}" if 'variation' in kwargs else '')
