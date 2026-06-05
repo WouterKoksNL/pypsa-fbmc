@@ -26,7 +26,7 @@ def run_redispatch(
         branch_outages=None,
         load_shedding_cost=1000,
         rt_deviation_factor=1.0,
-    create_model_kwargs: dict[str, str] = None,
+        create_model_kwargs: dict[str, str] = None,
         solver_kwargs: dict[str, str] = None
         ) -> pypsa.Network:
     """Run redispatch either with or without N-1 security constraint. 
@@ -122,7 +122,7 @@ def _set_nodal_objective(
                 dims=["snapshot", "StorageUnit"]
             ),
             soc_old=xr.DataArray(
-                dispatch_results.storage_units_soc.values,
+                dispatch_results.storage_levels.values,
                 coords=[net.snapshots, net.storage_units.index],
                 dims=["snapshot", "StorageUnit"]
             ),
