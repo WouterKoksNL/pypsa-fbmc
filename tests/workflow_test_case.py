@@ -38,7 +38,7 @@ def run_workflow_test(
 
     Returns the FBMCResult so callers can do additional assertions.
     """
-    from fbmc.api import fbmc_workflow, redispatch_workflow
+    from fbmc.api import run_fbmc, redispatch_workflow
 
 
     result = fbmc_workflow(
