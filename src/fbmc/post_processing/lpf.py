@@ -1,12 +1,12 @@
 import pypsa
 import pandas as pd
 
-from fbmc.types import SubnetFBMCParameters, DispatchResults
+from fbmc.types import SubnetFBMCParameters, DispatchResult
 
 
 def do_lpf_contingency_check(
         nodal_net: pypsa.Network,
-        dispatch_results: DispatchResults,
+        dispatch_results: DispatchResult,
         fbmc_parameters: dict[str, SubnetFBMCParameters] 
     ):
     gens_p = dispatch_results.generators_p

@@ -15,7 +15,7 @@ from fbmc.case_creation.main import alter_case_workflow
 from fbmc.redispatch.main import run_redispatch
 
 from fbmc.post_processing.lpf import do_lpf_contingency_check
-from fbmc.types import DispatchResults, FBMCResult
+from fbmc.types import DispatchResult, FBMCResult, RedispatchResult
 from fbmc.core.parameters.gsk import calculate_gsk, GSKStrategy
 from fbmc.core.input_checks import do_input_checks
 
@@ -29,7 +29,7 @@ configure_run_logging = importlib.import_module("fbmc.core.logging_setup").confi
 
 def _extract_commitment_status(
         zonal_net: pypsa.Network,
-        dispatch_results: DispatchResults,
+        dispatch_results: DispatchResult,
     ) -> pd.DataFrame:
     """Return per-snapshot commitment status (True=on, False=off)."""
     snapshots = zonal_net.snapshots
@@ -53,7 +53,7 @@ def _extract_commitment_status(
 
 def _fix_commitment_schedule_and_disable_uc(
         zonal_net: pypsa.Network,
-        dispatch_results: DispatchResults,
+        dispatch_results: DispatchResult,
     ) -> None:
     """Fix on/off schedule from UC run and disable UC binaries.
 
@@ -120,11 +120,11 @@ def input_getter(zonal_net: pypsa.Network = None, nodal_net: pypsa.Network = Non
 
 def redispatch_workflow(
         nodal_net: pypsa.Network,
-        dispatch_results: DispatchResults,
+        dispatch_results: DispatchResult,
         rd_solver_kwargs: dict[str, str] = None,
         rd_create_model_kwargs: dict[str, Any] = None,
         **redispatch_kwargs: dict,
-    ) -> tuple[pypsa.Network, float, DispatchResults]:
+    ) -> tuple[pypsa.Network, float, DispatchResult]:
 
     nodal_net, cost = run_redispatch(
         nodal_net, 

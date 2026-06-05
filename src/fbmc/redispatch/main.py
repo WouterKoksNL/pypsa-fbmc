@@ -8,7 +8,7 @@ import xarray as xr
 import logging
 
 from .security_constraints import add_security_constraints
-from fbmc.types import DispatchResults
+from fbmc.types import DispatchResult
 
 logging.basicConfig(level=logging.INFO)
 
@@ -20,7 +20,7 @@ def select_flex_gens(net, flexible_carriers: Sequence[str]) -> pd.Index:
 
 def run_redispatch(
         nodal_net:pypsa.Network, 
-        dispatch_results:DispatchResults, 
+        dispatch_results:DispatchResult, 
         adjustable_carriers=None, 
         security_constrained_flag=True, 
         branch_outages=None,
@@ -33,7 +33,7 @@ def run_redispatch(
 
     Args:
         nodal_net (pypsa.Network): _description_
-        dispatch_results (DispatchResults): _description_
+        dispatch_results (DispatchResult): _description_
         adjustable_carriers (_type_, optional): _description_. Defaults to None.
         security_constrained_flag (bool, optional): _description_. Defaults to True.
         branch_outages (_type_, optional): _description_. Defaults to None.
