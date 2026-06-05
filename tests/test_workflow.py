@@ -121,14 +121,14 @@ class TestFBMCWorkflow(unittest.TestCase):
 
     def test_three_node_redispatch(self):
         from fbmc.api import input_getter
-        zonal_net, nodal_net, gsk_dict = input_getter(
+        case_data = input_getter(
             case_name=Cases.THREE_NODE_REDISPATCH,
         )
         test_case = FBMCWorkflowTestCase(
             case_name=Cases.THREE_NODE_REDISPATCH,
-            gsk=gsk_dict,
-            zonal_net=zonal_net,
-            nodal_net=nodal_net,
+            gsk=case_data['gsk_dict'],
+            zonal_net=case_data['zonal_net'],
+            nodal_net=case_data['nodal_net'],
             base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
             advanced_hybrid_coupling_flag=False,
             config=_make_config(run_redispatch=True),
@@ -139,9 +139,12 @@ class TestFBMCWorkflow(unittest.TestCase):
 
     def test_three_node_redispatch_with_storage(self):
         from fbmc.api import input_getter
-        zonal_net, nodal_net, gsk_dict = input_getter(
+        case_data = input_getter(
             case_name=Cases.THREE_NODE_REDISPATCH,
         )
+        nodal_net = case_data['nodal_net']
+        zonal_net = case_data['zonal_net']
+        gsk_dict = case_data['gsk_dict']
         nodal_net.add("StorageUnit", "Storage", bus="A1", p_nom=1, max_hours=2)
         nodal_net.loads_t.p_set.loc['1', 'load_A1'] *= 0.5
         zonal_net.add("StorageUnit", "Storage", bus="A", p_nom=1, max_hours=2)  
@@ -190,10 +193,13 @@ class TestFBMCWorkflow(unittest.TestCase):
         13.5 is the maximum flow from zone B to A in case of a flow from a single node (B1). 
         """
         from fbmc.api import input_getter
-        zonal_net, nodal_net, gsk_dict = input_getter(
+        case_data = input_getter(
             case_name=Cases.THREE_NODE_REDISPATCH,
         )
-        
+        zonal_net = case_data['zonal_net']
+        nodal_net = case_data['nodal_net']
+        gsk_dict = case_data['gsk_dict']
+
         nodal_net.set_snapshots(['1', '2', '3'])
         zonal_net.set_snapshots(['1', '2', '3'])
         gsk_dict = {snapshot: gsk_dict['1'].copy() for snapshot in zonal_net.snapshots}
