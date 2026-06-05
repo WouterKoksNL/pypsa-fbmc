@@ -30,7 +30,7 @@ def _filter_generators_for_gsk(
 
 def calculate_gsk(nodal_net: pypsa.Network, 
                   gsk_strategy: GSKStrategy,
-                  config,) -> dict[pd.Timestamp, pd.DataFrame]:
+                  gsk_kwargs: dict) -> dict[pd.Timestamp, pd.DataFrame]:
     """
     Calculate the Generator Shift Key (GSK) of every node in the network.
     
@@ -44,8 +44,8 @@ def calculate_gsk(nodal_net: pypsa.Network,
         The network object containing generators and buses.
     gsk_strategy : GSKStrategy
         The strategy to use for calculating the GSK.
-    config : FBMCConfig
-        Configuration object containing GSK calculation parameters.
+    gsk_kwargs : dict
+        Keyword arguments for GSK calculation.
     
     Returns
     -------
@@ -59,7 +59,7 @@ def calculate_gsk(nodal_net: pypsa.Network,
     ValueError
         If an unknown GSK method is specified or if required network components are missing.
     """
-    gsk_kwargs = config.gsk_kwargs.get(gsk_strategy, {})
+
 
     # Validate network has required components
     if len(nodal_net.generators) == 0:

@@ -163,7 +163,6 @@ def run_fbmc(
 
     if gsk is None:
         gsk_strategy = coerce_enum_value(config.gsk_strategy, GSKStrategy, "gsk_strategy")
-        gsk = calculate_gsk(base_case, gsk_strategy, config)
 
     if nodal_net.sub_networks.empty:
         nodal_net.determine_network_topology()
