@@ -4,7 +4,9 @@ from .bridge_branches import find_bridges_network
 from ...enums import BaseCaseStrategy
 
 
-def prepare_nodal_optimum_base_case(_nodal_net: pypsa.Network, marginal_cost_load_shedding: float):
+def prepare_nodal_optimum_base_case(_nodal_net: pypsa.Network, **solver_kwargs):
+    """Prepare base case using nodal optimziation without security constraints.
+    """
     base_case = _nodal_net.copy()
     base_case.optimize.add_load_shedding(sign=1, marginal_cost=marginal_cost_load_shedding)
     base_case.optimize(solver_name='gurobi')
@@ -13,7 +15,7 @@ def prepare_nodal_optimum_base_case(_nodal_net: pypsa.Network, marginal_cost_loa
     return base_case
 
 
-def prepare_zero_flow_base_case(_nodal_net: pypsa.Network, **kwargs):
+def prepare_zero_flow_base_case(_nodal_net: pypsa.Network, **solver_kwargs):
     base_case = _nodal_net.copy()
     base_case.lines_t.p0.loc[base_case.snapshots, base_case.lines.index] = 0
     base_case.transformers_t.p0.loc[base_case.snapshots, base_case.transformers.index] = 0
@@ -21,12 +23,11 @@ def prepare_zero_flow_base_case(_nodal_net: pypsa.Network, **kwargs):
     return base_case
 
 
-def prepare_custom_base_case(_nodal_net: pypsa.Network, custom_flows: pd.DataFrame):
-
+def prepare_custom_base_case(_nodal_net: pypsa.Network, **solver_kwargs):
     return _nodal_net.copy()
 
 
-def prepare_security_constrained_base_case(_nodal_net: pypsa.Network, marginal_cost_load_shedding: float):
+def prepare_security_constrained_base_case(_nodal_net: pypsa.Network, **solver_kwargs):
     base_case = _nodal_net.copy()
     if base_case.sub_networks.empty:
         base_case.determine_network_topology()

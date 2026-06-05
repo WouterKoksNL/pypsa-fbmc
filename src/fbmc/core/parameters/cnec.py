@@ -30,7 +30,7 @@ def define_cne_reference_case_flows(basecase_nodal_network, config):
     reference_case = prepare_base_case(
         basecase_nodal_network.copy(), 
         strategy=config.cne_reference_case_flows, 
-        base_case_kwargs={'marginal_cost_load_shedding': config.marginal_cost_load_shedding}
+        base_case_kwargs=config.fbmc_solver_kwargs
     )
     reference_case_flows = get_base_flows(reference_case)
     return reference_case_flows
