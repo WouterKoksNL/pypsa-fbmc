@@ -111,8 +111,14 @@ class DispatchResults:
 class FBMCResult:
     zonal_net: pypsa.Network
     net_positions: pd.DataFrame
-    dispatch_results: DispatchResults
+    dispatch_results: DispatchResult
     fbmc_parameters: dict[str, "SubnetFBMCParameters"]
     base_case: pypsa.Network
 
 
+
+@dataclass
+class RedispatchResult:
+    nodal_net: pypsa.Network
+    cost: float
+    dispatch_results: DispatchResult
