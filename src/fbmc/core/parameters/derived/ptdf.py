@@ -10,13 +10,6 @@ def get_subnetwork_ptdf(sub_network: pypsa.SubNetwork) -> xr.DataArray:
     Returns PTDF matrix and associated sub_network.
     """
     sub_network.calculate_PTDF()
-
-
-    # ptdf = pd.DataFrame(
-    #     sub_network.PTDF,
-    #     index=sub_network.branches_i().droplevel(0), # Drop MultiIndex. The branches include lines and transformers
-    #     columns=sub_network.buses_o # Ordered list of buses used in all PF and PTDF calculations (slack first, then PV, then PQ)
-    # )
     ptdf = xr.DataArray(
         sub_network.PTDF,
         coords={
@@ -28,74 +21,6 @@ def get_subnetwork_ptdf(sub_network: pypsa.SubNetwork) -> xr.DataArray:
 
 
     return ptdf
-
-
-# def get_subnetwork_bodf(
-#         sub_network: pypsa.SubNetwork, 
-#         cnecs: pd.MultiIndex,
-#         min_size_threshold: float = 0.05
-#         ) -> pd.DataFrame:
-#     """
-#     Extract BODF values for each (branch, outage) pair in cnecs from a sub-network.
-
-#     Parameters
-#     ----------
-#     sub_network : pypsa.SubNetwork
-#         The sub-network to extract BODF values from.
-#     cnecs : pd.MultiIndex
-#         MultiIndex where the first level contains the outages and the second level contains the branches.
-#     min_size_threshold : float
-#         Minimum absolute value of BODF to include in the result, to reduce computational size. Default is 0.05.
-#     """
-#     sub_network.calculate_BODF()
-    
-#     bodf = pd.DataFrame(
-#         sub_network.BODF,
-#         index=sub_network.branches_i().droplevel(0), # Drop MultiIndex. The branches include lines and transformers
-#         columns=sub_network.branches_i().droplevel(0) # Ordered list of buses used in all PF and PTDF calculations (slack first, then PV, then PQ)
-#     )
-    
-#     branches = cnecs.get_level_values(0)
-#     outaged_branches = cnecs.get_level_values(1)
-
-#     # Get integer positions for each (branch, outage) pair
-#     row_idx = bodf.index.get_indexer(branches)
-#     col_idx = bodf.columns.get_indexer(outaged_branches)
-
-#     # Extract only the matching diagonal elements
-#     bodf_cnec = bodf.values[row_idx, col_idx]
-    
-#     bodf = pd.Series(bodf_cnec, index=cnecs, name='BODF')
-    
-#     bodf = bodf[bodf.abs() > min_size_threshold] 
-#     if bodf.isna().any().any():
-#         raise ValueError("BODF contains NaN values. Check if network bridges are filtered out of outage list.")
-#     return bodf
-
-
-# def calculate_zonal_ptdf(
-#         ptdf: pd.DataFrame, 
-#         gsk: pd.DataFrame, 
-#         cnecs: pd.Index | pd.MultiIndex,
-#         ) -> pd.DataFrame:
-#     """
-#     Transform nodal PTDF to zonal PTDF using Generation Shift Keys (GSK).
-#     PTDF shape: (branches, buses). buses are only the ones in the subnetwork.
-#     GSK shape: (zones, buses). buses can be all buses in the full net. 
-#     CNECs shape: (branches) for N-0 CNECs, or (branches, outaged_branches) for N-1 CNECs
-#     zPTDF shape: (CNECs, zones). 
-#     """
-#     if not set(ptdf.columns).issubset(set(gsk.columns)):
-#         raise ValueError("PTDF columns must match GSK bus names") #PTDF is based on subnetwork, GSK is based on full network
-
-#     gsk_subnet = gsk.loc[:, ptdf.columns]
-#     # gsk_filtered = gsk_filtered.loc[gsk_filtered.sum(axis=1) > 1e-6]  # Remove zones with zero GSK in this subnetwork
-#     assert (gsk_subnet.sum(axis=1) - 1).abs().max() < 1e-6, "GSK rows must sum to 1"
-#     z_ptdf = (gsk_subnet @ ptdf.T).T  # shape: (branches, zones)
-
-#     if not isinstance(cnecs, pd.MultiIndex):
-#         z_ptdf = z_ptdf.loc[cnecs] # filter on cnecs
-#     return z_ptdf
 
 
 def calculate_zonal_ptdf(
