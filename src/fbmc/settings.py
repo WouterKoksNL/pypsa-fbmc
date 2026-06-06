@@ -26,7 +26,6 @@ def _default_config_values() -> dict[str, Any]:
         "cnec_setting": "all",
         "line_usage_threshold": 0.2,
         "cne_list": None,
-        "cne_reference_case_flows": BaseCaseStrategy.NODAL_OPTIMUM,
         "security_constraint_bodf_size_threshold": 0.2,
         "security_constraint_bodf_columnwise_matrix_size_limit": 5_000_000,
         "gsk_strategy": GSKStrategy.CURRENT_GENERATION,
@@ -149,7 +148,6 @@ def _normalize_config_enums_in_place(config_values: dict[str, Any]) -> None:
     """Normalize enum-like config values to enum members."""
     enum_fields: dict[str, type[Enum]] = {
         "base_case_strategy": BaseCaseStrategy,
-        "cne_reference_case_flows": BaseCaseStrategy,
         "gsk_strategy": GSKStrategy,
     }
     for key, enum_type in enum_fields.items():
@@ -187,7 +185,6 @@ class FBMCConfig:
     cnec_setting: str = "all"
     line_usage_threshold: float = 0.2
     cne_list: list[str] = None
-    cne_reference_case_flows: BaseCaseStrategy = BaseCaseStrategy.NODAL_OPTIMUM
     security_constraint_bodf_size_threshold: float = 0.2
     security_constraint_bodf_columnwise_matrix_size_limit: int = 5_000_000
 
