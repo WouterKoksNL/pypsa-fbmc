@@ -147,8 +147,6 @@ def run_fbmc(
         nodal_net: pypsa.Network,
         config: FBMCConfig,
         gsk: dict = None,
-        config: FBMCConfig | None = None,
-
     ) -> FBMCResult:
     """Run the flow-based market clearing algorithm. Steps:
         Prepare base-case, depending on base case strategy
@@ -182,6 +180,7 @@ def run_fbmc(
 
     if gsk is None:
         gsk_strategy = coerce_enum_value(config.gsk_strategy, GSKStrategy, "gsk_strategy")
+        gsk = calculate_gsk(base_case, gsk_strategy, config.gsk_kwargs)
 
     if nodal_net.sub_networks.empty:
         nodal_net.determine_network_topology()
