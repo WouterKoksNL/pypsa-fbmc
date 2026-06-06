@@ -83,26 +83,10 @@ def calculate_fbmc_parameters(
         The target zonal network with added FBMC constraints.
     """
 
-    if config.advanced_hybrid_coupling_flag:
-        basecase_link_data = {
-            'df': basecase_nodal_network.links.loc[:, ['bus0', 'bus1']],
-            'p0': basecase_nodal_network.links_t.p0,
-            'p1': basecase_nodal_network.links_t.p1,
-            'link_bus0_zone_mapping': basecase_nodal_network.links.bus0.map(basecase_nodal_network.buses.zone_name).rename("Zone"),
-            'link_bus1_zone_mapping': basecase_nodal_network.links.bus1.map(basecase_nodal_network.buses.zone_name).rename("Zone"),
-        }
-    else: 
-        basecase_link_data = None
-
-    
     if basecase_nodal_network.sub_networks.empty:
         basecase_nodal_network.determine_network_topology()
     logging.info(f"Determined {len(basecase_nodal_network.sub_networks)} sub-networks in the base case nodal network.")
     fbmc_parameters: dict[str, SubnetFBMCParameters] = {}
-
-    net_positions_base_case = calc_base_net_positions(basecase_nodal_network)
-    base_flows = get_base_flows(basecase_nodal_network)  # shape: (snapshots, branches)
-
 
     cnecs_dict = cnec_router(basecase_nodal_network, config)
         
