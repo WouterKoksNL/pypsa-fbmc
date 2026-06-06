@@ -46,6 +46,15 @@ def add_fbmc_constraints(
         DataFrame containing RAM values.
     """
     # xarray conversion
+    unwanted_coords = [
+        'branch_component',
+        'branch',
+        'outage',
+        'outage_component'
+    ]
+    zPTDF_xr = _remove_coords(zPTDF_xr, unwanted_coords)
+    upper_RAM_xr = _remove_coords(upper_RAM_xr, unwanted_coords)
+    lower_RAM_xr = _remove_coords(lower_RAM_xr, unwanted_coords)
 
     # Restrict the load on CNEs by the Remaining Available Margin (RAM)
     upper_cne_constraint = construct_upper_ram_constraint(
