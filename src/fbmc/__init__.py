@@ -3,8 +3,7 @@
 from .api import run_fbmc, input_getter, redispatch_workflow, main
 from .settings import FBMCConfig, merge_config_overrides
 from .enums import GSKStrategy, BaseCaseStrategy
-from .case_creation.main import Cases
-from .types import FBMCResult, DispatchResults
+from .case_creation import Cases, create_case
 from .types import FBMCResult, DispatchResult
 
 __all__ = [
@@ -17,7 +16,7 @@ __all__ = [
     "GSKStrategy",
     "BaseCaseStrategy",
     "Cases",
+    "create_case",
     "FBMCResult",
-    "DispatchResults",
     "DispatchResult",
 ]
