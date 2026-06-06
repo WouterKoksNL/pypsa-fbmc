@@ -16,7 +16,7 @@ from .parameters.input.cnec import cnec_router
 from .constraints.main import create_zonal_generation
 from .constraints.main import add_fbmc_constraints, remove_original_constraints, remove_original_constraints_by_bus
 from ..settings import FBMCConfig
-from .results_extraction import extract_model_results, get_net_positions
+from .results_extraction import extract_model_results
 from .parameters.derived.base_case import calc_base_net_positions, get_base_flows
 logging.basicConfig(level=logging.INFO)
 
@@ -246,7 +246,6 @@ def solve(
         raise ValueError("FBMC optimization did not solve to optimality.")
     extract_model_results(zonal_net)
 
-    net_positions = get_net_positions(zonal_net, advanced_hybrid_flag=advanced_hybrid_flag)
-
-    return zonal_net, net_positions
+    
+    return zonal_net
 

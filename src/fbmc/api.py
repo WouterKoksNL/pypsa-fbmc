@@ -194,15 +194,14 @@ def run_fbmc(
     )
 
     logger.info("Solving FBMC model.")
-    zonal_net, net_positions = solve(
+    zonal_net = solve(
         zonal_net, 
-        advanced_hybrid_flag=config.advanced_hybrid_coupling_flag, 
         solver_kwargs=config.fbmc_solver_kwargs
     )
 
     return FBMCResult(
         zonal_net=zonal_net,
-        net_positions=net_positions,
+        net_positions=zonal_net.model.solution["Zone-p"],
         dispatch_results=DispatchResult(zonal_net),
         fbmc_parameters=fbmc_parameters,
         base_case=base_case,
