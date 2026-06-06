@@ -202,8 +202,6 @@ def add_fbmc_constraints_loop(
         upper_RAM_xr = parameters.upper_ram
         lower_RAM_xr = parameters.lower_ram
         zones = parameters.zones
-        link_ptdf_bus0 = parameters.link_ptdf_bus0
-        link_ptdf_bus1 = parameters.link_ptdf_bus1
 
         add_fbmc_constraints(
             zonal_net,
@@ -213,8 +211,6 @@ def add_fbmc_constraints_loop(
             upper_RAM_xr,
             lower_RAM_xr,
             advanced_hybrid_flag,
-            link_ptdf_bus0,
-            link_ptdf_bus1,
             upper_ram_only_flag
         )
         

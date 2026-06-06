@@ -9,7 +9,7 @@ from .derived.ram import calculate_ram
 from .derived.ptdf import calculate_zonal_ptdf, get_subnetwork_ptdf
 from ...settings import FBMCConfig
 from fbmc.core.parameters.derived.base_case import get_base_flows_subnet, calc_base_net_positions_subnet
-from .derived.security_constrained import apply_security_param_changes, calculate_zonal_ptdf_advanced_hybrid
+from .derived.security_constrained import apply_security_param_changes
 from ...types import SubnetFBMCParameters
 from ...settings import BaseCaseStrategy
 
@@ -66,34 +66,6 @@ def calculate_fbmc_parameters_subnet(
         nodal_ptdf = nodal_ptdf.assign_coords(cnec=('branch', cnecs['branch'].values)).swap_dims({"branch": "cnec"})  
         base_flows_subnet = base_flows_subnet.assign_coords(cnec=('branch', cnecs['branch'].values)).swap_dims({"branch": "cnec"})
 
-
-    link_ptdf_bus0, link_ptdf_bus1 = None, None
-    if config.advanced_hybrid_coupling_flag and basecase_link_data is not None:
-        buses = nodal_ptdf.columns 
-        bus0 = basecase_link_data['df'].bus0
-        bus1 = basecase_link_data['df'].bus1
-        
-        bus0_subnet = bus0[bus0.isin(buses)]
-        bus1_subnet = bus1[bus1.isin(buses)]
-
-
-        link_ptdf_bus0 = nodal_ptdf.loc[:, bus0_subnet]
-        link_ptdf_bus1 = nodal_ptdf.loc[:, bus1_subnet]
-
-        link_ptdf_bus0.columns = bus0_subnet.index
-        link_ptdf_bus1.columns = bus1_subnet.index
-        link_ptdf_bus0 = link_ptdf_bus0.reindex(columns=basecase_link_data['df'].index, fill_value=0.0)
-        link_ptdf_bus1 = link_ptdf_bus1.reindex(columns=basecase_link_data['df'].index, fill_value=0.0)
-        if not config.base_case_strategy == BaseCaseStrategy.ZERO_FLOWS:
-            link_bus0_zone = basecase_link_data['link_bus0_zone_mapping']
-            link_bus1_zone = basecase_link_data['link_bus1_zone_mapping']
-            link_p0 = basecase_link_data['p0']
-            p_inflow_bus0 = - link_p0.T.groupby(link_bus0_zone).sum().reindex(index=sub_network.buses().zone_name.unique(), fill_value=0.0).T
-            p_inflow_bus1 = link_p0.T.groupby(link_bus1_zone).sum().reindex(index=sub_network.buses().zone_name.unique(), fill_value=0.0).T
-            p_link = p_inflow_bus0 + p_inflow_bus1
-            base_net_positions_subnet += p_link
-
-
     gsk = xr.DataArray(
         data=list(gsk.values()),
         coords={
@@ -123,8 +95,6 @@ def calculate_fbmc_parameters_subnet(
         z_ptdf_dict=z_ptdf,
         cnecs=cnecs,
         zones=zones,
-        link_ptdf_bus0=link_ptdf_bus0,
-        link_ptdf_bus1=link_ptdf_bus1,
     )
     fbmc_parameters.convert_to_xr()
     
