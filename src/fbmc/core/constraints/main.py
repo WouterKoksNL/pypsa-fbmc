@@ -7,7 +7,7 @@ import pandas as pd
 import xarray as xr
 from copy import deepcopy
 
-from .fbmc_constraints import construct_cne_constraint, construct_zonal_balance_constraint
+from .fbmc_constraints import construct_lower_ram_constraint, construct_upper_ram_constraint, construct_zonal_balance_constraint
 from .zonal_generation import define_net_positions_constraint, add_net_position_variable
 
 
