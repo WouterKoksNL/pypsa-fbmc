@@ -1,0 +1,52 @@
+import numpy as np
+import pandas as pd
+import pypsa
+import xarray as xr
+
+
+def _calc_base_flows(trafo_p0: pd.DataFrame, line_p0: pd.DataFrame) -> xr.DataArray:
+    def to_da(df: pd.DataFrame, branch_component: str) -> xr.DataArray:
+        return xr.DataArray(
+            data=df.values,
+            coords={'snapshot': df.index, 'branch': df.columns.values},
+            dims=['snapshot', 'branch']
+        ).assign_coords(branch_component=('branch', [branch_component] * df.shape[1]))
+
+    return xr.concat([to_da(trafo_p0, 'Transformer'), to_da(line_p0, 'Line')], dim='branch')
+
+
+def _calc_net_positions(buses_p: pd.DataFrame, zone_names: pd.Series) -> xr.DataArray:
+    net_positions = (
+        xr.DataArray(
+            data=buses_p.values,
+            coords={'snapshot': buses_p.index, 'Bus': buses_p.columns.values},
+            dims=['snapshot', 'Bus']
+        )
+        .assign_coords(Zone=('Bus', zone_names.values))
+        .groupby('Zone').sum('Bus')
+    )
+    if float(np.abs(net_positions.sum('Zone')).max()) > 1e-6:
+        raise ValueError("Net positions do not sum to zero.")
+    return net_positions
+
+
+def get_base_flows_subnet(sub_network: pypsa.SubNetwork) -> xr.DataArray:
+    """Get the base case power flows from transformers, links and lines.
+    Assumes there are no transformers, links or lines with the same name."""
+    return _calc_base_flows(sub_network.pnl('transformers')['p0'], sub_network.pnl('lines')['p0'])
+
+
+def get_base_flows(net: pypsa.Network) -> xr.DataArray:
+    """Get the base case power flows from transformers, links and lines.
+    Assumes there are no transformers, links or lines with the same name."""
+    return _calc_base_flows(net.transformers_t.p0, net.lines_t.p0)
+
+
+def calc_base_net_positions_subnet(sub_network: pypsa.SubNetwork) -> xr.DataArray:
+    """Calculate net positions for each zone based on bus power values."""
+    return _calc_net_positions(sub_network.pnl('buses')['p'], sub_network.df('buses').zone_name)
+
+
+def calc_base_net_positions(net: pypsa.Network) -> xr.DataArray:
+    """Calculate net positions for each zone based on bus power values."""
+    return _calc_net_positions(net.buses_t.p, net.buses.zone_name)
