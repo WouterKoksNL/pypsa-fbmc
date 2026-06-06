@@ -37,16 +37,16 @@ def find_bridges_sub_network(sub_network: pypsa.SubNetwork) -> pd.MultiIndex:
     ).assign_coords(branch_component=('branch', bridge_branches.get_level_values(0).values)) 
     return bridge_branches_da
 
-def find_bridges_network(net) -> pd.MultiIndex:
-    """Loops over all sub-networks (connected AC) in a net and returns the bridge branches for each using the find_bridges_sub_network function.
+def find_bridges_network(net: pypsa.Network) -> xr.DataArray:
+    """Loops over all sub-networks (connected AC) in a net and returns the bridge branches.
 
     Args:
         net (pypsa.Network)
 
     Returns:
-        pd.MultiIndex: MultiIndex of bridges in the network. (First level: branch type, second level: branch name)
+        xr.DataArray: bridge branches with 'branch' dim and 'branch_component' coord.
     """
-    bridge_branches = pd.MultiIndex(levels=[[], []], codes=[[], []])
-    for subnet in net.sub_networks.obj:
-        bridge_branches = bridge_branches.append(find_bridges_sub_network(subnet))
-    return bridge_branches
+    return xr.concat(
+        [find_bridges_sub_network(subnet) for subnet in net.sub_networks.obj],
+        dim='branch'
+    )
