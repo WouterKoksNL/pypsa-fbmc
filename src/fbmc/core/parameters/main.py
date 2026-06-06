@@ -110,7 +110,7 @@ def calculate_fbmc_parameters_subnet(
 
     upper_ram, lower_ram = calculate_ram(
         sub_network, 
-        z_ptdf_dict, 
+        z_ptdf, 
         base_flows_subnet, 
         reliability_margin_factor=config.reliability_margin_factor, 
         net_positions_base_case=base_net_positions_subnet
@@ -120,7 +120,7 @@ def calculate_fbmc_parameters_subnet(
     fbmc_parameters = SubnetFBMCParameters(   
         upper_ram_dict=upper_ram,
         lower_ram_dict=lower_ram,
-        z_ptdf_dict=z_ptdf_dict,
+        z_ptdf_dict=z_ptdf,
         cnecs=cnecs,
         zones=zones,
         link_ptdf_bus0=link_ptdf_bus0,
