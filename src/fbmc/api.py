@@ -143,8 +143,9 @@ def redispatch_workflow(
 
 
 def run_fbmc(
-        zonal_net: pypsa.Network = None,
-        nodal_net: pypsa.Network = None,
+        zonal_net: pypsa.Network,
+        nodal_net: pypsa.Network,
+        config: FBMCConfig,
         gsk: dict = None,
         config: FBMCConfig | None = None,
 
@@ -194,8 +195,11 @@ def run_fbmc(
     )
 
     logger.info("Solving FBMC model.")
-    zonal_net, net_positions = solve(zonal_net, advanced_hybrid_flag=config.advanced_hybrid_coupling_flag, solver_kwargs=config.fbmc_solver_kwargs)
-    dispatch_results = DispatchResults(zonal_net)
+    zonal_net, net_positions = solve(
+        zonal_net, 
+        advanced_hybrid_flag=config.advanced_hybrid_coupling_flag, 
+        solver_kwargs=config.fbmc_solver_kwargs
+    )
 
     return FBMCResult(
         zonal_net=zonal_net,
