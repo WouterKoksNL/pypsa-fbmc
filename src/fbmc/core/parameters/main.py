@@ -63,7 +63,7 @@ def calculate_fbmc_parameters_subnet(
         nodal_ptdf = nodal_ptdf.assign_coords(cnec=('branch', cnecs['branch'].values)).swap_dims({"branch": "cnec"})  
         base_flows_subnet = base_flows_subnet.assign_coords(cnec=('branch', cnecs['branch'].values)).swap_dims({"branch": "cnec"})
 
-    gsk = xr.DataArray(
+    gsk_subnet = xr.DataArray(
         data=list(gsk.values()),
         coords={
             'snapshot': list(gsk.keys()),
@@ -72,8 +72,10 @@ def calculate_fbmc_parameters_subnet(
         },
         dims=['snapshot', 'Zone', 'Bus']
     )
+    gsk_subnet = gsk_subnet.sel(Bus=nodal_ptdf.coords['Bus'],
+                                 Zone=sub_network.buses().zone_name.unique()) # Align GSK to PTDF columns based on bus names
 
-    z_ptdf = calculate_zonal_ptdf(nodal_ptdf, gsk, cnecs)
+    z_ptdf = calculate_zonal_ptdf(nodal_ptdf, gsk_subnet, cnecs)
     # z_ptdf_dics
 
 
