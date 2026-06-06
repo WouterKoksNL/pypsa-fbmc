@@ -217,7 +217,6 @@ def add_fbmc_constraints_loop(
         
 def solve(
         zonal_net: pypsa.Network, 
-        advanced_hybrid_flag: bool = False,
         solver_kwargs: dict[str, str] = None
         ) -> tuple[pypsa.Network, pd.DataFrame]:
     """
