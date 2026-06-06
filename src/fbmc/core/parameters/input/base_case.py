@@ -3,7 +3,7 @@ import pypsa
 
 
 from ..derived.bridge_branches import find_bridges_network
-from src.fbmc.enums import BaseCaseStrategy
+from ....enums import BaseCaseStrategy
 
 
 def prepare_nodal_optimum_base_case(_nodal_net: pypsa.Network, **solver_kwargs):
