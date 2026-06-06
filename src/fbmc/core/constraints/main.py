@@ -48,26 +48,26 @@ def add_fbmc_constraints(
     # xarray conversion
 
     # Restrict the load on CNEs by the Remaining Available Margin (RAM)
-    upper_cne_constraint = construct_cne_constraint(
+    upper_cne_constraint = construct_upper_ram_constraint(
         zPTDF_xr, 
         network.model.variables["Zone-p"],
         upper_RAM_xr, 
-        upper_bool=True, 
         )
     network.model.add_constraints(upper_cne_constraint, name=f"CNEC-upper-RAM-subnet-{sub_network_name}")
 
     # Restrict the load on CNEs by the Remaining Available Margin (RAM)
     if not upper_ram_only_flag:
-        lower_cne_constraint = construct_cne_constraint(
+        lower_cne_constraint = construct_lower_ram_constraint(
             zPTDF_xr, 
             network.model.variables["Zone-p"], 
             lower_RAM_xr, 
-            upper_bool=False, 
             )
         network.model.add_constraints(lower_cne_constraint, name=f"CNEC-lower-RAM-subnet-{sub_network_name}")
 
     # Ensure the Net Position of all zones adds up to 0
-    zonal_balance_constraint = construct_zonal_balance_constraint(network.model.variables["Zone-p"].sel(Zone=zones))
+    zonal_balance_constraint = construct_zonal_balance_constraint(
+        network.model.variables["Zone-p"].sel(Zone=zones)
+    )
     network.model.add_constraints(zonal_balance_constraint, name=f"Zonal_balance-subnet-{sub_network_name}")
 
     
