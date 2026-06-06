@@ -14,7 +14,8 @@ from ...types import SubnetFBMCParameters
 def calculate_fbmc_parameters_subnet(
     sub_network: pypsa.SubNetwork,
     gsk: dict[Any, pd.DataFrame], 
-    config: FBMCConfig = FBMCConfig(),
+    config: FBMCConfig,
+    cnecs: xr.Coordinates,
     basecase_link_data: pd.DataFrame = None,
     base_case_flows: pd.DataFrame = None,
     cne_reference_case_flows: pd.DataFrame = None,
@@ -40,8 +41,9 @@ def calculate_fbmc_parameters_subnet(
     if sub_network.buses_i().size < 3:
         raise NotImplementedError("Sub-networks with less than 3 buses are not supported.")
 
-    base_flows_subnet = base_case_flows.loc[:, sub_network.df('transformers').index.union(sub_network.df('lines').index)].copy()
-    base_net_positions_subnet = net_positions_base_case.loc[:, sub_network.buses().zone_name.unique()].copy() 
+    base_flows_subnet = get_base_flows_subnet(sub_network)
+    base_net_positions_subnet = calc_base_net_positions_subnet(sub_network)
+
     nodal_ptdf = get_subnetwork_ptdf(sub_network)
 
     cnecs = cnec_router(sub_network, config, cne_reference_case_flows=cne_reference_case_flows)

@@ -103,16 +103,25 @@ def calculate_fbmc_parameters(
     net_positions_base_case = calc_base_net_positions(basecase_nodal_network)
     base_flows = get_base_flows(basecase_nodal_network)  # shape: (snapshots, branches)
 
-    cne_reference_case_flows = define_cne_reference_case_flows(basecase_nodal_network, config)
-    if cne_reference_case_flows is None:
-        cne_reference_case_flows = base_flows
+
+    cnecs_dict = cnec_router(basecase_nodal_network, config)
+        
+
     for sub_network_name, sub_network_df in basecase_nodal_network.sub_networks.iterrows():
         sub_network = sub_network_df.obj
         if sub_network.buses_i().size < 3:
             logging.warning(f"Sub-network {sub_network_name} has less than 3 buses. Skipping FBMC parameter calculation and constraint addition for this sub-network.")
             continue
 
-        subnet_fbmc_parameters: SubnetFBMCParameters = calculate_fbmc_parameters_subnet(sub_network, gsk, config=config, basecase_link_data=basecase_link_data, base_case_flows=base_flows, cne_reference_case_flows=cne_reference_case_flows, net_positions_base_case=net_positions_base_case)
+        subnet_fbmc_parameters: SubnetFBMCParameters = calculate_fbmc_parameters_subnet(
+            sub_network, 
+            gsk, 
+            config=config, 
+            basecase_link_data=basecase_link_data, 
+            base_case_flows=base_flows, 
+            net_positions_base_case=net_positions_base_case,
+            cnecs=cnecs_dict[sub_network_name]
+            )
         fbmc_parameters[sub_network_name] = subnet_fbmc_parameters
     
     return fbmc_parameters
