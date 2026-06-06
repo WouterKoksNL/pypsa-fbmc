@@ -46,7 +46,6 @@ def calculate_fbmc_parameters_subnet(
 
     nodal_ptdf = get_subnetwork_ptdf(sub_network)
 
-    cnecs = cnec_router(sub_network, config, cne_reference_case_flows=cne_reference_case_flows)
 
     if config.add_security_constraints:
         nodal_ptdf, base_flows_subnet = apply_security_param_changes(
