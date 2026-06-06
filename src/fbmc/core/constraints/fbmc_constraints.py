@@ -1,13 +1,7 @@
 import linopy as lp
 import pandas as pd
 import xarray as xr
-import numpy as np
 
-# ---- Data Transformations ----
-
-
-
-# ---- Load Mapping ----
 
 def create_load_zone_mapping(loads: pd.DataFrame) -> xr.DataArray:
     """
@@ -20,6 +14,7 @@ def create_load_zone_mapping(loads: pd.DataFrame) -> xr.DataArray:
     )
     return load_zone_mapping
 
+
 def create_load_zone_mask(load_zone_mapping: xr.DataArray, zones: list) -> xr.DataArray:
     """
     Create a mask for the loads in the zones.
@@ -27,6 +22,7 @@ def create_load_zone_mask(load_zone_mapping: xr.DataArray, zones: list) -> xr.Da
     zone_da = xr.DataArray(zones, dims = ["Zone"], coords = {"Zone": zones})
     mask = zone_da == load_zone_mapping
     return mask
+
 
 def get_zonal_loads(load_zone_mask, loads_t_pset):
     """
