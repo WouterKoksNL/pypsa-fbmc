@@ -203,3 +203,4 @@ cython_debug/
 /.vscode
 /output_results
 paths.toml
+/results
