@@ -23,6 +23,19 @@ def create_zonal_generation(network: pypsa.Network):
 
     return 
 
+def _remove_coords(
+    data_array: xr.DataArray, 
+    coords_to_remove: list[str]
+) -> xr.DataArray:
+    """
+    Remove unwanted coordinates from the DataArray to avoid issues with linopy.
+    """
+    for coord in coords_to_remove:
+        if coord in data_array.coords:
+            data_array = data_array.drop(coord)
+    return data_array
+
+
 def add_fbmc_constraints(
         network: pypsa.Network, 
         sub_network_name: str,
