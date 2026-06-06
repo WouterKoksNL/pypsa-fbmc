@@ -117,9 +117,6 @@ def calculate_fbmc_parameters(
             sub_network, 
             gsk, 
             config=config, 
-            basecase_link_data=basecase_link_data, 
-            base_case_flows=base_flows, 
-            net_positions_base_case=net_positions_base_case,
             cnecs=cnecs_dict[sub_network_name]
             )
         fbmc_parameters[sub_network_name] = subnet_fbmc_parameters

@@ -18,9 +18,6 @@ def calculate_fbmc_parameters_subnet(
     gsk: dict[Any, pd.DataFrame], 
     config: FBMCConfig,
     cnecs: xr.Coordinates,
-    basecase_link_data: pd.DataFrame = None,
-    base_case_flows: pd.DataFrame = None,
-    net_positions_base_case: pd.DataFrame = None,
 ) -> SubnetFBMCParameters:
     """Add security constraints to zonal network.
 
