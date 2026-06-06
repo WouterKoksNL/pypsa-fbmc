@@ -60,7 +60,6 @@ def cnec_subnet_router(
         )
         outages = cnes.sel(branch=mask).copy().rename({'branch': 'outage', 'branch_component': 'outage_component'})
         cnecs = cnecs_from_combinatorial_cne_and_outages(cnes, outages)
-        breakpoint()
     elif config.cnec_setting == 'manual':
         # cnes = config.cne_list
         raise NotImplementedError('Manual CNE selection not implemented yet.')
