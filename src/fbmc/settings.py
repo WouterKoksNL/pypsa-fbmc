@@ -23,7 +23,7 @@ def _default_config_values() -> dict[str, Any]:
     return {
         "reliability_margin_factor": 0.0,
         "min_ram": 0.0,
-        "cne_setting": "all",
+        "cnec_setting": "all",
         "line_usage_threshold": 0.2,
         "cne_list": None,
         "cne_reference_case_flows": BaseCaseStrategy.NODAL_OPTIMUM,
@@ -184,7 +184,7 @@ class FBMCConfig:
     reliability_margin_factor: float = 0.0
     min_ram: float = 0.0
 
-    cne_setting: str = "all"
+    cnec_setting: str = "all"
     line_usage_threshold: float = 0.2
     cne_list: list[str] = None
     cne_reference_case_flows: BaseCaseStrategy = BaseCaseStrategy.NODAL_OPTIMUM

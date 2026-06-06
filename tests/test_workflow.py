@@ -20,10 +20,9 @@ from tests.workflow_test_case import FBMCWorkflowTestCase, run_workflow_test
 EXPLICIT_TEST_CONFIG_DEFAULTS = {
     "reliability_margin_factor": 0.0,
     "min_ram": 0.0,
-    "cne_setting": "utilization_threshold",
+    "cnec_setting": "all",
     "line_usage_threshold": 0.2,
     "cne_list": None,
-    "cne_reference_case_flows": BaseCaseStrategy.NODAL_OPTIMUM,
     "security_constraint_bodf_size_threshold": 0.2,
     "security_constraint_bodf_columnwise_matrix_size_limit": 5_000_000,
     "gsk_strategy": "CURRENT_GENERATION",
