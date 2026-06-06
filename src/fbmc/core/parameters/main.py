@@ -20,7 +20,6 @@ def calculate_fbmc_parameters_subnet(
     cnecs: xr.Coordinates,
     basecase_link_data: pd.DataFrame = None,
     base_case_flows: pd.DataFrame = None,
-    cne_reference_case_flows: pd.DataFrame = None,
     net_positions_base_case: pd.DataFrame = None,
 ) -> SubnetFBMCParameters:
     """Add security constraints to zonal network.
