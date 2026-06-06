@@ -57,8 +57,14 @@ def calculate_fbmc_parameters_subnet(
             bodf_size_threshold=config.security_constraint_bodf_size_threshold,
             bodf_columnwise_matrix_size_limit=config.security_constraint_bodf_columnwise_matrix_size_limit,
         )
-
-        cnecs = nodal_ptdf.index  # Update CNECs to match the potentially reduced set in apply_security_param_changes
+        cnecs = nodal_ptdf.coords['cnec']  # Update CNECs to match the potentially reduced set in apply_security_param_changes
+    else:
+        
+        # filter on cnecs
+        nodal_ptdf = nodal_ptdf.sel(branch=cnecs['branch'])
+        base_flows_subnet = base_flows_subnet.sel(branch=cnecs['branch'])
+        nodal_ptdf = nodal_ptdf.assign_coords(cnec=('branch', cnecs['branch'].values)).swap_dims({"branch": "cnec"})  
+        base_flows_subnet = base_flows_subnet.assign_coords(cnec=('branch', cnecs['branch'].values)).swap_dims({"branch": "cnec"})
 
 
     link_ptdf_bus0, link_ptdf_bus1 = None, None
