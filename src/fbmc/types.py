@@ -149,7 +149,7 @@ class SubnetFBMCParameters:
             )
 
 
-class DispatchResults:
+class DispatchResult:
     def __init__(self, net: pypsa.Network):
         self.generators_p: pd.DataFrame = net.generators_t.p
         self.storage_units_p: pd.DataFrame = net.storage_units_t.p
