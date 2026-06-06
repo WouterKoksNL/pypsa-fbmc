@@ -1,10 +1,9 @@
 reliability_margin_factor: 0.0
 min_ram: 0.0
 
-cne_setting: all
+cnec_setting: all
 line_usage_threshold: 0.2
 cne_list: null
-cne_reference_case_flows: NODAL_OPTIMUM
 security_constraint_bodf_size_threshold: 0.2
 security_constraint_bodf_columnwise_matrix_size_limit: 5000000
 
