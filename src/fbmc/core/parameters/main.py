@@ -96,7 +96,5 @@ def calculate_fbmc_parameters_subnet(
         cnecs=cnecs,
         zones=zones,
     )
-    fbmc_parameters.convert_to_xr()
-    
 
     return fbmc_parameters
