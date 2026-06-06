@@ -88,10 +88,18 @@ def calculate_fbmc_parameters_subnet(
             base_net_positions_subnet += p_link
 
 
-    z_ptdf_dict = {
-        snapshot: calculate_zonal_ptdf(nodal_ptdf, gsk_snapshot, cnecs)
-        for snapshot, gsk_snapshot in gsk.items()
-    }
+    gsk = xr.DataArray(
+        data=list(gsk.values()),
+        coords={
+            'snapshot': list(gsk.keys()),
+            'Zone': gsk[list(gsk.keys())[0]].index,
+            'Bus': gsk[list(gsk.keys())[0]].columns
+        },
+        dims=['snapshot', 'Zone', 'Bus']
+    )
+
+    z_ptdf = calculate_zonal_ptdf(nodal_ptdf, gsk, cnecs)
+    # z_ptdf_dics
 
 
     upper_ram, lower_ram = calculate_ram(
