@@ -149,7 +149,25 @@ def run_fbmc(
         config: FBMCConfig | None = None,
 
     ) -> FBMCResult:
-    
+    """Run the flow-based market clearing algorithm. Steps:
+        Prepare base-case, depending on base case strategy
+        If gsk is None, calculate gsk according to strategy
+        Set up and solve FBMC model
+
+    Args:
+        zonal_net (pypsa.Network): _description_
+        nodal_net (pypsa.Network): _description_
+        config (FBMCConfig | None): _description_
+        gsk (dict, optional): _description_. Defaults to None.
+
+    Returns:
+        FBMCResult: FBMCResult object containing 
+            Solved zonal net 
+            Net positions
+            Dispatch results (generator dispatch, storage dispatch, link flows, storage levels, water values)
+            FBMC parameters (zPTDFs, etc.)
+            Base case nodal network
+    """
     logger = logging.getLogger(__name__)
     do_input_checks(nodal_net, zonal_net, gsk)
 
