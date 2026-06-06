@@ -176,7 +176,7 @@ def run_fbmc(
     base_case = prepare_base_case(
         nodal_net, 
         strategy=config.base_case_strategy,
-        base_case_kwargs={'marginal_cost_load_shedding': config.marginal_cost_load_shedding}
+        base_case_kwargs=config.fbmc_solver_kwargs
         )
     logger.info("Base case prepared.")
 
