@@ -6,8 +6,8 @@ from .cnec import cnec_router
 from .ram import calculate_ram
 from .ptdf import calculate_zonal_ptdf, get_subnetwork_ptdf
 from ...settings import FBMCConfig
-from .base_case import calc_base_net_positions, get_base_flows, BaseCaseStrategy
-from .security_constrained import apply_security_param_changes, calculate_zonal_ptdf_advanced_hybrid
+from fbmc.core.parameters.derived.base_case import get_base_flows_subnet, calc_base_net_positions_subnet
+from .derived.security_constrained import apply_security_param_changes, calculate_zonal_ptdf_advanced_hybrid
 from ...types import SubnetFBMCParameters
 
 

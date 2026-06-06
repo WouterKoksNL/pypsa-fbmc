@@ -7,8 +7,8 @@ import pypsa
 
 from fbmc.case_creation.main import Cases
 from fbmc.settings import FBMCConfig
-from fbmc.core.parameters.base_case import BaseCaseStrategy
-from fbmc.core.parameters.gsk import GSKStrategy
+from fbmc.core.parameters.input.base_case import BaseCaseStrategy
+from fbmc.core.parameters.input.gsk import GSKStrategy
 from fbmc.types import FBMCResult
 
 
@@ -40,25 +40,23 @@ def run_workflow_test(
     """
     from fbmc.api import run_fbmc, redispatch_workflow
 
-
-    result = fbmc_workflow(
+    config = test_case.config
+    config.gsk_strategy = test_case.gsk_strategy 
+    config.base_case_strategy = test_case.base_case_strategy
+    config.advanced_hybrid_coupling_flag = test_case.advanced_hybrid_coupling_flag
+    result = run_fbmc(
         zonal_net=test_case.zonal_net,
         nodal_net=test_case.nodal_net,
         gsk=test_case.gsk,
         config=test_case.config,
-        config_overrides={
-            "gsk_strategy": test_case.gsk_strategy,
-            "base_case_strategy": test_case.base_case_strategy,
-            "advanced_hybrid_coupling_flag": test_case.advanced_hybrid_coupling_flag,
-        }
     )
     redispatch_kwargs = {
-        'with_security_constraints': test_case.config.security_constrained_redispatch, 
+        'security_constrained_flag': test_case.config.security_constrained_redispatch, 
         'rt_deviation_factor': test_case.config.deviation_factor_redispatch,
     }
     if test_case.config.run_redispatch:
-        nodal_net, cost, result.dispatch_results = redispatch_workflow(
+        redispatch_result = redispatch_workflow(
             test_case.nodal_net, result.dispatch_results, **redispatch_kwargs   
         )
         breakpoint()
-    return result, cost
+    return result, redispatch_result.cost if test_case.config.run_redispatch else None

@@ -8,8 +8,8 @@ from ..constraints.fbmc_constraints import (
     create_load_zone_mask,
     get_zonal_loads
 )
-from fbmc.core.parameters.ptdf import convert_zPTDF_to_xarray
-from fbmc.core.parameters.ram import convert_RAM_to_xarray
+from fbmc.core.parameters.derived.ptdf import convert_zPTDF_to_xarray
+from fbmc.core.parameters.derived.ram import convert_RAM_to_xarray
 
 
 
