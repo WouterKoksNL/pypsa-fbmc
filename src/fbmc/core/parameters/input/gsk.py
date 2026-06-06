@@ -554,8 +554,6 @@ def calc_merit_order_based_gsk(network: pypsa.Network,
 
     gen_zone_map = network.generators.bus.map(network.buses['zone_name'])
 
-    # reference_net_positions_zones = get_net_positions(network.buses, network.buses_t, network.buses.zone_name.unique())
-
     reference_generation_zones = network.generators_t.p.T.groupby(gen_zone_map).sum().T
     
     if isinstance(standard_deviation, (int | float)):
