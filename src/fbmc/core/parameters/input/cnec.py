@@ -73,30 +73,6 @@ def cnec_subnet_router(
         return cnes
 
 
-def _determine_cnes_threshold(max_absolute_flow, line_capacity, line_usage_threshold) -> list:
-    """
-    Determine Critical Network Elements (CNEs) based on line usage.
-    This function identifies the lines in the network that are considered 
-    Critical Network Elements (CNEs) by comparing their maximum absolute power 
-    flow to a predefined threshold. Lines with a maximum usage above the 
-    threshold are classified as CNEs.
-    Args:
-        max_absolute_flow (pd.Series): The maximum absolute power flow for each line.
-        line_capacity (pd.Series): The capacity of each line.
-    Returns:
-        xr.DataArray: A DataArray containing the identified CNEs, with coords (branch, component) and dimension 'branch'.
-    """
-    assert (0 <= line_usage_threshold <= 1), 'Threshold is out of acceptable bounds: [0,1]'
-    assert (max_absolute_flow.coords['branch'] == line_capacity.coords['branch']).all(), 'Indices of max_absolute_flow and line_capacity do not match.'
-    assert (max_absolute_flow >= 0).all(), 'Max absolute flow contains non-positive values.'
-    assert (line_capacity > 0).all(), 'Line capacity contains non-positive values.'
-
-    max_line_usage = max_absolute_flow / line_capacity
-    cne = max_line_usage[max_line_usage > line_usage_threshold].coords
-    assert len(cne) != 0, f'There are no Critical Network Elements for threshold {line_usage_threshold}.'
-    return cne
-
-
 def filter_on_cne(ptdf_parameter: pd.DataFrame, cne_lines: list) -> pd.DataFrame:
     """
     Filters the PTDF parameter DataFrame to include only the specified critical network elements (CNEs).
