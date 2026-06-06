@@ -154,9 +154,11 @@ def setup_fbmc_model(
     
     create_zonal_generation(zonal_net)
     remove_original_constraints_loop(zonal_net, basecase_nodal_network)
-    add_fbmc_constraints_loop(zonal_net, fbmc_parameters, 
-                              config.advanced_hybrid_coupling_flag, 
-                              config.upper_ram_only_flag)
+    add_fbmc_constraints_loop(
+        zonal_net, 
+        fbmc_parameters, 
+        config.upper_ram_only_flag
+    )
     post_model_creation_workflow(zonal_net, config)
     return model, fbmc_parameters
 
@@ -192,7 +194,6 @@ def remove_original_constraints_loop(
 def add_fbmc_constraints_loop(
         zonal_net: pypsa.Network,
         fbmc_parameters: dict[str, SubnetFBMCParameters],
-        advanced_hybrid_flag: bool,
         upper_ram_only_flag: bool,
     ) -> None:
     """Add FBMC constraints for each sub-network in the zonal network."""
@@ -210,7 +211,6 @@ def add_fbmc_constraints_loop(
             zPTDF_xr,
             upper_RAM_xr,
             lower_RAM_xr,
-            advanced_hybrid_flag,
             upper_ram_only_flag
         )
         

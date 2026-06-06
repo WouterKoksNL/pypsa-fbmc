@@ -9,7 +9,7 @@ from copy import deepcopy
 
 from .fbmc_constraints import construct_cne_constraint, construct_zonal_balance_constraint
 from .zonal_generation import define_net_positions_constraint, add_net_position_variable
-from .link_flows import construct_cne_constraint_advanced_hybrid
+
 
 def create_zonal_generation(network: pypsa.Network):
     """
