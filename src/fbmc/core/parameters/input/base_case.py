@@ -1,10 +1,12 @@
+"""Constains the methods for preparing the base case for the FBMC optimization."""
+
 import pandas as pd
 import pypsa
 import numpy as np
 import xarray as xr
 
 from ..derived.bridge_branches import find_bridges_network
-from ....enums import BaseCaseStrategy
+from src.fbmc.enums import BaseCaseStrategy
 
 
 def prepare_nodal_optimum_base_case(_nodal_net: pypsa.Network, **solver_kwargs):
