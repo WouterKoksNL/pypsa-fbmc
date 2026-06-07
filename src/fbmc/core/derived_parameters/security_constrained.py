@@ -50,25 +50,6 @@ def get_subnetwork_bodf(
     return bodf
 
 
-
-def apply_security_param_changes(
-        sub_network: pypsa.SubNetwork, 
-        cnecs: pd.MultiIndex, 
-        nodal_ptdf: pd.DataFrame, 
-        base_flows: xr.DataArray,
-        bodf_size_threshold: float,
-        bodf_columnwise_matrix_size_limit: int = BODF_COLUMNWISE_MATRIX_SIZE_LIMIT,
-        ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Apply security constraint parameter changes to nodal PTDF and base flows.""" 
-
-    bodf = get_subnetwork_bodf(sub_network, cnecs, bodf_size_threshold)
-
-    nodal_ptdf_outaged = apply_bodf(nodal_ptdf, bodf, matrix_size_limit=bodf_columnwise_matrix_size_limit)
-    base_flows_outaged = apply_bodf(base_flows, bodf, matrix_size_limit=bodf_columnwise_matrix_size_limit).T
-
-    return nodal_ptdf_outaged, base_flows_outaged
-
-
 def calc_bodf_cnec_values(BODF: pd.DataFrame, cnecs: pd.MultiIndex) -> pd.Series:
     """
     Extract BODF values for each (line, outage) pair in cnecs.
