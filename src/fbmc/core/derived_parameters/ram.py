@@ -46,8 +46,8 @@ def calculate_ram(
         zonal_ptdf: xr.DataArray,
         base_flows: pd.DataFrame,
         net_positions_base_case: pd.DataFrame,
-        min_ram: float = 0.0,
-        reliability_margin_factor: float = 0.1,
+        min_ram: float,
+        reliability_margin_factor: float,
     ) -> xr.DataArray:
     """
     Calculate the Remaining Available Margin (RAM) for a given power network.
@@ -93,8 +93,6 @@ def calculate_ram(
     cap_at_cnec = safety_adjusted_capacity.sel(branch=xr.DataArray(cnec_branches, dims='cnec')).reset_coords(drop=True)
     upper_ram = cap_at_cnec - reference_flow
     lower_ram = - cap_at_cnec - reference_flow
-
-
 
     if min_ram > 0:
         upper_ram = upper_ram.clip(min=min_ram * cap_at_cnec)
