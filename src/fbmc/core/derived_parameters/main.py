@@ -67,9 +67,9 @@ def calculate_fbmc_parameters_subnet(
     
     zones = sub_network.buses().zone_name.unique()
     fbmc_parameters = SubnetFBMCParameters(   
-        upper_ram_dict=upper_ram,
-        lower_ram_dict=lower_ram,
-        z_ptdf_dict=z_ptdf,
+        upper_ram=upper_ram,
+        lower_ram=lower_ram,
+        z_ptdf=z_ptdf,
         cnecs=cnecs,
         zones=zones,
     )
