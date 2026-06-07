@@ -9,6 +9,7 @@ import pypsa
 import pandas as pd
 import logging
 import linopy as lp 
+import xarray as xr
 
 from .parameters.main import calculate_fbmc_parameters_subnet
 from ..types import SubnetFBMCParameters
@@ -63,6 +64,7 @@ def post_model_creation_workflow(zonal_net: pypsa.Network, config: FBMCConfig):
 def calculate_fbmc_parameters(
         basecase_nodal_network: pypsa.Network, 
         gsk: pd.DataFrame | dict[pd.Timestamp, pd.DataFrame], 
+        cnecs: dict[str, xr.Coordinates],
         config: FBMCConfig = FBMCConfig(), 
     ) -> dict[str, SubnetFBMCParameters]:
     """
@@ -101,7 +103,7 @@ def calculate_fbmc_parameters(
             sub_network, 
             gsk, 
             config=config, 
-            cnecs=cnecs_dict[sub_network_name]
+            cnecs=cnecs[sub_network_name]
             )
         fbmc_parameters[sub_network_name] = subnet_fbmc_parameters
     
@@ -111,8 +113,9 @@ def calculate_fbmc_parameters(
 def setup_fbmc_model(
         zonal_net: pypsa.Network, 
         basecase_nodal_network: pypsa.Network,
-        gsk: pd.DataFrame | dict[pd.Timestamp, pd.DataFrame] = None,
-        config: FBMCConfig = FBMCConfig()
+        gsk: pd.DataFrame | dict[pd.Timestamp, pd.DataFrame],
+        cnecs: dict[str, xr.Coordinates],
+        config: FBMCConfig,
     ) -> tuple[lp.Model, dict[str, SubnetFBMCParameters]]:
     """_summary_
 
@@ -128,7 +131,8 @@ def setup_fbmc_model(
         dict[str, SubnetFBMCParameters]: dict of FBMC parameters for each sub-network
     """
 
-    fbmc_parameters = calculate_fbmc_parameters(basecase_nodal_network, gsk, config=config)
+    fbmc_parameters = calculate_fbmc_parameters(
+        basecase_nodal_network, gsk, cnecs=cnecs, config=config)
 
     if zonal_net.model is None:
         model = _create_model_without_meshed_split(zonal_net, create_model_kwargs=config.fbmc_create_model_kwargs)

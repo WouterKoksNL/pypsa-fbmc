@@ -6,6 +6,8 @@ import logging
 from typing import Any
 
 from fbmc.core.parameters.derived.bridge_branches import find_bridges_network
+from fbmc.core.parameters.input.cnec import cnec_router
+from fbmc.core.results_extraction import extract_model_results
 from fbmc.settings import FBMCConfig, coerce_enum_value, merge_config_overrides
 from fbmc.core.main import setup_fbmc_model
 from fbmc.core.parameters.input.base_case import prepare_base_case, BaseCaseStrategy
@@ -185,11 +187,15 @@ def run_fbmc(
     if nodal_net.sub_networks.empty:
         nodal_net.determine_network_topology()
 
+    cnecs_dict = cnec_router(nodal_net, config.cnec_setting, config.add_security_constraints)
+        
+
     logger.info("Calculating FBMC parameters and setting up FBMC model.")
     model, fbmc_parameters = setup_fbmc_model(
         zonal_net, 
         basecase_nodal_network=base_case, 
         gsk=gsk,
+        cnecs=cnecs_dict,
         config=config
     )
 
