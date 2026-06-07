@@ -3,12 +3,11 @@ import pandas as pd
 from typing import Any
 import xarray as xr
 
-
-from .input.cnec import cnec_router
+from .derived.security_constrained import get_subnetwork_bodf
 from .derived.ram import calculate_ram
-from .derived.ptdf import calculate_zonal_ptdf, get_subnetwork_ptdf
+from .derived.ptdf import calculate_zonal_ptdf, get_subnetwork_ptdf, get_subnetwork_ptdf_security_constrained
 from ...settings import FBMCConfig
-from fbmc.core.parameters.derived.base_case import get_base_flows_subnet, calc_base_net_positions_subnet
+from fbmc.core.parameters.derived.base_case import get_base_flows_subnet, calc_base_net_positions_subnet, get_base_flows_subnet_security_constrained
 from .derived.security_constrained import apply_security_param_changes
 from ...types import SubnetFBMCParameters
 from ...settings import BaseCaseStrategy
@@ -39,29 +38,22 @@ def calculate_fbmc_parameters_subnet(
     if sub_network.buses_i().size < 3:
         raise NotImplementedError("Sub-networks with less than 3 buses are not supported.")
 
-    base_flows_subnet = get_base_flows_subnet(sub_network)
-    base_net_positions_subnet = calc_base_net_positions_subnet(sub_network)
-
-    nodal_ptdf = get_subnetwork_ptdf(sub_network)
-
-
     if config.add_security_constraints:
-        nodal_ptdf, base_flows_subnet = apply_security_param_changes(
-            sub_network,
-            cnecs,
-            nodal_ptdf,
-            base_flows_subnet,
-            bodf_size_threshold=config.security_constraint_bodf_size_threshold,
-            bodf_columnwise_matrix_size_limit=config.security_constraint_bodf_columnwise_matrix_size_limit,
-        )
+        bodf = get_subnetwork_bodf(sub_network, cnecs, config.security_constraint_bodf_size_threshold)
+        nodal_ptdf = get_subnetwork_ptdf_security_constrained(sub_network, bodf, bodf_columnwise_matrix_size_limit=config.security_constraint_bodf_columnwise_matrix_size_limit)
+        base_flows_subnet = get_base_flows_subnet_security_constrained(sub_network, bodf)
         cnecs = nodal_ptdf.coords['cnec']  # Update CNECs to match the potentially reduced set in apply_security_param_changes
     else:
-        
-        # filter on cnecs
+        nodal_ptdf = get_subnetwork_ptdf(sub_network)
+        base_flows_subnet = get_base_flows_subnet(sub_network)
+
         nodal_ptdf = nodal_ptdf.sel(branch=cnecs['branch'])
         base_flows_subnet = base_flows_subnet.sel(branch=cnecs['branch'])
         nodal_ptdf = nodal_ptdf.assign_coords(cnec=('branch', cnecs['branch'].values)).swap_dims({"branch": "cnec"})  
         base_flows_subnet = base_flows_subnet.assign_coords(cnec=('branch', cnecs['branch'].values)).swap_dims({"branch": "cnec"})
+
+
+    base_net_positions_subnet = calc_base_net_positions_subnet(sub_network)
 
     gsk_subnet = xr.DataArray(
         data=list(gsk.values()),

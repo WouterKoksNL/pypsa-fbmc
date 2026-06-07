@@ -3,6 +3,7 @@ import pandas as pd
 import pypsa
 import xarray as xr
 
+from fbmc.core.parameters.derived.security_constrained import apply_bodf
 
 def _calc_base_flows(trafo_p0: pd.DataFrame, line_p0: pd.DataFrame) -> xr.DataArray:
     def to_da(df: pd.DataFrame, branch_component: str) -> xr.DataArray:
@@ -34,6 +35,11 @@ def get_base_flows_subnet(sub_network: pypsa.SubNetwork) -> xr.DataArray:
     """Get the base case power flows from transformers, links and lines.
     Assumes there are no transformers, links or lines with the same name."""
     return _calc_base_flows(sub_network.pnl('transformers')['p0'], sub_network.pnl('lines')['p0'])
+
+def get_base_flows_subnet_security_constrained(sub_network: pypsa.SubNetwork, bodf: xr.DataArray, cnecs: xr.Coordinates, bodf_columnwise_matrix_size_limit: int) -> xr.DataArray:
+    base_flows = get_base_flows_subnet(sub_network)
+    base_flows_constrained = apply_bodf(base_flows, bodf)
+    return base_flows_constrained
 
 
 def get_base_flows(net: pypsa.Network) -> xr.DataArray:

@@ -3,6 +3,8 @@ import pandas as pd
 import pypsa
 import xarray as xr
 
+from fbmc.core.parameters.derived.security_constrained import apply_bodf
+
 
 def get_subnetwork_ptdf(sub_network: pypsa.SubNetwork) -> xr.DataArray:
     """
@@ -19,9 +21,12 @@ def get_subnetwork_ptdf(sub_network: pypsa.SubNetwork) -> xr.DataArray:
         dims=['branch', 'Bus']
     ).assign_coords(branch_component=('branch', sub_network.branches_i().get_level_values(0)))
 
-
     return ptdf
 
+def calc_subnet_ptdf_security_constrained(sub_network: pypsa.SubNetwork, bodf: xr.DataArray) -> xr.DataArray:
+    nodal_ptdf = get_subnetwork_ptdf(sub_network)
+    nodal_ptdf = apply_bodf(nodal_ptdf, bodf)
+    return nodal_ptdf
 
 def calculate_zonal_ptdf(
         ptdf: pd.DataFrame, 
