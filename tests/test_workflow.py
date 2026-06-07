@@ -20,7 +20,7 @@ from tests.workflow_test_case import FBMCWorkflowTestCase, run_workflow_test
 EXPLICIT_TEST_CONFIG_DEFAULTS = {
     "reliability_margin_factor": 0.0,
     "min_ram": 0.0,
-    "cnec_setting": "all",
+    "cnec_setting": "ALL",
     "line_usage_threshold": 0.2,
     "cne_list": None,
     "security_constraint_bodf_size_threshold": 0.2,
