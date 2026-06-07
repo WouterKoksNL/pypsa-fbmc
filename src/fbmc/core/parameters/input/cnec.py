@@ -27,27 +27,28 @@ def cnecs_from_combinatorial_cne_and_outages(cnes: xr.Coordinates, outages: xr.C
 
 def cnec_router(
         net: pypsa.Network,
-        config: FBMCConfig,
+        cnec_setting: str,
+        add_security_constraints: bool,
         **kwargs
         ) -> dict[str, xr.Coordinates]:
     """Router function to determine CNECs based on the configuration. This function can be extended in the future to include more complex logic for determining CNECs.
     """
     cnecs_dict = {}
     for subnet in net.sub_networks.obj:
-        cnecs = cnec_subnet_router(subnet, config, **kwargs)
+        cnecs = cnec_subnet_router(subnet, cnec_setting, add_security_constraints, **kwargs)
         cnecs_dict[subnet.name] = cnecs
     return cnecs_dict
 
 
 def cnec_subnet_router(
         sub_network: pypsa.SubNetwork,
-        config: FBMCConfig,
-        **kwargs
+        cnec_setting: str,
+        add_security_constraints: bool,
         ) -> xr.Coordinates:
     bridge_branches = find_bridges_sub_network(sub_network)
 
     logging.info(f"Identified {len(bridge_branches)} bridge branches that will be excluded from CNECs: {bridge_branches}.")
-    if config.cnec_setting == 'all':
+    if cnec_setting == 'all':
         cnes = sub_network.branches().index.droplevel(0) 
         cnes = xr.DataArray(
             data=cnes.values,
@@ -60,13 +61,13 @@ def cnec_subnet_router(
         )
         outages = cnes.sel(branch=mask).copy().rename({'branch': 'outage', 'branch_component': 'outage_component'})
         cnecs = cnecs_from_combinatorial_cne_and_outages(cnes, outages)
-    elif config.cnec_setting == 'manual':
+    elif cnec_setting == 'manual':
         # cnes = config.cne_list
         raise NotImplementedError('Manual CNE selection not implemented yet.')
     else:
-        raise ValueError(f'cnec_setting {config.cnec_setting} not recognized. Choices are "all", "manual".')
+        raise ValueError(f'cnec_setting {cnec_setting} not recognized. Choices are "all", "manual".')
     
-    if config.add_security_constraints:
+    if add_security_constraints:
         return cnecs
     else:
         return cnes
