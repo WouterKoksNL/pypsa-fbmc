@@ -7,7 +7,7 @@ from typing import Any
 
 from fbmc.core.parameters.derived.bridge_branches import find_bridges_network
 from fbmc.settings import FBMCConfig, coerce_enum_value, merge_config_overrides
-from fbmc.core.main import setup_fbmc_model, solve
+from fbmc.core.main import setup_fbmc_model
 from fbmc.core.parameters.input.base_case import prepare_base_case, BaseCaseStrategy
 
 from fbmc.case_creation.main import create_case, Cases
@@ -194,10 +194,14 @@ def run_fbmc(
     )
 
     logger.info("Solving FBMC model.")
-    zonal_net = solve(
-        zonal_net, 
-        solver_kwargs=config.fbmc_solver_kwargs
-    )
+    solver_kwargs = config.fbmc_solver_kwargs or {}
+
+    # Run the optimization and save the results to the nodal network
+    zonal_net.model.solve(**solver_kwargs)
+    if zonal_net.model.termination_condition != 'optimal':
+        raise ValueError("FBMC optimization did not solve to optimality.")
+    extract_model_results(zonal_net)
+
 
     return FBMCResult(
         zonal_net=zonal_net,
