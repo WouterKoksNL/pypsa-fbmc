@@ -6,11 +6,11 @@ import logging
 from typing import Any
 
 from fbmc.core.derived_parameters.bridge_branches import find_bridges_network
-from fbmc.core.input_parameters.cnec import cnec_router
+
 from fbmc.core.results_extraction import extract_model_results
 from fbmc.settings import FBMCConfig, coerce_enum_value, merge_config_overrides
 from fbmc.core.main import setup_fbmc_model
-from fbmc.core.input_parameters.base_case import prepare_base_case, BaseCaseStrategy
+from fbmc.core.input_parameters.main import calc_input_parameters
 
 from fbmc.case_creation.main import create_case, Cases
 from fbmc.case_creation.main import alter_case_workflow
@@ -18,7 +18,7 @@ from fbmc.redispatch.main import run_redispatch
 
 from fbmc.post_processing.lpf import do_lpf_contingency_check
 from fbmc.types import DispatchResult, FBMCResult, RedispatchResult
-from fbmc.core.input_parameters.gsk import calculate_gsk, GSKStrategy
+from fbmc.enums import GSKStrategy, BaseCaseStrategy
 from fbmc.core.input_checks import do_input_checks
 
 
@@ -28,51 +28,6 @@ from fbmc.paths import get_case_results_dir
 
 configure_run_logging = importlib.import_module("fbmc.core.logging_setup").configure_run_logging
 
-
-def _extract_commitment_status(
-        zonal_net: pypsa.Network,
-        dispatch_results: DispatchResult,
-    ) -> pd.DataFrame:
-    """Return per-snapshot commitment status (True=on, False=off)."""
-    snapshots = zonal_net.snapshots
-    generators = zonal_net.generators.index
-    if zonal_net.model is not None and hasattr(zonal_net.model, "solution") and "Generator-status" in zonal_net.model.solution:
-        status_raw = zonal_net.model.solution["Generator-status"].to_pandas()
-        if isinstance(status_raw, pd.Series):
-            if isinstance(status_raw.index, pd.MultiIndex):
-                status = status_raw.unstack()
-            else:
-                status = status_raw.to_frame().T
-        else:
-            status = status_raw
-        status = status.reindex(index=snapshots, columns=generators, fill_value=0.0)
-        return status > 0.5
-
-    # Fallback if status variable is not available: infer on/off from dispatch.
-    dispatch = dispatch_results.generators_p.reindex(index=snapshots, columns=generators, fill_value=0.0)
-    return dispatch > 1e-6
-
-
-def _fix_commitment_schedule_and_disable_uc(
-        zonal_net: pypsa.Network,
-        dispatch_results: DispatchResult,
-    ) -> None:
-    """Fix on/off schedule from UC run and disable UC binaries.
-
-    For generators that are off, set p_max_pu = 0 and p_min_pu = 0.
-    For generators that are on, keep p_max_pu and p_min_pu as in the UC parametrization.
-    Ramp-rate parameters are left unchanged and therefore still active in the LP rerun.
-    """
-    snapshots = zonal_net.snapshots
-    generators = zonal_net.generators.index
-    status_on = _extract_commitment_status(zonal_net, dispatch_results)
-
-    p_min_uc = zonal_net.get_switchable_as_dense("Generator", "p_min_pu").reindex(index=snapshots, columns=generators, fill_value=0.0)
-    p_max_uc = zonal_net.get_switchable_as_dense("Generator", "p_max_pu").reindex(index=snapshots, columns=generators, fill_value=1.0)
-
-    zonal_net.generators_t.p_min_pu = p_min_uc.where(status_on, 0.0)
-    zonal_net.generators_t.p_max_pu = p_max_uc.where(status_on, 0.0)
-    zonal_net.generators.loc[:, "committable"] = False
 
 
 
@@ -173,29 +128,27 @@ def run_fbmc(
     do_input_checks(nodal_net, zonal_net, gsk)
 
     logger.info(f"Preparing base case with strategy {config.base_case_strategy}")
-    base_case = prepare_base_case(
-        nodal_net, 
-        strategy=config.base_case_strategy,
-        base_case_kwargs=config.fbmc_solver_kwargs
-        )
+
     logger.info("Base case prepared.")
 
-    if gsk is None:
-        gsk_strategy = coerce_enum_value(config.gsk_strategy, GSKStrategy, "gsk_strategy")
-        gsk = calculate_gsk(base_case, gsk_strategy, config.gsk_kwargs)
 
     if nodal_net.sub_networks.empty:
         nodal_net.determine_network_topology()
 
-    cnecs_dict = cnec_router(nodal_net, config.cnec_setting, config.add_security_constraints)
-        
+    gsk_strategy = coerce_enum_value(config.gsk_strategy, GSKStrategy, "gsk_strategy")
+    input_parameters = calc_input_parameters(
+        nodal_net, 
+        gsk, 
+        gsk_strategy, 
+        config
+    )
 
     logger.info("Calculating FBMC parameters and setting up FBMC model.")
     model, fbmc_parameters = setup_fbmc_model(
         zonal_net, 
-        basecase_nodal_network=base_case, 
-        gsk=gsk,
-        cnecs=cnecs_dict,
+        basecase_nodal_network=input_parameters.base_case, 
+        gsk=input_parameters.gsk,
+        cnecs=input_parameters.cnecs,
         config=config
     )
 
@@ -214,7 +167,7 @@ def run_fbmc(
         net_positions=zonal_net.model.solution["Zone-p"],
         dispatch_results=DispatchResult(zonal_net),
         fbmc_parameters=fbmc_parameters,
-        base_case=base_case,
+        base_case=input_parameters.base_case,
     )
 
 

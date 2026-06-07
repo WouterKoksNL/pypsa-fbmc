@@ -46,6 +46,13 @@ def _network_summary(net: pypsa.Network) -> str:
     components = ", ".join(parts) if parts else "none"
     return f"{name} | snapshots={snapshots} | components=[{components}]"
 
+
+@dataclass
+class InputParameters:
+    gsk: pd.DataFrame | dict[pd.Timestamp, pd.DataFrame]
+    cnecs: dict[str, xr.Coordinates]
+    base_case: pypsa.Network
+
 class SubnetFBMCParameters:
     def __init__(
         self,
