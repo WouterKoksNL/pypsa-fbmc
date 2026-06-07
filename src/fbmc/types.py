@@ -53,20 +53,14 @@ class InputParameters:
     cnecs: dict[str, xr.Coordinates]
     base_case: pypsa.Network
 
+
+@dataclass
 class SubnetFBMCParameters:
-    def __init__(
-        self,
-        z_ptdf_dict: dict[Any, pd.DataFrame],
-        upper_ram_dict: dict[Any, pd.DataFrame],
-        lower_ram_dict: dict[Any, pd.DataFrame],
-        cnecs: pd.Series | pd.MultiIndex,
-        zones: pd.Index,
-    ):
-        self.z_ptdf: dict[Any, pd.DataFrame] | xr.DataArray = z_ptdf_dict
-        self.upper_ram: dict[Any, pd.DataFrame] | xr.DataArray = upper_ram_dict
-        self.lower_ram: dict[Any, pd.DataFrame] | xr.DataArray = lower_ram_dict
-        self.cnecs: pd.Series | pd.MultiIndex = cnecs
-        self.zones: pd.Index = zones
+    z_ptdf: xr.DataArray 
+    upper_ram: xr.DataArray
+    lower_ram: xr.DataArray
+    cnecs: xr.Coordinates
+    zones: pd.Index
 
     def __repr__(self) -> str:
         return (
