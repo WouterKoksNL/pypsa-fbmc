@@ -13,7 +13,7 @@ from ...settings import BaseCaseStrategy
 
 def calculate_fbmc_parameters_subnet(
     sub_network: pypsa.SubNetwork,
-    gsk: dict[Any, pd.DataFrame], 
+    gsk: xr.DataArray,
     config: FBMCConfig,
     cnecs: xr.Coordinates,
 ) -> SubnetFBMCParameters:
@@ -49,17 +49,8 @@ def calculate_fbmc_parameters_subnet(
 
     base_net_positions_subnet = calc_base_net_positions_subnet(sub_network)
 
-    gsk_subnet = xr.DataArray(
-        data=list(gsk.values()),
-        coords={
-            'snapshot': list(gsk.keys()),
-            'Zone': gsk[list(gsk.keys())[0]].index,
-            'Bus': gsk[list(gsk.keys())[0]].columns
-        },
-        dims=['snapshot', 'Zone', 'Bus']
-    )
-    gsk_subnet = gsk_subnet.sel(Bus=nodal_ptdf.coords['Bus'],
-                                 Zone=sub_network.buses().zone_name.unique()) # Align GSK to PTDF columns based on bus names
+    gsk_subnet = gsk.sel(Bus=nodal_ptdf.coords['Bus'],
+                         Zone=sub_network.buses().zone_name.unique())
 
     z_ptdf = calculate_zonal_ptdf(nodal_ptdf, gsk_subnet, cnecs)
     # z_ptdf_dics

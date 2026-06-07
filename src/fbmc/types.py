@@ -49,7 +49,7 @@ def _network_summary(net: pypsa.Network) -> str:
 
 @dataclass
 class InputParameters:
-    gsk: pd.DataFrame | dict[pd.Timestamp, pd.DataFrame]
+    gsk: xr.DataArray
     cnecs: dict[str, xr.Coordinates]
     base_case: pypsa.Network
 

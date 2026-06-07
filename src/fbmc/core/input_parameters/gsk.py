@@ -20,6 +20,19 @@ from ...enums import GSKStrategy
 LOAD_SHEDDING_CARRIER = "load-shedding"
 
 
+def gsk_dict_to_xarray(gsk: dict) -> xr.DataArray:
+    first = gsk[next(iter(gsk))]
+    return xr.DataArray(
+        data=list(gsk.values()),
+        coords={
+            'snapshot': list(gsk.keys()),
+            'Zone': first.index,
+            'Bus': first.columns,
+        },
+        dims=['snapshot', 'Zone', 'Bus']
+    )
+
+
 def _filter_generators_for_gsk(
     generators: pd.DataFrame,
     excluded_carrier: str = LOAD_SHEDDING_CARRIER,
@@ -29,9 +42,9 @@ def _filter_generators_for_gsk(
     return generators.loc[~(generators['carrier'] == excluded_carrier)].copy()
 
 
-def calculate_gsk(nodal_net: pypsa.Network, 
+def calculate_gsk(nodal_net: pypsa.Network,
                   gsk_strategy: GSKStrategy,
-                  gsk_kwargs: dict) -> dict[pd.Timestamp, pd.DataFrame]:
+                  gsk_kwargs: dict) -> xr.DataArray:
     """
     Calculate the Generator Shift Key (GSK) of every node in the network.
     
@@ -110,8 +123,7 @@ def calculate_gsk(nodal_net: pypsa.Network,
     if isinstance(gsk, pd.DataFrame):
         gsk = {snapshot: gsk.copy() for snapshot in nodal_net.snapshots}
 
-    
-    return gsk 
+    return gsk_dict_to_xarray(gsk)
 
 def gsk_iterative_uncertainty(
     network: pypsa.Network,

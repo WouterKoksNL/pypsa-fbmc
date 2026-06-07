@@ -10,14 +10,14 @@ from .cnec import cnec_router
 
 def calc_input_parameters(
     nodal_net: pypsa.Network,
-    gsk: dict | None,
-    gsk_strategy: GSKStrategy,
+    gsk: dict | xr.DataArray | None,
     config: FBMCConfig
 ) -> InputParameters:
     """
 
     Args:
         nodal_net (pypsa.Network): _description_
+        gsk (dict | xr.DataArray | None): _description_
         config (FBMCConfig): _description_
 
     Returns:
@@ -30,7 +30,9 @@ def calc_input_parameters(
         )
 
     if gsk is None:
-        gsk = calculate_gsk(base_case, gsk_strategy, config.gsk_kwargs)
+        gsk = calculate_gsk(base_case, config.gsk_strategy, config.gsk_kwargs)
+    elif isinstance(gsk, dict):
+        gsk = gsk_dict_to_xarray(gsk)
 
     cnecs_dict = cnec_router(nodal_net, config.cnec_setting, config.add_security_constraints)
         

@@ -61,8 +61,8 @@ def post_model_creation_workflow(zonal_net: pypsa.Network, config: FBMCConfig):
             )
         
 def calculate_fbmc_parameters(
-        basecase_nodal_network: pypsa.Network, 
-        gsk: pd.DataFrame | dict[pd.Timestamp, pd.DataFrame], 
+        basecase_nodal_network: pypsa.Network,
+        gsk: xr.DataArray,
         cnecs: dict[str, xr.Coordinates],
         config: FBMCConfig = FBMCConfig(), 
     ) -> dict[str, SubnetFBMCParameters]:
@@ -109,7 +109,7 @@ def calculate_fbmc_parameters(
 def setup_fbmc_model(
         zonal_net: pypsa.Network, 
         basecase_nodal_network: pypsa.Network,
-        gsk: pd.DataFrame | dict[pd.Timestamp, pd.DataFrame],
+        gsk: xr.DataArray,
         cnecs: dict[str, xr.Coordinates],
         config: FBMCConfig,
     ) -> tuple[lp.Model, dict[str, SubnetFBMCParameters]]:
