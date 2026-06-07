@@ -5,7 +5,7 @@ import pandas as pd
 from ...settings import FBMCConfig
 from ...types import InputParameters, GSKStrategy, BaseCaseStrategy
 from .base_case import prepare_base_case
-from .gsk import calculate_gsk
+from .gsk import calculate_gsk, gsk_dict_to_xarray
 from .cnec import cnec_router
 
 def calc_input_parameters(
