@@ -5,10 +5,9 @@ import xarray as xr
 
 from .security_constrained import get_subnetwork_bodf
 from .ram import calculate_ram
-from .ptdf import calculate_zonal_ptdf, get_subnetwork_ptdf, get_subnetwork_ptdf_security_constrained
+from .ptdf import calculate_zonal_ptdf, get_subnetwork_ptdf_non_security_constrained, calc_subnet_ptdf_security_constrained
 from ...settings import FBMCConfig
-from fbmc.core.derived_parameters.base_case import get_base_flows_subnet, calc_base_net_positions_subnet, get_base_flows_subnet_security_constrained
-from .security_constrained import apply_security_param_changes
+from fbmc.core.derived_parameters.base_case import get_base_flows_subnet_non_security_constrained, calc_base_net_positions_subnet, get_base_flows_subnet_security_constrained
 from ...types import SubnetFBMCParameters
 from ...settings import BaseCaseStrategy
 
@@ -40,17 +39,12 @@ def calculate_fbmc_parameters_subnet(
 
     if config.add_security_constraints:
         bodf = get_subnetwork_bodf(sub_network, cnecs, config.security_constraint_bodf_size_threshold)
-        nodal_ptdf = get_subnetwork_ptdf_security_constrained(sub_network, bodf, bodf_columnwise_matrix_size_limit=config.security_constraint_bodf_columnwise_matrix_size_limit)
+        nodal_ptdf = calc_subnet_ptdf_security_constrained(sub_network, bodf, bodf_columnwise_matrix_size_limit=config.security_constraint_bodf_columnwise_matrix_size_limit)
         base_flows_subnet = get_base_flows_subnet_security_constrained(sub_network, bodf)
         cnecs = nodal_ptdf.coords['cnec']  # Update CNECs to match the potentially reduced set in apply_security_param_changes
     else:
-        nodal_ptdf = get_subnetwork_ptdf(sub_network)
-        base_flows_subnet = get_base_flows_subnet(sub_network)
-
-        nodal_ptdf = nodal_ptdf.sel(branch=cnecs['branch'])
-        base_flows_subnet = base_flows_subnet.sel(branch=cnecs['branch'])
-        nodal_ptdf = nodal_ptdf.assign_coords(cnec=('branch', cnecs['branch'].values)).swap_dims({"branch": "cnec"})  
-        base_flows_subnet = base_flows_subnet.assign_coords(cnec=('branch', cnecs['branch'].values)).swap_dims({"branch": "cnec"})
+        nodal_ptdf = get_subnetwork_ptdf_non_security_constrained(sub_network, cnecs)
+        base_flows_subnet = get_base_flows_subnet_non_security_constrained(sub_network, cnecs)
 
 
     base_net_positions_subnet = calc_base_net_positions_subnet(sub_network)

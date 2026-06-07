@@ -4,9 +4,10 @@ import pypsa
 import xarray as xr
 
 from fbmc.core.derived_parameters.security_constrained import apply_bodf
+from fbmc.core.derived_parameters.utils import filter_on_cnecs, set_branch_coord_to_cnec
 
 
-def get_subnetwork_ptdf(sub_network: pypsa.SubNetwork) -> xr.DataArray:
+def _get_subnetwork_ptdf(sub_network: pypsa.SubNetwork) -> xr.DataArray:
     """
     Extract PTDF matrix from the network model.
     Returns PTDF matrix and associated sub_network.
@@ -20,11 +21,16 @@ def get_subnetwork_ptdf(sub_network: pypsa.SubNetwork) -> xr.DataArray:
         },
         dims=['branch', 'Bus']
     ).assign_coords(branch_component=('branch', sub_network.branches_i().get_level_values(0)))
+    return ptdf
 
+def get_subnetwork_ptdf_non_security_constrained(sub_network: pypsa.SubNetwork, cnecs: xr.Coordinates) -> xr.DataArray:
+    ptdf = _get_subnetwork_ptdf(sub_network)
+    ptdf = filter_on_cnecs(ptdf, cnecs)
+    ptdf = set_branch_coord_to_cnec(ptdf, cnecs)
     return ptdf
 
 def calc_subnet_ptdf_security_constrained(sub_network: pypsa.SubNetwork, bodf: xr.DataArray) -> xr.DataArray:
-    nodal_ptdf = get_subnetwork_ptdf(sub_network)
+    nodal_ptdf = _get_subnetwork_ptdf(sub_network)
     nodal_ptdf = apply_bodf(nodal_ptdf, bodf)
     return nodal_ptdf
 
