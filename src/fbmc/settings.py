@@ -11,7 +11,7 @@ from typing import Any
 
 import yaml
 
-from fbmc.enums import BaseCaseStrategy, GSKStrategy
+from fbmc.enums import BaseCaseStrategy, GSKStrategy, CNECStrategy
 
 
 BASE_CONFIG_PATH = _pkg_files("fbmc") / "config" / "base_config.yaml"
@@ -23,7 +23,7 @@ def _default_config_values() -> dict[str, Any]:
     return {
         "reliability_margin_factor": 0.0,
         "min_ram": 0.0,
-        "cnec_setting": "all",
+        "cnec_setting": "ALL",
         "line_usage_threshold": 0.2,
         "cne_list": None,
         "security_constraint_bodf_size_threshold": 0.2,
@@ -149,6 +149,7 @@ def _normalize_config_enums_in_place(config_values: dict[str, Any]) -> None:
     enum_fields: dict[str, type[Enum]] = {
         "base_case_strategy": BaseCaseStrategy,
         "gsk_strategy": GSKStrategy,
+        "cnec_setting": CNECStrategy,
     }
     for key, enum_type in enum_fields.items():
         if key in config_values and config_values[key] is not None:
@@ -182,7 +183,7 @@ class FBMCConfig:
     reliability_margin_factor: float = 0.0
     min_ram: float = 0.0
 
-    cnec_setting: str = "all"
+    cnec_setting: CNECStrategy = CNECStrategy.ALL
     line_usage_threshold: float = 0.2
     cne_list: list[str] = None
     security_constraint_bodf_size_threshold: float = 0.2

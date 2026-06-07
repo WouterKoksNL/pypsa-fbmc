@@ -16,3 +16,7 @@ class GSKStrategy(Enum):
     MERIT_ORDER: str = "MERIT_ORDER"
     BUS_P: str = "BUS_P"
     P_NOM: str = "P_NOM"
+
+class CNECStrategy(Enum):
+    ALL = "ALL"
+    CUSTOM = "CUSTOM"

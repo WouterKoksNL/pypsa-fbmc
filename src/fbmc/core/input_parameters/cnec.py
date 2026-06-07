@@ -7,9 +7,7 @@ import logging
 import pypsa
 import xarray as xr
 
-from fbmc.settings import FBMCConfig
-
-from fbmc.core.derived_parameters.base_case import get_base_flows
+from fbmc.enums import CNECStrategy
 
 from ..derived_parameters.bridge_branches import find_bridges_sub_network
 
@@ -27,7 +25,7 @@ def cnecs_from_combinatorial_cne_and_outages(cnes: xr.Coordinates, outages: xr.C
 
 def cnec_router(
         net: pypsa.Network,
-        cnec_setting: str,
+        cnec_setting: CNECStrategy,
         add_security_constraints: bool,
         **kwargs
         ) -> dict[str, xr.Coordinates]:
@@ -42,13 +40,13 @@ def cnec_router(
 
 def cnec_subnet_router(
         sub_network: pypsa.SubNetwork,
-        cnec_setting: str,
+        cnec_setting: CNECStrategy,
         add_security_constraints: bool,
         ) -> xr.Coordinates:
     bridge_branches = find_bridges_sub_network(sub_network)
 
     logging.info(f"Identified {len(bridge_branches)} bridge branches that will be excluded from CNECs: {bridge_branches}.")
-    if cnec_setting == 'all':
+    if cnec_setting == CNECStrategy.ALL:
         cnes = sub_network.branches().index.droplevel(0) 
         cnes = xr.DataArray(
             data=cnes.values,
@@ -61,11 +59,11 @@ def cnec_subnet_router(
         )
         outages = cnes.sel(branch=mask).copy().rename({'branch': 'outage', 'branch_component': 'outage_component'})
         cnecs = cnecs_from_combinatorial_cne_and_outages(cnes, outages)
-    elif cnec_setting == 'manual':
+    elif cnec_setting == CNECStrategy.CUSTOM:
         # cnes = config.cne_list
         raise NotImplementedError('Manual CNE selection not implemented yet.')
     else:
-        raise ValueError(f'cnec_setting {cnec_setting} not recognized. Choices are "all", "manual".')
+        raise ValueError(f'cnec_setting {cnec_setting.value} not recognized. Choices are "all", "manual".')
     
     if add_security_constraints:
         return cnecs

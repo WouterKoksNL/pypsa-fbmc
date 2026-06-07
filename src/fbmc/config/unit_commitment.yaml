@@ -1,7 +1,7 @@
 reliability_margin_factor: 0.0
 min_ram: 0.0
 
-cnec_setting: all
+cnec_setting: ALL
 line_usage_threshold: 0.2
 cne_list: null
 
