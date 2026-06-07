@@ -3,7 +3,7 @@ import pandas as pd
 import pypsa
 import xarray as xr
 
-from fbmc.core.parameters.derived.security_constrained import apply_bodf
+from fbmc.core.derived_parameters.security_constrained import apply_bodf
 
 
 def get_subnetwork_ptdf(sub_network: pypsa.SubNetwork) -> xr.DataArray:

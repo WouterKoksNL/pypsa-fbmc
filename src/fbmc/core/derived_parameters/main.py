@@ -3,12 +3,12 @@ import pandas as pd
 from typing import Any
 import xarray as xr
 
-from .derived.security_constrained import get_subnetwork_bodf
-from .derived.ram import calculate_ram
-from .derived.ptdf import calculate_zonal_ptdf, get_subnetwork_ptdf, get_subnetwork_ptdf_security_constrained
+from .security_constrained import get_subnetwork_bodf
+from .ram import calculate_ram
+from .ptdf import calculate_zonal_ptdf, get_subnetwork_ptdf, get_subnetwork_ptdf_security_constrained
 from ...settings import FBMCConfig
-from fbmc.core.parameters.derived.base_case import get_base_flows_subnet, calc_base_net_positions_subnet, get_base_flows_subnet_security_constrained
-from .derived.security_constrained import apply_security_param_changes
+from fbmc.core.derived_parameters.base_case import get_base_flows_subnet, calc_base_net_positions_subnet, get_base_flows_subnet_security_constrained
+from .security_constrained import apply_security_param_changes
 from ...types import SubnetFBMCParameters
 from ...settings import BaseCaseStrategy
 

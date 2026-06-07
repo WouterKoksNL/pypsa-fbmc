@@ -7,8 +7,8 @@ import pypsa
 
 from fbmc.case_creation.main import Cases
 from fbmc.settings import FBMCConfig
-from fbmc.core.parameters.input.base_case import BaseCaseStrategy
-from fbmc.core.parameters.input.gsk import GSKStrategy
+from fbmc.core.input_parameters.base_case import BaseCaseStrategy
+from fbmc.core.input_parameters.gsk import GSKStrategy
 from fbmc.types import FBMCResult
 
 

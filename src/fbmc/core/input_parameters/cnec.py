@@ -9,9 +9,9 @@ import xarray as xr
 
 from fbmc.settings import FBMCConfig
 
-from fbmc.core.parameters.derived.base_case import get_base_flows
+from fbmc.core.derived_parameters.base_case import get_base_flows
 
-from ..derived.bridge_branches import find_bridges_sub_network
+from ..derived_parameters.bridge_branches import find_bridges_sub_network
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -2,8 +2,8 @@
 import pypsa
 
 
-from ..derived.bridge_branches import find_bridges_network
-from ....enums import BaseCaseStrategy
+from ..derived_parameters.bridge_branches import find_bridges_network
+from ...enums import BaseCaseStrategy
 
 
 def prepare_nodal_optimum_base_case(_nodal_net: pypsa.Network, **solver_kwargs):

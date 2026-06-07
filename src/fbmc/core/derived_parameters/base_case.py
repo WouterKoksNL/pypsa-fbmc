@@ -3,7 +3,7 @@ import pandas as pd
 import pypsa
 import xarray as xr
 
-from fbmc.core.parameters.derived.security_constrained import apply_bodf
+from fbmc.core.derived_parameters.security_constrained import apply_bodf
 
 def _calc_base_flows(trafo_p0: pd.DataFrame, line_p0: pd.DataFrame) -> xr.DataArray:
     def to_da(df: pd.DataFrame, branch_component: str) -> xr.DataArray:

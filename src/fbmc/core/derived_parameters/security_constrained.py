@@ -4,7 +4,7 @@ import numpy as np
 import xarray as xr
 
 
-from fbmc.core.parameters.derived.ptdf import calculate_zonal_ptdf
+from fbmc.core.derived_parameters.ptdf import calculate_zonal_ptdf
 
 
 BODF_COLUMNWISE_MATRIX_SIZE_LIMIT = 5_000_000

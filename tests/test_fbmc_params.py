@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 import pypsa
 import fbmc.core.pos_neg_method.main as fbmc_main
-import fbmc.core.parameters.input.cnec as cne_params
-import fbmc.core.parameters as fbmc_params
+import fbmc.core.input_parameters.cnec as cne_params
+import fbmc.core.derived_parameters as fbmc_params
 
 class TestDetermineCnes(unittest.TestCase):
 

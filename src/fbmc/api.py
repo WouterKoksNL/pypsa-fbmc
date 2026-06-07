@@ -5,12 +5,12 @@ from pathlib import Path
 import logging
 from typing import Any
 
-from fbmc.core.parameters.derived.bridge_branches import find_bridges_network
-from fbmc.core.parameters.input.cnec import cnec_router
+from fbmc.core.derived_parameters.bridge_branches import find_bridges_network
+from fbmc.core.input_parameters.cnec import cnec_router
 from fbmc.core.results_extraction import extract_model_results
 from fbmc.settings import FBMCConfig, coerce_enum_value, merge_config_overrides
 from fbmc.core.main import setup_fbmc_model
-from fbmc.core.parameters.input.base_case import prepare_base_case, BaseCaseStrategy
+from fbmc.core.input_parameters.base_case import prepare_base_case, BaseCaseStrategy
 
 from fbmc.case_creation.main import create_case, Cases
 from fbmc.case_creation.main import alter_case_workflow
@@ -18,7 +18,7 @@ from fbmc.redispatch.main import run_redispatch
 
 from fbmc.post_processing.lpf import do_lpf_contingency_check
 from fbmc.types import DispatchResult, FBMCResult, RedispatchResult
-from fbmc.core.parameters.input.gsk import calculate_gsk, GSKStrategy
+from fbmc.core.input_parameters.gsk import calculate_gsk, GSKStrategy
 from fbmc.core.input_checks import do_input_checks
 
 

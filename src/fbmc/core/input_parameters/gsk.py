@@ -13,8 +13,8 @@ from .helpers import (
     silence_output,
 )
 
-from ....settings import FBMCConfig
-from ....enums import GSKStrategy
+from ...settings import FBMCConfig
+from ...enums import GSKStrategy
 
 
 LOAD_SHEDDING_CARRIER = "load-shedding"
