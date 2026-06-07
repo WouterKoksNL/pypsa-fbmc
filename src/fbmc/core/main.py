@@ -90,9 +90,6 @@ def calculate_fbmc_parameters(
     logging.info(f"Determined {len(basecase_nodal_network.sub_networks)} sub-networks in the base case nodal network.")
     fbmc_parameters: dict[str, SubnetFBMCParameters] = {}
 
-    cnecs_dict = cnec_router(basecase_nodal_network, config)
-        
-
     for sub_network_name, sub_network_df in basecase_nodal_network.sub_networks.iterrows():
         sub_network = sub_network_df.obj
         if sub_network.buses_i().size < 3:
@@ -200,36 +197,4 @@ def add_fbmc_constraints_loop(
         )
         
         
-def solve(
-        zonal_net: pypsa.Network, 
-        solver_kwargs: dict[str, str] = None
-        ) -> tuple[pypsa.Network, pd.DataFrame]:
-    """
-    Run the FBMC process on the given networks.
-
-    Parameters
-    ----------
-    nodal_network : pypsa.Network
-        The nodal network to be used for FBMC.
-    zonal_net : pypsa.Network
-        The zonal network to be used for FBMC.
-    config : FBMCConfig
-        Configuration object for FBMC parameters.
-    gsk_strategy : GSKStrategy
-    Returns
-    -------
-    pypsa.Network
-        The updated zonal network after FBMC.
-    """
-    if solver_kwargs is None:
-        solver_kwargs = {}
-
-    # Run the optimization and save the results to the nodal network
-    zonal_net.model.solve(**solver_kwargs)
-    if zonal_net.model.termination_condition != 'optimal':
-        raise ValueError("FBMC optimization did not solve to optimality.")
-    extract_model_results(zonal_net)
-
-    
-    return zonal_net
 
