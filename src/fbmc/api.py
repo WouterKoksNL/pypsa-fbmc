@@ -138,17 +138,16 @@ def run_fbmc(
     gsk_strategy = coerce_enum_value(config.gsk_strategy, GSKStrategy, "gsk_strategy")
     input_parameters = calc_input_parameters(
         nodal_net, 
-        gsk, 
-        gsk_strategy, 
+        gsk,  
         config
     )
+
+
 
     logger.info("Calculating FBMC parameters and setting up FBMC model.")
     model, fbmc_parameters = setup_fbmc_model(
         zonal_net, 
-        basecase_nodal_network=input_parameters.base_case, 
-        gsk=input_parameters.gsk,
-        cnecs=input_parameters.cnecs,
+        input_parameters,
         config=config
     )
 

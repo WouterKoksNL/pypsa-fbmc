@@ -47,12 +47,30 @@ def _network_summary(net: pypsa.Network) -> str:
     return f"{name} | snapshots={snapshots} | components=[{components}]"
 
 
+@dataclass 
+class InputParametersSubnet:
+    gsk: xr.DataArray
+    cnecs: xr.Coordinates
+    base_case: pypsa.SubNetwork
+
 @dataclass
 class InputParameters:
     gsk: xr.DataArray
     cnecs: dict[str, xr.Coordinates]
     base_case: pypsa.Network
 
+    def for_subnet(self, subnet_name: str) -> InputParametersSubnet:
+        if subnet_name not in self.cnecs:
+            raise ValueError(f"Subnet {subnet_name} not found in cnecs.")
+        gsk_subnet = self.gsk.sel(
+            Bus=self.base_case.sub_networks.obj[subnet_name].buses_i(),
+            Zone=self.base_case.sub_networks.obj[subnet_name].buses().zone_name.unique()
+        )
+        return InputParametersSubnet(
+            gsk=gsk_subnet,
+            cnecs=self.cnecs[subnet_name],
+            base_case=self.base_case.sub_networks.obj[subnet_name]
+        )
 
 @dataclass
 class SubnetFBMCParameters:

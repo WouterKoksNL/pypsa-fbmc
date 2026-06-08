@@ -1,9 +1,10 @@
 import logging
 import pypsa
 import pandas as pd
+import xarray as xr
 
 from ...settings import FBMCConfig
-from ...types import InputParameters, GSKStrategy, BaseCaseStrategy
+from ...types import InputParameters
 from .base_case import prepare_base_case
 from .gsk import calculate_gsk, gsk_dict_to_xarray
 from .cnec import cnec_router
@@ -14,6 +15,7 @@ def calc_input_parameters(
     config: FBMCConfig
 ) -> InputParameters:
     """
+    Call all functions that calculate input parameters for the FBMC workflow.
 
     Args:
         nodal_net (pypsa.Network): _description_
@@ -24,7 +26,7 @@ def calc_input_parameters(
         InputParameters: _description_
     """
     base_case = prepare_base_case(
-        nodal_net, 
+        nodal_net,
         strategy=config.base_case_strategy,
         base_case_kwargs=config.fbmc_solver_kwargs
         )
@@ -35,5 +37,5 @@ def calc_input_parameters(
         gsk = gsk_dict_to_xarray(gsk)
 
     cnecs_dict = cnec_router(nodal_net, config.cnec_setting, config.add_security_constraints)
-        
+
     return InputParameters(gsk=gsk, cnecs=cnecs_dict, base_case=base_case)

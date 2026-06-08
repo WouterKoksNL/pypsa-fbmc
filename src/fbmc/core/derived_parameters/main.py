@@ -1,6 +1,4 @@
 import pypsa
-import pandas as pd
-from typing import Any
 import xarray as xr
 
 from .security_constrained import get_subnetwork_bodf
@@ -8,27 +6,42 @@ from .ram import calculate_ram
 from .ptdf import calculate_zonal_ptdf, get_subnetwork_ptdf_non_security_constrained, calc_subnet_ptdf_security_constrained
 from ...settings import FBMCConfig
 from fbmc.core.derived_parameters.base_case import get_base_flows_subnet_non_security_constrained, calc_base_net_positions_subnet, get_base_flows_subnet_security_constrained
-from ...types import SubnetFBMCParameters
-from ...settings import BaseCaseStrategy
+from ...types import SubnetFBMCParameters, InputParametersSubnet
+
 
 def calculate_fbmc_parameters_subnet(
+    input_parameters_subnet: InputParametersSubnet,
+    config: FBMCConfig
+) -> SubnetFBMCParameters:
+    return _calculate_fbmc_parameters_subnet(
+        sub_network=input_parameters_subnet.base_case,
+        gsk=input_parameters_subnet.gsk,
+        cnecs=input_parameters_subnet.cnecs,
+        config=config
+    )
+
+    
+
+
+def _calculate_fbmc_parameters_subnet(
     sub_network: pypsa.SubNetwork,
     gsk: xr.DataArray,
-    config: FBMCConfig,
     cnecs: xr.Coordinates,
+    config: FBMCConfig
 ) -> SubnetFBMCParameters:
-    """Add security constraints to zonal network.
-
-    This ensures that no branch is overloaded even given the branch outages.
+    """
+    Orchestration function that takes a sub-network that represents the base case of that area, and other 
+    input parameters (gsk, cnecs) and calculates the FBMC parameters (RAM, zPTDF)
 
     Parameters
     ----------
     sub_network : pypsa.SubNetwork
-        The sub-network to calculate security constrainted parameters for. 
-    gsk : dict
+        The sub-network to calculate security constrainted parameters for. Represents the base case,
+        so flows should be set. Must have a 'zone_name' column in its buses DataFrame to link it to the GSK.
+    gsk : xr.DataArray
         Generation shift key mapping for each snapshot. Must contain at least the buses and zones in the subnetwork. 
     config : FBMCConfig
-        Configuration object for FBMC parameters.
+        Configuration object. 
     Returns
     -------
     FBMCParameters
@@ -49,12 +62,8 @@ def calculate_fbmc_parameters_subnet(
 
     base_net_positions_subnet = calc_base_net_positions_subnet(sub_network)
 
-    gsk_subnet = gsk.sel(Bus=nodal_ptdf.coords['Bus'],
-                         Zone=sub_network.buses().zone_name.unique())
 
-    z_ptdf = calculate_zonal_ptdf(nodal_ptdf, gsk_subnet, cnecs)
-    # z_ptdf_dics
-
+    z_ptdf = calculate_zonal_ptdf(nodal_ptdf, gsk, cnecs)
 
     upper_ram, lower_ram = calculate_ram(
         sub_network, 

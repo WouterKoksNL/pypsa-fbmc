@@ -12,7 +12,7 @@ import linopy as lp
 import xarray as xr
 
 from .derived_parameters.main import calculate_fbmc_parameters_subnet
-from ..types import SubnetFBMCParameters
+from ..types import SubnetFBMCParameters, InputParameters
 
 from .constraints.main import create_zonal_generation
 from .constraints.main import add_fbmc_constraints, remove_original_constraints, remove_original_constraints_by_bus
@@ -61,10 +61,8 @@ def post_model_creation_workflow(zonal_net: pypsa.Network, config: FBMCConfig):
             )
         
 def calculate_fbmc_parameters(
-        basecase_nodal_network: pypsa.Network,
-        gsk: xr.DataArray,
-        cnecs: dict[str, xr.Coordinates],
-        config: FBMCConfig = FBMCConfig(), 
+        input_parameters: InputParameters,
+        config: FBMCConfig = FBMCConfig(),
     ) -> dict[str, SubnetFBMCParameters]:
     """
     Set up the FBMC model by calculating parameters and adding constraints.
@@ -84,22 +82,22 @@ def calculate_fbmc_parameters(
         The target zonal network with added FBMC constraints.
     """
 
-    if basecase_nodal_network.sub_networks.empty:
-        basecase_nodal_network.determine_network_topology()
-    logging.info(f"Determined {len(basecase_nodal_network.sub_networks)} sub-networks in the base case nodal network.")
+    if input_parameters.base_case.sub_networks.empty:
+        input_parameters.base_case.determine_network_topology()
+    logging.info(f"Determined {len(input_parameters.base_case.sub_networks)} sub-networks in the base case nodal network.")
     fbmc_parameters: dict[str, SubnetFBMCParameters] = {}
 
-    for sub_network_name, sub_network_df in basecase_nodal_network.sub_networks.iterrows():
-        sub_network = sub_network_df.obj
-        if sub_network.buses_i().size < 3:
+    for sub_network_name in input_parameters.base_case.sub_networks.index:
+        input_parameters_subnet = input_parameters.for_subnet(sub_network_name)
+        if input_parameters_subnet.base_case.buses_i().size < 3:
             logging.warning(f"Sub-network {sub_network_name} has less than 3 buses. Skipping FBMC parameter calculation and constraint addition for this sub-network.")
             continue
 
+        
+
         subnet_fbmc_parameters: SubnetFBMCParameters = calculate_fbmc_parameters_subnet(
-            sub_network, 
-            gsk, 
-            config=config, 
-            cnecs=cnecs[sub_network_name]
+            input_parameters_subnet,
+            config,
             )
         fbmc_parameters[sub_network_name] = subnet_fbmc_parameters
     
@@ -107,10 +105,8 @@ def calculate_fbmc_parameters(
 
 
 def setup_fbmc_model(
-        zonal_net: pypsa.Network, 
-        basecase_nodal_network: pypsa.Network,
-        gsk: xr.DataArray,
-        cnecs: dict[str, xr.Coordinates],
+        zonal_net: pypsa.Network,
+        input_parameters: InputParameters,
         config: FBMCConfig,
     ) -> tuple[lp.Model, dict[str, SubnetFBMCParameters]]:
     """_summary_
@@ -128,13 +124,13 @@ def setup_fbmc_model(
     """
 
     fbmc_parameters = calculate_fbmc_parameters(
-        basecase_nodal_network, gsk, cnecs=cnecs, config=config)
+        input_parameters=input_parameters, config=config)
 
     if zonal_net.model is None:
         model = _create_model_without_meshed_split(zonal_net, create_model_kwargs=config.fbmc_create_model_kwargs)
     
     create_zonal_generation(zonal_net)
-    remove_original_constraints_loop(zonal_net, basecase_nodal_network)
+    remove_original_constraints_loop(zonal_net, input_parameters.base_case)
     add_fbmc_constraints_loop(
         zonal_net, 
         fbmc_parameters, 
