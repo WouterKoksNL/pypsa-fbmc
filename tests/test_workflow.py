@@ -11,7 +11,7 @@ from copy import deepcopy
 
 from fbmc.case_creation.main import Cases
 from fbmc.settings import FBMCConfig
-from fbmc.enums import BaseCaseStrategy
+from fbmc.enums import BaseCaseStrategy, CNECStrategy, GSKStrategy
 
 from tests.workflow_test_case import FBMCWorkflowTestCase, run_workflow_test
 
@@ -20,35 +20,13 @@ from tests.workflow_test_case import FBMCWorkflowTestCase, run_workflow_test
 EXPLICIT_TEST_CONFIG_DEFAULTS = {
     "reliability_margin_factor": 0.0,
     "min_ram": 0.0,
-    "cnec_setting": "ALL",
+    "cnec_setting": CNECStrategy.ALL,
     "line_usage_threshold": 0.2,
     "cne_list": None,
     "security_constraint_bodf_size_threshold": 0.2,
     "security_constraint_bodf_columnwise_matrix_size_limit": 5_000_000,
     "gsk_strategy": "CURRENT_GENERATION",
-    "gsk_kwargs": {
-        "ADJUSTABLE_CAP": {
-            "adjustable_carriers": ("CCGT", "coal", "lignite", "OCGT", "oil"),
-        },
-        "ITERATIVE_UNCERTAINTY": {
-            "uncertain_carriers": ("offshore-wind", "onshore-wind"),
-            "num_scenarios": 100,
-            "gen_variation_std_dev": 0.5,
-            "load_variation_std_dev": 0.5,
-        },
-        "ITERATIVE_FBMC": {
-            "uncertain_carriers": ("offshore-wind", "onshore-wind"),
-            "num_scenarios": 100,
-            "max_gsk_iterations": 5,
-            "initial_gsk_strategy": "BUS_P",
-            "gen_variation_std_dev": 0.5,
-            "load_variation_std_dev": 0.5,
-        },
-        "MERIT_ORDER": {
-            "standard_deviation": 5,
-        },
-        "BUS_P": {},
-    },
+    "gsk_kwargs": {},
     "base_case_strategy": BaseCaseStrategy.ZERO_FLOWS,
     "marginal_cost_load_shedding": 1e5,
     "add_security_constraints": False,
@@ -56,6 +34,7 @@ EXPLICIT_TEST_CONFIG_DEFAULTS = {
     "run_redispatch": True,
     "security_constrained_redispatch": False,
     "deviation_factor_redispatch": 0.9,
+    "fbmc_solver_kwargs": {"solver_name": "gurobi"},
 }
 
 
