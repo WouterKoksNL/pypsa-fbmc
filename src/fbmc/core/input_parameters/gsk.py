@@ -5,7 +5,7 @@ import xarray as xr
 from scipy.stats import norm, halfnorm
 
 from .helpers import (
-    get_uncertain_elements, 
+    get_uncertain_elements,
     initialize_gen_difference,
     introduce_variation_to_network,
     calculate_generation_difference,
@@ -13,7 +13,6 @@ from .helpers import (
     silence_output,
 )
 
-from ...settings import FBMCConfig
 from ...enums import GSKStrategy
 
 
