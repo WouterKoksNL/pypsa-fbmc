@@ -127,15 +127,10 @@ def run_fbmc(
     logger = logging.getLogger(__name__)
     do_input_checks(nodal_net, zonal_net, gsk)
 
-    logger.info(f"Preparing base case with strategy {config.base_case_strategy}")
-
-    logger.info("Base case prepared.")
-
 
     if nodal_net.sub_networks.empty:
         nodal_net.determine_network_topology()
 
-    gsk_strategy = coerce_enum_value(config.gsk_strategy, GSKStrategy, "gsk_strategy")
     input_parameters = calc_input_parameters(
         nodal_net, 
         gsk,  
