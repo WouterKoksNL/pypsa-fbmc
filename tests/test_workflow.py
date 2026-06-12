@@ -14,14 +14,14 @@ from fbmc.settings import FBMCConfig
 from fbmc.enums import BaseCaseStrategy, CNECStrategy, GSKStrategy
 
 from tests.workflow_test_case import FBMCWorkflowTestCase, run_workflow_test
-
+from .network_creator.basic_three_node import create_basic_three_node_case
+from .network_creator.three_node_redispatch import create_three_node_redispatch_case
 
 # Keep test defaults explicit so tests do not implicitly depend on FBMCConfig internals.
 EXPLICIT_TEST_CONFIG_DEFAULTS = {
     "reliability_margin_factor": 0.0,
     "min_ram": 0.0,
     "cnec_setting": CNECStrategy.ALL,
-    "line_usage_threshold": 0.2,
     "cne_list": None,
     "security_constraint_bodf_size_threshold": 0.2,
     "security_constraint_bodf_columnwise_matrix_size_limit": 5_000_000,
@@ -30,7 +30,6 @@ EXPLICIT_TEST_CONFIG_DEFAULTS = {
     "base_case_strategy": BaseCaseStrategy.ZERO_FLOWS,
     "marginal_cost_load_shedding": 1e5,
     "add_security_constraints": False,
-    "advanced_hybrid_coupling_flag": True,
     "solver_kwargs": {"solver_name": "gurobi"},
 }
 
@@ -88,24 +87,19 @@ class TestFBMCWorkflow(unittest.TestCase):
         #     gsk=gsk,
         #     gsk_strategy=GSKStrategy.P_NOM,
         #     base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
-        #     advanced_hybrid_coupling_flag=False,
         #     expected_objective=4800,  
         #     expected_rd_objective=100.,  
         # )
         # self._assert_objective(test_case)
 
     def test_three_node_redispatch(self):
-        from src.runner import input_getter
-        case_data = input_getter(
-            case_name=Cases.THREE_NODE_REDISPATCH,
-        )
+        case_data = create_three_node_redispatch_case()
         test_case = FBMCWorkflowTestCase(
             case_name=Cases.THREE_NODE_REDISPATCH,
             gsk=case_data['gsk_dict'],
             zonal_net=case_data['zonal_net'],
             nodal_net=case_data['nodal_net'],
             base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
-            advanced_hybrid_coupling_flag=False,
             config=_make_config(),
             expected_objective=3600,  
             expected_rd_objective=6300,  
@@ -118,10 +112,8 @@ class TestFBMCWorkflow(unittest.TestCase):
         self._assert_objective(test_case)
 
     def test_three_node_redispatch_with_storage(self):
-        from src.runner import input_getter
-        case_data = input_getter(
-            case_name=Cases.THREE_NODE_REDISPATCH,
-        )
+        
+        case_data = create_three_node_redispatch_case()
         nodal_net = case_data['nodal_net']
         zonal_net = case_data['zonal_net']
         gsk_dict = case_data['gsk_dict']
@@ -135,7 +127,6 @@ class TestFBMCWorkflow(unittest.TestCase):
             zonal_net=zonal_net,
             nodal_net=nodal_net,
             base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
-            advanced_hybrid_coupling_flag=False,
             config=_make_config(),
             expected_objective=2700,  
             expected_rd_objective=3750.0,  
@@ -177,10 +168,7 @@ class TestFBMCWorkflow(unittest.TestCase):
         
         13.5 is the maximum flow from zone B to A in case of a flow from a single node (B1). 
         """
-        from src.runner import input_getter
-        case_data = input_getter(
-            case_name=Cases.THREE_NODE_REDISPATCH,
-        )
+        case_data = create_three_node_redispatch_case()
         zonal_net = case_data['zonal_net']
         nodal_net = case_data['nodal_net']
         gsk_dict = case_data['gsk_dict']
@@ -202,7 +190,6 @@ class TestFBMCWorkflow(unittest.TestCase):
             zonal_net=zonal_net,
             nodal_net=nodal_net,
             base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
-            advanced_hybrid_coupling_flag=False,
             run_redispatch_flag=True,
             redispatch_kwargs={
                 'security_constrained_flag': False,
@@ -215,7 +202,7 @@ class TestFBMCWorkflow(unittest.TestCase):
         self._assert_objective(test_case)
 
 
-    def test_three_node_redispatch_with_storage_redispatching(self):
+    def test_three_node_security_constrained_redispatch_with_storage_redispatching(self):
         """A case in which storage is being used in DA but gets adapted in redispatch. 
         Dispatch results zonal clearing:
 
@@ -245,10 +232,7 @@ class TestFBMCWorkflow(unittest.TestCase):
         
         13.5 is the maximum flow from zone B to A in case of a flow from a single node (B1). 
         """
-        from src.runner import input_getter
-        case_data = input_getter(
-            case_name=Cases.THREE_NODE_REDISPATCH,
-        )
+        case_data = create_three_node_redispatch_case()
         zonal_net = case_data['zonal_net']
         nodal_net = case_data['nodal_net']
         gsk_dict = case_data['gsk_dict']
@@ -270,7 +254,6 @@ class TestFBMCWorkflow(unittest.TestCase):
             zonal_net=zonal_net,
             nodal_net=nodal_net,
             base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
-            advanced_hybrid_coupling_flag=False,
             run_redispatch_flag=True,
             redispatch_kwargs={
                 'security_constrained_flag': True,
