@@ -42,23 +42,7 @@ def _create_model_without_meshed_split(network: pypsa.Network, create_model_kwar
 
     return model
 
-def post_model_creation_workflow(zonal_net: pypsa.Network, config: FBMCConfig):
-    if config.transfer_limit_UA_flag:
-        logging.info(f"Applying limit of {config.transfer_limit_EUR_UA} (EUR->UA) and {config.transfer_limit_UA_EUR} (UA->EUR) on total transfer to UA/MD.")
-        ua_links = zonal_net.links.index[(zonal_net.links.bus0 == "UA") | (zonal_net.links.bus1 == "UA")]
-        zonal_net.model.add_constraints(zonal_net.model.variables["Link-p"].sel(Link=ua_links).sum(dim="Link") <= config.transfer_limit_EUR_UA, name="total_transfer_limit_EUR_UA")
-        zonal_net.model.add_constraints(-zonal_net.model.variables["Link-p"].sel(Link=ua_links).sum(dim="Link") <= config.transfer_limit_UA_EUR, name="total_transfer_limit_UA_EUR")
-        
 
-    if config.net_position_limit_UA_flag:
-        logging.info(f"Applying limits of {config.net_position_UA_lower_limit} and {config.net_position_UA_upper_limit} on net position of UA.")
-        
-        zonal_net.model.add_constraints(
-            zonal_net.model.variables["Zone-p"].sel(Zone="UA") >= config.net_position_UA_lower_limit, name="net_position_lower_limit_UA"
-            )
-        zonal_net.model.add_constraints(
-            zonal_net.model.variables["Zone-p"].sel(Zone="UA") <= config.net_position_UA_upper_limit, name="net_position_upper_limit_UA"
-            )
         
 def calculate_fbmc_parameters(
         input_parameters: InputParameters,
@@ -109,7 +93,7 @@ def setup_fbmc_model(
         input_parameters: InputParameters,
         config: FBMCConfig,
     ) -> tuple[lp.Model, dict[str, SubnetFBMCParameters]]:
-    """_summary_
+    """Set up the FBMC optimization model by calculating FBMC parameters and adding the corresponding constraints to the zonal network.
 
     Args:
         zonal_net (pypsa.Network): _description_
@@ -136,7 +120,7 @@ def setup_fbmc_model(
         fbmc_parameters, 
         config.upper_ram_only_flag
     )
-    post_model_creation_workflow(zonal_net, config)
+
     return model, fbmc_parameters
 
 
