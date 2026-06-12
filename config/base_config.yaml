@@ -34,7 +34,7 @@ upper_ram_only_flag: false
 add_security_constraints: false
 advanced_hybrid_coupling_flag: false
 
-fbmc_solver_kwargs:
+solver_kwargs:
   solver_name: gurobi
 
 

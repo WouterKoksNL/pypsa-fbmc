@@ -189,7 +189,7 @@ for case, params_base in runs_to_execute.items():
         config.net_position_limit_UA_flag = True
         config.net_position_UA_lower_limit = -2450
         config.net_position_UA_upper_limit = 900
-    # config.fbmc_create_model_kwargs["linearized_unit_commitment"] = False
+    # config.create_model_kwargs["linearized_unit_commitment"] = False
     # config.use_unit_commitment = False
     # config.add_security_constraints
 
