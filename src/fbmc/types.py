@@ -94,8 +94,7 @@ class SubnetFBMCParameters:
     __str__ = __repr__
 
 
-
-class DispatchResult:
+class DispatchResult:    
     def __init__(self, net: pypsa.Network):
         self.generators_p: pd.DataFrame = net.generators_t.p
         self.storage_units_p: pd.DataFrame = net.storage_units_t.p
@@ -147,8 +146,3 @@ class FBMCResult:
 
     __repr__ = __str__
 
-@dataclass
-class RedispatchResult:
-    nodal_net: pypsa.Network
-    cost: float
-    dispatch_results: DispatchResult
