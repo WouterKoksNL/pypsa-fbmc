@@ -29,6 +29,8 @@ class FBMCWorkflowTestCase:
     expected_rd_objective: float | None = None
     """If set, the test asserts the objective value matches within `tolerance`."""
     tolerance: float = 1e-2
+    run_redispatch_flag: bool = True
+    redispatch_kwargs: dict = None
 
 
 def run_workflow_test(
@@ -51,13 +53,11 @@ def run_workflow_test(
         gsk=test_case.gsk,
         config=test_case.config,
     )
-    redispatch_kwargs = {
-        'security_constrained_flag': test_case.config.security_constrained_redispatch, 
-        'rt_deviation_factor': test_case.config.deviation_factor_redispatch,
-    }
-    if test_case.config.run_redispatch:
+
+    redispatch_kwargs = test_case.redispatch_kwargs or {}
+    if test_case.run_redispatch_flag:
         nodal_net, rd_cost = run_redispatch(
             test_case.nodal_net, result.dispatch_results, **redispatch_kwargs   
         )
         breakpoint()
-    return result, rd_cost if test_case.config.run_redispatch else None
+    return result, rd_cost if test_case.run_redispatch_flag else None

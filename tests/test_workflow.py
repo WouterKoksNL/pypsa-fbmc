@@ -59,7 +59,7 @@ class TestFBMCWorkflow(unittest.TestCase):
                     f"got {objective:.4f}, expected {test_case.expected_objective:.4f}"
                 ),
             )
-        if test_case.config.run_redispatch and test_case.expected_rd_objective is not None:
+        if test_case.run_redispatch_flag and test_case.expected_rd_objective is not None:
             self.assertAlmostEqual(
                 rd_objective,
                 test_case.expected_rd_objective,
@@ -106,9 +106,14 @@ class TestFBMCWorkflow(unittest.TestCase):
             nodal_net=case_data['nodal_net'],
             base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
             advanced_hybrid_coupling_flag=False,
-            config=_make_config(run_redispatch=True),
+            config=_make_config(),
             expected_objective=3600,  
             expected_rd_objective=6300,  
+            run_redispatch_flag=True,
+            redispatch_kwargs={
+                'security_constrained_flag': False,
+                'deviation_factor': 0.9,
+            }
         )
         self._assert_objective(test_case)
 
@@ -131,9 +136,14 @@ class TestFBMCWorkflow(unittest.TestCase):
             nodal_net=nodal_net,
             base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
             advanced_hybrid_coupling_flag=False,
-            config=_make_config(run_redispatch=True),
+            config=_make_config(),
             expected_objective=2700,  
             expected_rd_objective=3750.0,  
+            run_redispatch_flag=True,
+            redispatch_kwargs={
+                'security_constrained_flag': False,
+                'deviation_factor': 0.9,
+            }
         )
         self._assert_objective(test_case)
 
@@ -184,9 +194,8 @@ class TestFBMCWorkflow(unittest.TestCase):
         zonal_net.add("StorageUnit", "Storage", bus="A", p_nom=5, max_hours=2)  
         zonal_net.loads_t.p_set.loc[:, 'load_A1'] = [9, 13.5, 18]
         zonal_net.remove('Generator', 'gen_A1')
-        config = _make_config(run_redispatch=True)
-        config.deviation_factor_redispatch = 0.9
-        config.security_constrained_redispatch = False
+        config = _make_config()
+
         test_case = FBMCWorkflowTestCase(
             case_name='Three Node Redispatch with Storage Duration',
             gsk=gsk_dict,
@@ -194,29 +203,85 @@ class TestFBMCWorkflow(unittest.TestCase):
             nodal_net=nodal_net,
             base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
             advanced_hybrid_coupling_flag=False,
+            run_redispatch_flag=True,
+            redispatch_kwargs={
+                'security_constrained_flag': False,
+                'deviation_factor': 0.9,
+            },
             config=config,
             expected_objective=4050,  
             expected_rd_objective=4050,  
         )
         self._assert_objective(test_case)
-    # def test_basic_three_node_p_nom_gsk(self):
-    #     test_case = FBMCWorkflowTestCase(
-    #         case_name=Cases.BASIC_THREE_NODE,
-    #         gsk_strategy=GSKStrategy.P_NOM,
-    #         base_case_strategy=BaseCaseStrategy.SECURITY_CONSTRAINED_NODAL_OPTIMUM,
-    #         expected_objective=None,  # TODO: fill in after first passing run
-    #     )
-    #     self._assert_objective(test_case)
 
-    # def test_double_three_node_link_and_line_advanced_hybrid(self):
-    #     test_case = FBMCWorkflowTestCase(
-    #         case_name=Cases.DOUBLE_THREE_NODE_LINK_AND_LINE,
-    #         gsk_strategy=GSKStrategy.P_NOM,
-    #         base_case_strategy=BaseCaseStrategy.SECURITY_CONSTRAINED_NODAL_OPTIMUM,
-    #         advanced_hybrid_coupling_flag=True,
-    #         expected_objective=None,  # TODO: fill in after first passing run
-    #     )
-    #     self._assert_objective(test_case)
+
+    def test_three_node_redispatch_with_storage_redispatching(self):
+        """A case in which storage is being used in DA but gets adapted in redispatch. 
+        Dispatch results zonal clearing:
+
+        Generator  gen_B1  gen_B2
+        snapshot                 
+        1            14.0     0.0
+        2             8.5     0.0
+        3            18.0     0.0
+
+        StorageUnit  Storage
+        snapshot            
+        1               -5.0
+        2                5.0
+        3                0.0
+
+        Redispatch results: (no load shedding)
+        Generator  gen_B1  gen_B2  
+        snapshot                                                                       
+        1            13.5     0.0    
+        2             8.5     5.0    
+        3            13.5     0.0  
+        StorageUnit  Storage
+        snapshot            
+        1               -4.5
+        2                0.0
+        3                4.5
+        
+        13.5 is the maximum flow from zone B to A in case of a flow from a single node (B1). 
+        """
+        from src.runner import input_getter
+        case_data = input_getter(
+            case_name=Cases.THREE_NODE_REDISPATCH,
+        )
+        zonal_net = case_data['zonal_net']
+        nodal_net = case_data['nodal_net']
+        gsk_dict = case_data['gsk_dict']
+
+        nodal_net.set_snapshots(['1', '2', '3'])
+        zonal_net.set_snapshots(['1', '2', '3'])
+        gsk_dict = {snapshot: gsk_dict['1'].copy() for snapshot in zonal_net.snapshots}
+        nodal_net.add("StorageUnit", "Storage", bus="A1", p_nom=5, max_hours=2)
+        nodal_net.loads_t.p_set.loc[:, 'load_A1'] = [9, 13.5, 18]
+        nodal_net.remove('Generator', 'gen_A1')
+        zonal_net.add("StorageUnit", "Storage", bus="A", p_nom=5, max_hours=2)  
+        zonal_net.loads_t.p_set.loc[:, 'load_A1'] = [9, 13.5, 18]
+        zonal_net.remove('Generator', 'gen_A1')
+        config = _make_config()
+
+        test_case = FBMCWorkflowTestCase(
+            case_name='Three Node security constrained Redispatch with Storage Duration',
+            gsk=gsk_dict,
+            zonal_net=zonal_net,
+            nodal_net=nodal_net,
+            base_case_strategy=BaseCaseStrategy.ZERO_FLOWS,
+            advanced_hybrid_coupling_flag=False,
+            run_redispatch_flag=True,
+            redispatch_kwargs={
+                'security_constrained_flag': True,
+                'deviation_factor': 0.9,
+            },
+            config=config,
+            expected_objective=4050,  
+            expected_rd_objective=16200,  
+        )
+        self._assert_objective(test_case)
+
 
 
 if __name__ == "__main__":
