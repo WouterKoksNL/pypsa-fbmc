@@ -48,8 +48,30 @@ It is also possible to choose another optimiser, but you will have to update the
 
 6. **Run the code:**
 
-Scripts for running different setups can be found under /scripts. Run a minimal example using
+Example: 
+
+´´´
+from fbmc.settings import FBMCConfig
+from fbmc.api import run_fbmc
+from example_networks.main import create_case, Cases
+
+
+config = FBMCConfig.from_base_yaml("config/base_config.yaml")
+case_data = create_case(case=Cases.BASIC_THREE_NODE)
+
+fbmc_result = run_fbmc(
+    zonal_net=case_data['zonal_net'],
+    nodal_net=case_data['nodal_net'],
+    config=config,
+)
+
+print(fbmc_result.dispatch_results.generators_p)
+print(fbmc_result.net_positions)
+´´´
+
+Prepared scripts can be found under /scripts. Run the minimal example using
 ´python -m scripts.run.minimal_example´
+
 ## Input Network Location
 
 Input network folders are configured centrally in `src/paths.py`.
