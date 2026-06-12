@@ -25,7 +25,7 @@ def run_redispatch(
         security_constrained_flag=True, 
         branch_outages=None,
         load_shedding_cost=1000,
-        rt_deviation_factor=1.0,
+        deviation_factor=1.0,
         create_model_kwargs: dict[str, str] = None,
         solver_kwargs: dict[str, str] = None
         ) -> pypsa.Network:
@@ -65,7 +65,7 @@ def run_redispatch(
         nodal_net,
         dispatch_results,
         flex_gens_up,
-        rt_deviation_factor,
+        deviation_factor,
         create_model_kwargs=create_model_kwargs,
     )
     if security_constrained_flag:
