@@ -57,7 +57,7 @@ def input_getter(zonal_net: pypsa.Network = None, nodal_net: pypsa.Network = Non
     # if only one is none, raise an error
     if nodal_net is not None and zonal_net is None:
         logger.info("Only nodal net provided, converting to zonal net.")
-        from fbmc.core.input_network_conversions.network_conversion import nodal_to_zonal
+        from fbmc.input_network_conversions.network_conversion import nodal_to_zonal
         zonal_net = nodal_to_zonal(nodal_net, bus_zone_map=nodal_net.buses.zone_name)
     if zonal_net is not None and nodal_net is None:
         raise ValueError("Nodal net must be provided if zonal net is provided. ")
@@ -80,6 +80,7 @@ def main(
         case_kwargs: dict[str, Any] | None = None,
         case_name=Cases.BASIC_THREE_NODE,
         config: FBMCConfig | None = None,
+        run_redispatch_flag: bool = True,
         config_overrides: dict[str, Any] | None = None,
         case_alteration_kwargs: dict[str, Any] | None = None,
         **config_kwargs: Any,
@@ -130,7 +131,7 @@ def main(
         )
     rd_cost = None
     rd_dispatch = fbmc_result.dispatch_results
-    if config.run_redispatch:
+    if run_redispatch_flag:
         find_bridges_network(nodal_net)
         # outaged_lines = nodal_net.lines.index.difference(bridges)
         redispatch_kwargs = {
