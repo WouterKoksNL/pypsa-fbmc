@@ -1,7 +1,7 @@
 
 import pypsa
 
-from fbmc.core.input_network_conversions.network_conversion import nodal_to_zonal
+from fbmc.input_network_conversions.network_conversion import nodal_to_zonal
 
 def create_linear_case(**kwargs):
     nodal_net = pypsa.Network()

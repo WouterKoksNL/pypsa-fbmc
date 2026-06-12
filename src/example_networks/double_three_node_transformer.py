@@ -1,7 +1,7 @@
 import pypsa
 import pandas as pd
 
-from fbmc.core.input_network_conversions.network_conversion import nodal_to_zonal
+from fbmc.input_network_conversions.network_conversion import nodal_to_zonal
 
 def create_double_three_node_transformer_case():
     # two three node networks connected by a transformer. 

@@ -5,7 +5,7 @@ import pypsa
 import pandas as pd
 from pathlib import Path
 from fbmc.paths import get_case_input_dir
-from fbmc.core.input_network_conversions.network_conversion import copy_net, nodal_to_zonal
+from fbmc.input_network_conversions.network_conversion import copy_net, nodal_to_zonal
 
 def _remove_buses_and_connected_components(net: pypsa.Network, buses_to_remove):
     # remove lines and transformers connected to the buses to remove

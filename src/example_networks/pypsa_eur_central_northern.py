@@ -1,6 +1,6 @@
 import pypsa
 import pandas as pd
-from fbmc.core.input_network_conversions.network_conversion import copy_net, nodal_to_zonal
+from fbmc.input_network_conversions.network_conversion import copy_net, nodal_to_zonal
 from fbmc.paths import get_unprocessed_input_networks_dir
 
 
