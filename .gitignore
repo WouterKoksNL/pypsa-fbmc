@@ -204,3 +204,4 @@ cython_debug/
 /output_results
 paths.toml
 /results
+/.claude
