@@ -10,7 +10,7 @@ from fbmc.settings import FBMCConfig
 from fbmc.core.input_parameters.base_case import BaseCaseStrategy
 from fbmc.core.input_parameters.gsk import GSKStrategy
 from fbmc.types import FBMCResult
-from redispatch.main import run_redispatch
+from src.redispatch.main import run_redispatch
 
 
 @dataclass

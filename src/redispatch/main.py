@@ -1,11 +1,10 @@
-from dataclasses import dataclass
-
 import pandas as pd
 import pypsa
 from typing import Sequence
 from linopy import Model, LinearExpression
 import xarray as xr
 import logging
+from dataclasses import dataclass, field
 
 from .security_constraints import add_security_constraints
 from .types import ReferenceDispatch
