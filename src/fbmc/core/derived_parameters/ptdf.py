@@ -29,9 +29,9 @@ def get_subnetwork_ptdf_non_security_constrained(sub_network: pypsa.SubNetwork, 
     ptdf = set_branch_coord_to_cnec(ptdf, cnecs)
     return ptdf
 
-def calc_subnet_ptdf_security_constrained(sub_network: pypsa.SubNetwork, bodf: xr.DataArray) -> xr.DataArray:
+def calc_subnet_ptdf_security_constrained(sub_network: pypsa.SubNetwork, bodf: xr.DataArray, bodf_columnwise_matrix_size_limit: int) -> xr.DataArray:
     nodal_ptdf = _get_subnetwork_ptdf(sub_network)
-    nodal_ptdf = apply_bodf(nodal_ptdf, bodf)
+    nodal_ptdf = apply_bodf(nodal_ptdf, bodf, matrix_size_limit=bodf_columnwise_matrix_size_limit)
     return nodal_ptdf
 
 def calculate_zonal_ptdf(

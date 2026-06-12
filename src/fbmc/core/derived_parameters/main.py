@@ -53,7 +53,7 @@ def _calculate_fbmc_parameters_subnet(
     if config.add_security_constraints:
         bodf = get_subnetwork_bodf(sub_network, cnecs, config.security_constraint_bodf_size_threshold)
         nodal_ptdf = calc_subnet_ptdf_security_constrained(sub_network, bodf, bodf_columnwise_matrix_size_limit=config.security_constraint_bodf_columnwise_matrix_size_limit)
-        base_flows_subnet = get_base_flows_subnet_security_constrained(sub_network, bodf)
+        base_flows_subnet = get_base_flows_subnet_security_constrained(sub_network, bodf, cnecs, bodf_columnwise_matrix_size_limit=config.security_constraint_bodf_columnwise_matrix_size_limit)
         cnecs = nodal_ptdf.coords['cnec']  # Update CNECs to match the potentially reduced set in apply_security_param_changes
     else:
         nodal_ptdf = get_subnetwork_ptdf_non_security_constrained(sub_network, cnecs)
