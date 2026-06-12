@@ -51,7 +51,8 @@ It is also possible to choose another optimiser, but you will have to update the
 Example: 
 
 
-```from fbmc.settings import FBMCConfig
+```python
+from fbmc.settings import FBMCConfig
 from fbmc.api import run_fbmc
 from example_networks.main import create_case, Cases
 
