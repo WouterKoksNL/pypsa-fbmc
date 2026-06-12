@@ -59,5 +59,4 @@ def run_workflow_test(
         nodal_net, rd_cost = run_redispatch(
             test_case.nodal_net, result.dispatch_results, **redispatch_kwargs   
         )
-        breakpoint()
     return result, rd_cost if test_case.run_redispatch_flag else None
