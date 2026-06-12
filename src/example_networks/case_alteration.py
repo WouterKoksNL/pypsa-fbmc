@@ -1,9 +1,7 @@
 import logging
-from typing import Any
-
 
 from .utils import select_snapshot
-from .unit_commitment import apply_unit_commitment_data
+from fbmc.core.input_network_conversions.unit_commitment import apply_unit_commitment_data
 
 
 
