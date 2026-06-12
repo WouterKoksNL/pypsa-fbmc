@@ -66,7 +66,8 @@ fbmc_result = run_fbmc(
 )
 
 print(fbmc_result.dispatch_results.generators_p)
-print(fbmc_result.net_positions)```
+print(fbmc_result.net_positions)
+```
 
 
 Prepared scripts can be found under /scripts. Run the minimal example using
