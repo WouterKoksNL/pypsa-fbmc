@@ -14,7 +14,16 @@ import yaml
 from fbmc.enums import BaseCaseStrategy, GSKStrategy, CNECStrategy
 
 
-BASE_CONFIG_PATH = _pkg_files("fbmc") / "config" / "base_config.yaml"
+def _find_project_root(start: Path = None) -> Path:
+    """Walk up from start (default: CWD) until pyproject.toml is found."""
+    current = (start or Path.cwd()).resolve()
+    for parent in [current, *current.parents]:
+        if (parent / "pyproject.toml").exists():
+            return parent
+    return current
+
+
+BASE_CONFIG_PATH = _find_project_root() / "config" / "base_config.yaml"
 _DEFAULT_UC_PATH = _pkg_files("fbmc") / "data" / "unit_commitment.csv"
 
 
@@ -24,47 +33,18 @@ def _default_config_values() -> dict[str, Any]:
         "reliability_margin_factor": 0.0,
         "min_ram": 0.0,
         "cnec_setting": "ALL",
-        "line_usage_threshold": 0.2,
         "cne_list": None,
         "security_constraint_bodf_size_threshold": 0.2,
         "security_constraint_bodf_columnwise_matrix_size_limit": 5_000_000,
-        "gsk_strategy": GSKStrategy.CURRENT_GENERATION,
-        "gsk_kwargs": {
-            "ADJUSTABLE_CAP": {
-                "adjustable_carriers": ("CCGT", "coal", "lignite", "OCGT", "oil"),
-            },
-            "ITERATIVE_UNCERTAINTY": {
-                "uncertain_carriers": ("offshore-wind", "onshore-wind"),
-                "num_scenarios": 100,
-                "gen_variation_std_dev": 0.5,
-                "load_variation_std_dev": 0.5,
-            },
-            "ITERATIVE_FBMC": {
-                "uncertain_carriers": ("offshore-wind", "onshore-wind"),
-                "num_scenarios": 100,
-                "max_gsk_iterations": 5,
-                "initial_gsk_strategy": "BUS_P",
-                "gen_variation_std_dev": 0.5,
-                "load_variation_std_dev": 0.5,
-            },
-            "MERIT_ORDER": {
-                "standard_deviation": 5,
-            },
-            "BUS_P": {},
-        },
+        "gsk_strategy": GSKStrategy.P_NOM,
+        "gsk_kwargs": {},
         "base_case_strategy": BaseCaseStrategy.ZERO_FLOWS,
         "marginal_cost_load_shedding": 1e5,
         "add_security_constraints": True,
         "advanced_hybrid_coupling_flag": False,
         "create_model_kwargs": {},
         "solver_kwargs": {"solver_name": "gurobi"},
-        "transfer_limit_UA_flag": False,
-        "transfer_limit_EUR_UA": None,
-        "transfer_limit_UA_EUR": None,
-        "net_position_limit_UA_flag": False,
-        "net_position_UA_lower_limit": None,
-        "net_position_UA_upper_limit": None,
-        "upper_ram_only_flag": True,
+        "upper_ram_only_flag": False,
     }
 
 
@@ -175,76 +155,29 @@ def config_to_dict(config: "FBMCConfig") -> dict[str, Any]:
 @dataclass
 class FBMCConfig:
     """Configuration parameters for FBMC calculations."""
-    reliability_margin_factor: float = 0.0
-    min_ram: float = 0.0
-
     cnec_setting: CNECStrategy = CNECStrategy.ALL
-    line_usage_threshold: float = 0.2
     cne_list: list[str] = None
+
+    add_security_constraints: bool = True
     security_constraint_bodf_size_threshold: float = 0.2
     security_constraint_bodf_columnwise_matrix_size_limit: int = 5_000_000
 
-    # GSK Method options:
-    # "ADJUSTABLE_CAP" - Share of Adjustable Capacity
-    # "CURRENT_GENERATION" - Current Generation
-    # "ITERATIVE_UNCERTAINTY" - Iterative Uncertainty
-    # "ITERATIVE_FBMC" - Iterative FBMC
-    
-    # use the GSKStrategy class
-    gsk_strategy: str = "CURRENT_GENERATION"
-    gsk_kwargs: dict[str, dict[str, Any]] = field(default_factory=lambda: {
-        "ADJUSTABLE_CAP": {
-            "adjustable_carriers": ("CCGT", "coal", "lignite", "OCGT", "oil"),
-        },
-        "ITERATIVE_UNCERTAINTY": {
-            "uncertain_carriers": ("offshore-wind", "onshore-wind"),
-            "num_scenarios": 100,
-            "gen_variation_std_dev": 0.5,
-            "load_variation_std_dev": 0.5,
-        },
-        "ITERATIVE_FBMC": {
-            "uncertain_carriers": ("offshore-wind", "onshore-wind"),
-            "num_scenarios": 100,
-            "max_gsk_iterations": 5,
-            "initial_gsk_strategy": "BUS_P",
-            "gen_variation_std_dev": 0.5,
-            "load_variation_std_dev": 0.5,
-        },
-        "MERIT_ORDER": {
-            "standard_deviation": 5,
-        },
-        "BUS_P": {},
-    })
+    gsk_strategy: GSKStrategy = GSKStrategy.P_NOM
+    gsk_kwargs: dict[str, dict[str, Any]] = field(default_factory=lambda: {})
+
+    reliability_margin_factor: float = 0.0
+    min_ram: float = 0.0
+    upper_ram_only_flag: bool = False  # Whether to only apply upper RAM constraints in advanced hybrid coupling
 
     base_case_strategy: BaseCaseStrategy = BaseCaseStrategy.ZERO_FLOWS
+
     marginal_cost_load_shedding: float = 1e5
     
-
-    add_security_constraints: bool = True
-    
-
     advanced_hybrid_coupling_flag: bool = False
 
     create_model_kwargs: dict[str, Any] = field(default_factory=dict)
-
     solver_kwargs: dict[str, Any] = field(default_factory=lambda: {"solver_name": "gurobi"})
 
-    use_unit_commitment: bool = False
-    unit_commitment_path: str = field(default_factory=lambda: str(_DEFAULT_UC_PATH))
-
-    # Water values config
-    load_water_values: bool = False  # Whether to load water values in case creation
-    water_values_path: str = None  # Optional: path to water values file
-
-    transfer_limit_UA_flag: bool = False  # Whether to apply an upper limit on total transfer in UA market design
-    transfer_limit_EUR_UA: float = None  # Value for upper limit on total transfer in UA market design (if flag is True)
-    transfer_limit_UA_EUR: float = None  # Value for upper limit on total transfer in UA market design (if flag is True)
-
-    net_position_limit_UA_flag: bool = False  # Whether to apply a limit on net position in UA market design
-    net_position_UA_lower_limit: float = None  # Value for lower limit on net position of Ukraine
-    net_position_UA_upper_limit: float = None  # Value for upper limit on net position of Ukraine
-
-    upper_ram_only_flag: bool = False  # Whether to only apply upper RAM constraints in advanced hybrid coupling
 
     def __str__(self) -> str:
         """Return a readable multi-line view of the effective configuration."""
@@ -258,8 +191,11 @@ class FBMCConfig:
     @classmethod
     def from_base_yaml(cls, path: Path | str = BASE_CONFIG_PATH) -> "FBMCConfig":
         """Construct config by overlaying base YAML on top of built-in defaults."""
+        path = Path(path)
+        if not path.is_absolute():
+            path = _find_project_root() / path
         merged_values = deepcopy(_default_config_values())
-        yaml_values = load_base_config_yaml(Path(path))
+        yaml_values = load_base_config_yaml(path)
 
         valid_fields = {field.name for field in field_list(cls)}
         unknown_fields = sorted(set(yaml_values) - valid_fields)
