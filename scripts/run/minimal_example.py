@@ -1,14 +1,9 @@
-from pathlib import Path
-
 from fbmc.settings import FBMCConfig
 from fbmc.api import run_fbmc
 from example_networks.main import create_case, Cases
 
 
-config_path = Path("config/base_config.yaml")
-config = FBMCConfig.from_base_yaml(config_path)
-config.gsk_strategy = "P_NOM"
-
+config = FBMCConfig.from_base_yaml("config/base_config.yaml")
 case_data = create_case(case=Cases.BASIC_THREE_NODE)
 
 fbmc_result = run_fbmc(
@@ -17,9 +12,9 @@ fbmc_result = run_fbmc(
     config=config,
 )
 
-
+print(fbmc_result.dispatch_results)
 print(fbmc_result.net_positions)
-print(fbmc_result.zonal_net.model)
+
 
 
 
