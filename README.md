@@ -66,7 +66,7 @@ fbmc_result = run_fbmc(
     config=config,
 )
 
-print(fbmc_result.dispatch_results.generators_p)
+print(fbmc_result.dispatch_results)
 print(fbmc_result.net_positions)
 ```
 
