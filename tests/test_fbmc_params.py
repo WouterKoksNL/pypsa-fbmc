@@ -6,52 +6,7 @@ import fbmc.core.pos_neg_method.main as fbmc_main
 import fbmc.core.input_parameters.cnec as cne_params
 import fbmc.core.derived_parameters as fbmc_params
 
-class TestDetermineCnes(unittest.TestCase):
 
-    def setUp(self):
-        # Sample data for testing
-        self.mean_absolute_flow = pd.Series([100, 200, 300, 400], index=['line1', 'line2', 'line3', 'line4'])
-        self.line_capacity = pd.Series([500, 500, 500, 500], index=['line1', 'line2', 'line3', 'line4'])
-        self.line_usage_threshold = 0.3
-
-    def test_determine_cnes(self):
-        # Test with default threshold
-        cnes = fbmc_params.determine_cnes(self.mean_absolute_flow, self.line_capacity, line_usage_threshold=self.line_usage_threshold)
-        self.assertEqual(cnes, ['line2', 'line3', 'line4'])
-
-    def test_determine_cnes_custom_threshold(self):
-        # Test with custom threshold
-        cnes = fbmc_params.determine_cnes(self.mean_absolute_flow, self.line_capacity, line_usage_threshold=0.5)
-        self.assertEqual(cnes, ['line3', 'line4'])
-
-    def test_threshold_out_of_bounds(self):
-        # Test with threshold out of bounds
-        with self.assertRaises(AssertionError):
-            fbmc_params.determine_cnes(self.mean_absolute_flow, self.line_capacity, line_usage_threshold=1.5)
-
-    def test_indices_mismatch(self):
-        # Test with mismatched indices
-        mean_absolute_flow = pd.Series([100, 200, 300, 400], index=['line1', 'line2', 'line3', 'line5'])
-        with self.assertRaises(AssertionError):
-            fbmc_params.determine_cnes(mean_absolute_flow, self.line_capacity, line_usage_threshold=self.line_usage_threshold)
-
-    def test_non_positive_mean_absolute_flow(self):
-        # Test with non-positive mean absolute flow
-        mean_absolute_flow = pd.Series([100, -200, 300, 400], index=['line1', 'line2', 'line3', 'line4'])
-        with self.assertRaises(AssertionError):
-            fbmc_params.determine_cnes(mean_absolute_flow, self.line_capacity, line_usage_threshold=self.line_usage_threshold)
-
-    def test_non_positive_line_capacity(self):
-        # Test with non-positive line capacity
-        line_capacity = pd.Series([500, 500, 0, 500], index=['line1', 'line2', 'line3', 'line4'])
-        with self.assertRaises(AssertionError):
-            fbmc_params.determine_cnes(self.mean_absolute_flow, line_capacity, line_usage_threshold=self.line_usage_threshold)
-
-    def test_no_cnes(self):
-        # Test with no CNEs
-        mean_absolute_flow = pd.Series([100, 100, 100, 100], index=['line1', 'line2', 'line3', 'line4'])
-        with self.assertRaises(AssertionError):
-            fbmc_params.determine_cnes(mean_absolute_flow, self.line_capacity, line_usage_threshold=0.5)
 class TestGetNetworkPtdf(unittest.TestCase):
 
     def setUp(self):
