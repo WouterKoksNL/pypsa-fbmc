@@ -2,7 +2,6 @@
 
 This package adds FBMC capabilities for the pypsa package. It further introduces several methods for GSK calculation.
 
-WARNING: While the notebooks work, at this stage of development, the package will contain bugs and is not meant for production.
 
 ## Setup Instructions
 
