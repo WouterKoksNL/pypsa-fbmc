@@ -43,7 +43,7 @@ def get_subnetwork_bodf(
         dims=['cnec']
     )
     bodf = bodf.where(np.abs(bodf) > min_size_threshold, drop=True)
-    breakpoint()
+
     return bodf
 
 
