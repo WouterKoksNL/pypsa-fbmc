@@ -12,7 +12,7 @@ from fbmc.settings import FBMCConfig
 from example_networks.main import Cases
 from fbmc.enums import GSKStrategy, BaseCaseStrategy
 from fbmc.paths import get_case_results_dir, get_input_networks_dir
-from fbmc.core.input_network_conversions.network_conversion import nodal_to_zonal
+from fbmc.input_network_conversions.network_conversion import nodal_to_zonal
 
 from src.runner import main
 
