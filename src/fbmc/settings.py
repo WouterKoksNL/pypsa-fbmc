@@ -229,12 +229,6 @@ class FBMCConfig:
 
     solver_kwargs: dict[str, Any] = field(default_factory=lambda: {"solver_name": "gurobi"})
 
-    run_redispatch: bool = True
-    security_constrained_redispatch: bool = False
-    deviation_factor_redispatch: float = 0.9
-    rd_create_model_kwargs: dict[str, Any] = field(default_factory=dict)
-    rd_solver_kwargs: dict[str, Any] = field(default_factory=lambda: {"solver_name": "gurobi"})
-
     use_unit_commitment: bool = False
     unit_commitment_path: str = field(default_factory=lambda: str(_DEFAULT_UC_PATH))
 
