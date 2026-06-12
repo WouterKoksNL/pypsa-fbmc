@@ -42,7 +42,7 @@ def _filter_generators_for_gsk(
 
 
 def calculate_gsk(nodal_net: pypsa.Network,
-                  gsk_strategy: GSKStrategy,
+                  gsk_strategy: GSKStrategy | str,
                   gsk_kwargs: dict) -> xr.DataArray:
     """
     Calculate the Generator Shift Key (GSK) of every node in the network.
@@ -55,7 +55,7 @@ def calculate_gsk(nodal_net: pypsa.Network,
     ----------
     network : pypsa.Network
         The network object containing generators and buses.
-    gsk_strategy : GSKStrategy
+    gsk_strategy : GSKStrategy | str
         The strategy to use for calculating the GSK.
     gsk_kwargs : dict
         Keyword arguments for GSK calculation.
@@ -72,7 +72,8 @@ def calculate_gsk(nodal_net: pypsa.Network,
     ValueError
         If an unknown GSK method is specified or if required network components are missing.
     """
-
+    if isinstance(gsk_strategy, str):
+        gsk_strategy = GSKStrategy(gsk_strategy)
 
     # Validate network has required components
     if len(nodal_net.generators) == 0:
@@ -100,7 +101,7 @@ def calculate_gsk(nodal_net: pypsa.Network,
         gsk_generators = _filter_generators_for_gsk(nodal_net.generators)
         gsk = gsk_p_nom(gsk_generators, nodal_net.buses)
     else:
-        raise ValueError(f"Unknown method: {gsk_strategy}. Supported methods are: 'MERIT_ORDER','ADJUSTABLE_CAP', 'ITERATIVE_UNCERTAINTY', 'CURRENT_GENERATION', 'ITERATIVE_FBMC'.")
+        raise ValueError(f"Unknown method: {gsk_strategy}. Supported methods are: 'P_NOM', 'MERIT_ORDER','ADJUSTABLE_CAP', 'ITERATIVE_UNCERTAINTY', 'CURRENT_GENERATION', 'ITERATIVE_FBMC'.")
     
     if type(gsk) is pd.DataFrame:
         gsk = {snapshot: gsk for snapshot in nodal_net.snapshots}
