@@ -13,7 +13,7 @@ To run the FBMC module, follow these steps:
 2. **Clone the repository:**
 
 ```bash
-git clone https://github.com/ameldekok/pypsa-fbmc.git
+git clone https://github.com/WouterKoksNL/pypsa-fbmc/tree/dev
 cd pypsa-fbmc
 ```
 
@@ -44,7 +44,7 @@ pip install -r requirements.txt
 
 Package included in dependencies; Instructions for licence and further installation can be found here: https://support.gurobi.com/hc/en-us/articles/14799677517585-Getting-Started-with-Gurobi-Optimizer.
 
-It is also possible to choose another optimiser, but you will have to update the `solver =`to other options within the code.
+It is also possible to choose another optimiser, but you will have to update the `solver =`to other options in the config. 
 
 6. **Run the code:**
 
