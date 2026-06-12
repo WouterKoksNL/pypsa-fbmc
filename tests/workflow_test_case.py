@@ -56,8 +56,8 @@ def run_workflow_test(
         'rt_deviation_factor': test_case.config.deviation_factor_redispatch,
     }
     if test_case.config.run_redispatch:
-        redispatch_result = redispatch_workflow(
+        nodal_net, rd_cost = run_redispatch(
             test_case.nodal_net, result.dispatch_results, **redispatch_kwargs   
         )
         breakpoint()
-    return result, redispatch_result.cost if test_case.config.run_redispatch else None
+    return result, rd_cost if test_case.config.run_redispatch else None
