@@ -256,10 +256,10 @@ class FBMCConfig:
         return f"FBMCConfig:\n{config_dump}"
 
     @classmethod
-    def from_base_yaml(cls, path: Path = BASE_CONFIG_PATH) -> "FBMCConfig":
+    def from_base_yaml(cls, path: Path | str = BASE_CONFIG_PATH) -> "FBMCConfig":
         """Construct config by overlaying base YAML on top of built-in defaults."""
         merged_values = deepcopy(_default_config_values())
-        yaml_values = load_base_config_yaml(path)
+        yaml_values = load_base_config_yaml(Path(path))
 
         valid_fields = {field.name for field in field_list(cls)}
         unknown_fields = sorted(set(yaml_values) - valid_fields)
