@@ -50,8 +50,8 @@ It is also possible to choose another optimiser, but you will have to update the
 
 Example: 
 
-´´´
-from fbmc.settings import FBMCConfig
+
+```from fbmc.settings import FBMCConfig
 from fbmc.api import run_fbmc
 from example_networks.main import create_case, Cases
 
@@ -66,8 +66,8 @@ fbmc_result = run_fbmc(
 )
 
 print(fbmc_result.dispatch_results.generators_p)
-print(fbmc_result.net_positions)
-´´´
+print(fbmc_result.net_positions)```
+
 
 Prepared scripts can be found under /scripts. Run the minimal example using
 ´python -m scripts.run.minimal_example´
