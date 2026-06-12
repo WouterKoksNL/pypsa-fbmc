@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import pypsa
 from fbmc.core.derived_parameters.security_constrained import add_security_constraints
-from fbmc.case_creation.network_conversion import nodal_to_zonal
+from fbmc.core.input_network_conversions.network_conversion import nodal_to_zonal
 
 class TestSecurityConstraints(unittest.TestCase):
 

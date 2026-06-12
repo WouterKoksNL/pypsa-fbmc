@@ -9,12 +9,12 @@ import pypsa
 from copy import deepcopy
 
 from fbmc.settings import FBMCConfig
-from fbmc.case_creation.main import Cases
+from example_networks.main import Cases
 from fbmc.enums import GSKStrategy, BaseCaseStrategy
-from fbmc.api import main
 from fbmc.paths import get_case_results_dir, get_input_networks_dir
-from fbmc.case_creation.network_conversion import nodal_to_zonal
+from fbmc.core.input_network_conversions.network_conversion import nodal_to_zonal
 
+from src.runner import main
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(

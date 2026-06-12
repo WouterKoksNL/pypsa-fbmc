@@ -5,11 +5,12 @@ and run_workflow_test, which executes the scenario and returns the objective val
 from dataclasses import dataclass, field
 import pypsa 
 
-from fbmc.case_creation.main import Cases
+
 from fbmc.settings import FBMCConfig
 from fbmc.core.input_parameters.base_case import BaseCaseStrategy
 from fbmc.core.input_parameters.gsk import GSKStrategy
 from fbmc.types import FBMCResult
+from redispatch.main import run_redispatch
 
 
 @dataclass
@@ -38,7 +39,7 @@ def run_workflow_test(
 
     Returns the FBMCResult so callers can do additional assertions.
     """
-    from fbmc.api import run_fbmc, redispatch_workflow
+    from fbmc.api import run_fbmc
 
     config = test_case.config
     config.gsk_strategy = test_case.gsk_strategy 

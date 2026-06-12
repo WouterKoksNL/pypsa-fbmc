@@ -1,8 +1,8 @@
 from pathlib import Path
 
 from fbmc.settings import FBMCConfig
-from fbmc.core import main
-from fbmc.case_creation.main import Cases
+from ...src.runner import main
+from example_networks.main import Cases
 from fbmc.enums import GSKStrategy, BaseCaseStrategy
 from fbmc.paths import get_case_results_dir
 

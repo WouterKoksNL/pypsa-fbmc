@@ -1,9 +1,9 @@
 from pathlib import Path
 
 from fbmc.settings import FBMCConfig
-from fbmc.api import main, run_fbmc
-from fbmc import Cases, create_case
-from fbmc.api import redispatch_workflow
+from fbmc.api import run_fbmc
+from example_networks.main import create_case, Cases
+
 
 config_path = Path("config/base_config.yaml")
 config = FBMCConfig.from_base_yaml(config_path)

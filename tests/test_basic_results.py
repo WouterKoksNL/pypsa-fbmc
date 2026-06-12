@@ -2,7 +2,7 @@ import pypsa
 import pandas as pd
 import unittest
 
-from fbmc.case_creation.network_conversion import nodal_to_zonal
+from fbmc.core.input_network_conversions.network_conversion import nodal_to_zonal
 from fbmc.core.pos_neg_method.main import FBMCConfig, run_fbmc
 from fbmc.core.input_parameters.gsk import GSKStrategy
 from fbmc.post_processing.market_prices import calculate_zonal_prices

@@ -9,7 +9,7 @@ To add a new test:
 import unittest
 from copy import deepcopy
 
-from fbmc.case_creation.main import Cases
+from example_networks.main import Cases
 from fbmc.settings import FBMCConfig
 from fbmc.enums import BaseCaseStrategy, CNECStrategy, GSKStrategy
 
@@ -31,10 +31,7 @@ EXPLICIT_TEST_CONFIG_DEFAULTS = {
     "marginal_cost_load_shedding": 1e5,
     "add_security_constraints": False,
     "advanced_hybrid_coupling_flag": True,
-    "run_redispatch": True,
-    "security_constrained_redispatch": False,
-    "deviation_factor_redispatch": 0.9,
-    "fbmc_solver_kwargs": {"solver_name": "gurobi"},
+    "solver_kwargs": {"solver_name": "gurobi"},
 }
 
 
@@ -98,7 +95,7 @@ class TestFBMCWorkflow(unittest.TestCase):
         # self._assert_objective(test_case)
 
     def test_three_node_redispatch(self):
-        from fbmc.api import input_getter
+        from src.runner import input_getter
         case_data = input_getter(
             case_name=Cases.THREE_NODE_REDISPATCH,
         )
@@ -116,7 +113,7 @@ class TestFBMCWorkflow(unittest.TestCase):
         self._assert_objective(test_case)
 
     def test_three_node_redispatch_with_storage(self):
-        from fbmc.api import input_getter
+        from src.runner import input_getter
         case_data = input_getter(
             case_name=Cases.THREE_NODE_REDISPATCH,
         )
@@ -170,7 +167,7 @@ class TestFBMCWorkflow(unittest.TestCase):
         
         13.5 is the maximum flow from zone B to A in case of a flow from a single node (B1). 
         """
-        from fbmc.api import input_getter
+        from src.runner import input_getter
         case_data = input_getter(
             case_name=Cases.THREE_NODE_REDISPATCH,
         )

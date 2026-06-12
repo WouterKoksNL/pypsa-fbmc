@@ -1,22 +1,20 @@
 """Flow-Based Market Coupling (FBMC) extension for PyPSA."""
 
-from .api import run_fbmc, input_getter, redispatch_workflow, main
+from .api import run_fbmc
+from .core.input_network_conversions.network_conversion import nodal_to_zonal
 from .settings import FBMCConfig, merge_config_overrides
 from .enums import GSKStrategy, BaseCaseStrategy
-from .case_creation import Cases, create_case
+
 from .types import FBMCResult, DispatchResult
 
 __all__ = [
     "run_fbmc",
-    "input_getter",
-    "redispatch_workflow",
-    "main",
     "FBMCConfig",
     "merge_config_overrides",
     "GSKStrategy",
     "BaseCaseStrategy",
-    "Cases",
     "create_case",
     "FBMCResult",
     "DispatchResult",
+    "nodal_to_zonal",
 ]
