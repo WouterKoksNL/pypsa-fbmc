@@ -16,22 +16,76 @@ from fbmc.enums import GSKStrategy, BaseCaseStrategy
 from fbmc.paths import get_case_results_dir, get_input_networks_dir
 from fbmc.input_network_conversions.network_conversion import nodal_to_zonal
 
-
-from fbmc.core.derived_parameters.bridge_branches import find_bridges_network
-
 from fbmc.core.results_extraction import extract_model_results
 from fbmc.settings import FBMCConfig
 from fbmc.core.main import setup_fbmc_model
 from fbmc.core.input_parameters.main import calc_input_parameters
 
-from fbmc.post_processing.lpf import do_lpf_contingency_check
-from fbmc.types import DispatchResult, FBMCResult
 from fbmc.core.input_checks import do_input_checks
 
 
 
 
-from src.runner import main
+def runner(zonal_net, nodal_net, gsk, config):
+    logger = logging.getLogger(__name__)
+    do_input_checks(nodal_net, zonal_net, gsk)
+
+
+    if nodal_net.sub_networks.empty:
+        nodal_net.determine_network_topology()
+
+    input_parameters = calc_input_parameters(
+        nodal_net, 
+        gsk,  
+        config
+    )
+
+    logger.info("Calculating FBMC parameters and setting up FBMC model.")
+    model, fbmc_parameters = setup_fbmc_model(
+        zonal_net, 
+        input_parameters,
+        config=config
+    )
+    post_model_creation_workflow(zonal_net, config)
+
+    logger.info("Solving FBMC model.")
+    solver_kwargs = config.solver_kwargs or {}
+
+    # Run the optimization and save the results to the nodal network
+    zonal_net.model.solve(**solver_kwargs)
+    if zonal_net.model.termination_condition != 'optimal':
+        raise ValueError("FBMC optimization did not solve to optimality.")
+    extract_model_results(zonal_net)
+    return zonal_net
+
+@dataclass 
+class UAConfig:
+    transfer_limit_UA_flag: bool = False
+    transfer_limit_EUR_UA: float = 0.0
+    transfer_limit_UA_EUR: float = 0.0
+
+    net_position_limit_UA_flag: bool = False
+    net_position_UA_lower_limit: float = 0.0
+    net_position_UA_upper_limit: float = 0.0
+
+def post_model_creation_workflow(zonal_net: pypsa.Network, ua_config: UAConfig):
+    if ua_config.transfer_limit_UA_flag:
+        logging.info(f"Applying limit of {ua_config.transfer_limit_EUR_UA} (EUR->UA) and {ua_config.transfer_limit_UA_EUR} (UA->EUR) on total transfer to UA/MD.")
+        ua_links = zonal_net.links.index[(zonal_net.links.bus0 == "UA") | (zonal_net.links.bus1 == "UA")]
+        zonal_net.model.add_constraints(zonal_net.model.variables["Link-p"].sel(Link=ua_links).sum(dim="Link") <= ua_config.transfer_limit_EUR_UA, name="total_transfer_limit_EUR_UA")
+        zonal_net.model.add_constraints(-zonal_net.model.variables["Link-p"].sel(Link=ua_links).sum(dim="Link") <= ua_config.transfer_limit_UA_EUR, name="total_transfer_limit_UA_EUR")
+        
+
+    if ua_config.net_position_limit_UA_flag:
+        logging.info(f"Applying limits of {ua_config.net_position_UA_lower_limit} and {ua_config.net_position_UA_upper_limit} on net position of UA.")
+        
+        zonal_net.model.add_constraints(
+            zonal_net.model.variables["Zone-p"].sel(Zone="UA") >= ua_config.net_position_UA_lower_limit, name="net_position_lower_limit_UA"
+            )
+        zonal_net.model.add_constraints(
+            zonal_net.model.variables["Zone-p"].sel(Zone="UA") <= ua_config.net_position_UA_upper_limit, name="net_position_upper_limit_UA"
+            )
+
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(
@@ -218,85 +272,25 @@ for case, params_base in runs_to_execute.items():
         if not save_path.exists():
             save_path.mkdir(parents=True)
         
-        obj3 = main(
-            save_path=save_path,
-            case_name=params["case_name"], 
-            zonal_net=params.get("zonal_net", None),
-            nodal_net=params.get("nodal_net", None),
-            config=config,
-            config_overrides={
-                "gsk_strategy": GSKStrategy.P_NOM,
-                "base_case_strategy": BaseCaseStrategy.ZERO_FLOWS,
-                "reliability_margin_factor": RMF,
-                "run_redispatch": False,
-            },
-            load_case_flag=False,
-            case_kwargs={},
-            case_alteration_kwargs={
+        from src.example_networks.main import alter_case_workflow
+        case_alteration_kwargs={
                 'snapshot_i_range': slice(TS_START+N_TIMESTEPS_MARKET*i_clearing, TS_START+N_TIMESTEPS_MARKET*(i_clearing+1)),
                 'use_unit_commitment': False,
                 'unit_commitment_path': "data/unit_commitment_halve_su_sd.csv",
                 'add_zonal_load_shedding': True,
                 'load_shedding_cost': 5000,
             }
-        )  
-
-
-def runner(zonal_net, nodal_net, gsk, config):
-    logger = logging.getLogger(__name__)
-    do_input_checks(nodal_net, zonal_net, gsk)
-
-
-    if nodal_net.sub_networks.empty:
-        nodal_net.determine_network_topology()
-
-    input_parameters = calc_input_parameters(
-        nodal_net, 
-        gsk,  
-        config
-    )
-
-    logger.info("Calculating FBMC parameters and setting up FBMC model.")
-    model, fbmc_parameters = setup_fbmc_model(
-        zonal_net, 
-        input_parameters,
-        config=config
-    )
-    post_model_creation_workflow(zonal_net, config)
-
-    logger.info("Solving FBMC model.")
-    solver_kwargs = config.solver_kwargs or {}
-
-    # Run the optimization and save the results to the nodal network
-    zonal_net.model.solve(**solver_kwargs)
-    if zonal_net.model.termination_condition != 'optimal':
-        raise ValueError("FBMC optimization did not solve to optimality.")
-    extract_model_results(zonal_net)
-
-@dataclass 
-class UAConfig:
-    transfer_limit_UA_flag: bool = False
-    transfer_limit_EUR_UA: float = 0.0
-    transfer_limit_UA_EUR: float = 0.0
-
-    net_position_limit_UA_flag: bool = False
-    net_position_UA_lower_limit: float = 0.0
-    net_position_UA_upper_limit: float = 0.0
-
-def post_model_creation_workflow(zonal_net: pypsa.Network, ua_config: UAConfig):
-    if ua_config.transfer_limit_UA_flag:
-        logging.info(f"Applying limit of {ua_config.transfer_limit_EUR_UA} (EUR->UA) and {ua_config.transfer_limit_UA_EUR} (UA->EUR) on total transfer to UA/MD.")
-        ua_links = zonal_net.links.index[(zonal_net.links.bus0 == "UA") | (zonal_net.links.bus1 == "UA")]
-        zonal_net.model.add_constraints(zonal_net.model.variables["Link-p"].sel(Link=ua_links).sum(dim="Link") <= ua_config.transfer_limit_EUR_UA, name="total_transfer_limit_EUR_UA")
-        zonal_net.model.add_constraints(-zonal_net.model.variables["Link-p"].sel(Link=ua_links).sum(dim="Link") <= ua_config.transfer_limit_UA_EUR, name="total_transfer_limit_UA_EUR")
-        
-
-    if ua_config.net_position_limit_UA_flag:
-        logging.info(f"Applying limits of {ua_config.net_position_UA_lower_limit} and {ua_config.net_position_UA_upper_limit} on net position of UA.")
-        
-        zonal_net.model.add_constraints(
-            zonal_net.model.variables["Zone-p"].sel(Zone="UA") >= ua_config.net_position_UA_lower_limit, name="net_position_lower_limit_UA"
-            )
-        zonal_net.model.add_constraints(
-            zonal_net.model.variables["Zone-p"].sel(Zone="UA") <= ua_config.net_position_UA_upper_limit, name="net_position_upper_limit_UA"
-            )
+        net_data = {
+            "zonal_net": params.get("zonal_net", None),
+            "nodal_net": params.get("nodal_net", None),
+            "gsk": None
+        }
+        net_data = alter_case_workflow(net_data, case_alteration_kwargs)
+        config.reliability_margin_factor = RMF
+        config.run_redispatch = False
+        zonal_net = runner(
+            zonal_net=net_data["zonal_net"],
+            nodal_net=net_data["nodal_net"],
+            gsk=net_data["gsk"],
+            config=config
+        )
