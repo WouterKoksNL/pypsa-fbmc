@@ -18,6 +18,8 @@ advanced_hybrid_coupling_flag: false
 
 solver_kwargs:
   solver_name: gurobi
+  OutputFlag: 0
+
 
 
 
