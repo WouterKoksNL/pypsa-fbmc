@@ -19,6 +19,7 @@ model and adds the FBMC capacity constraints derived from the nodal topology.
    :caption: Examples
 
    examples/minimal_example
+   examples/fbmc_analysis
 
 .. toctree::
    :maxdepth: 2
