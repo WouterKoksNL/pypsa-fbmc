@@ -73,27 +73,3 @@ print(fbmc_result.net_positions)
 ```
 
 
-
-## Input Network Location
-
-Input network folders are configured centrally in `src/paths.py`.
-
-- `get_input_networks_dir()` defaults to `input_networks/`
-- `get_unprocessed_input_networks_dir()` defaults to `unprocessed_input_networks/`
-
-You can set both locations in the project file `paths.toml`:
-
-```toml
-[paths]
-input_networks_dir = "input_networks"
-unprocessed_input_networks_dir = "unprocessed_input_networks"
-```
-
-If these values are relative, they are resolved from the project root.
-
-You can override these locations with environment variables:
-
-- `PYPSA_FBMC_INPUT_NETWORKS_DIR`
-- `PYPSA_FBMC_UNPROCESSED_INPUT_NETWORKS_DIR`
-
-Environment variables take precedence over `paths.toml`. If an override path is relative, it is resolved from the project root.
