@@ -2,13 +2,16 @@
 
 This package adds FBMC capabilities for the pypsa package. It further introduces several methods for GSK calculation.
 
+## Documentation
+
+Initial documentation can be found at [pypsa-fbmc.readthedocs.io](https://pypsa-fbmc.readthedocs.io/en/latest/).
+
 
 ## Setup Instructions
 
 To run the FBMC module, follow these steps:
 
-1. **Install Python 3.11.x** (e.g. from https://www.python.org/downloads/release/python-3118/)
-
+1. **Install Python 3.11.x** 
 2. **Clone the repository:**
 
 ```bash
@@ -70,8 +73,6 @@ print(fbmc_result.net_positions)
 ```
 
 
-Prepared scripts can be found under /scripts. Run the minimal example using
-´python -m scripts.run.minimal_example´
 
 ## Input Network Location
 
