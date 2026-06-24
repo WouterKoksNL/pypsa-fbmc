@@ -87,18 +87,4 @@ If you already have GSK values, pass them directly as a dict
 
    result = run_fbmc(zonal_net, nodal_net, config, gsk=gsk)
 
-Network path configuration
----------------------------
 
-Input network directories are resolved from ``paths.toml`` in the project root:
-
-.. code-block:: toml
-
-   [paths]
-   input_networks_dir = "input_networks"
-   unprocessed_input_networks_dir = "unprocessed_input_networks"
-
-Both settings can be overridden with environment variables:
-
-* ``PYPSA_FBMC_INPUT_NETWORKS_DIR``
-* ``PYPSA_FBMC_UNPROCESSED_INPUT_NETWORKS_DIR``

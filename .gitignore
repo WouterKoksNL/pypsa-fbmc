@@ -202,6 +202,5 @@ cython_debug/
 .claude/worktrees/epic-chaum-6d44de/
 /.vscode
 /output_results
-paths.toml
 /results
 /.claude
