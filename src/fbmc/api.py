@@ -37,10 +37,12 @@ def run_fbmc(
         Set up and solve FBMC model
 
     Args:
-        zonal_net (pypsa.Network): _description_
-        nodal_net (pypsa.Network): _description_
-        config (FBMCConfig | None): _description_
-        gsk (dict, optional): _description_. Defaults to None.
+        zonal_net (pypsa.Network): Zonal network to which FBMC model will be added.
+        nodal_net (pypsa.Network): Nodal network to be used as reference for FBMC model creation.
+        config (FBMCConfig): Configuration object. 
+        gsk (dict, optional): Dictionary of GSK matrices for each snapshot. 
+            The values need to be pd.DataFrames with index Zone and column Bus.
+            Defaults to None.
         cnecs (Sequence[Sequence] | None, optional): Custom CNECs input, required when
             config.cnec_setting == CNECStrategy.CUSTOM. See
             fbmc.core.input_parameters.cnec.cnec_subnet_router() for the expected format.
@@ -55,7 +57,7 @@ def run_fbmc(
             Base case nodal network
     """
     logger = logging.getLogger(__name__)
-    do_input_checks(nodal_net, zonal_net, gsk, cnec_strategy=config.cnec_setting, cnecs_input=cnecs)
+    do_input_checks(nodal_net, zonal_net, gsk, config, cnecs_input=cnecs)
 
 
     if nodal_net.sub_networks.empty:
