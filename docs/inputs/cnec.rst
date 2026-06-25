@@ -10,21 +10,25 @@ N-0 CNECs
 ---------
 
 An N-0 CNEC monitors branch :math:`b` under *normal* operating conditions (no outage).
-The capacity constraint is simply:
+The capacity constraint is expressed via the *Remaining Available Margin* (RAM):
 
 .. math::
 
-   -c_b \;\le\; f_b \;\le\; c_b
+   \underline{RAM}_{\ell,t} \;\le\; \sum_n z\text{PTDF}_{\ell,n}\, p_{n,t} \;\le\; \overline{RAM}_{\ell,t}
+   \qquad \forall \ell \in \mathcal{C},\; \forall t \in \mathcal{T}
 
-In FBMC terms this becomes:
+where the upper and lower RAM values are defined as:
 
 .. math::
 
-   RAM_b^{lower}
-   \;\le\;
-   \sum_z zPTDF_{b,z} \cdot NP_z
-   \;\le\;
-   RAM_b^{upper}
+   \overline{RAM}_{\ell,t}  &= \overline{F}_\ell - F^{\mathrm{REF}}_{\ell,t} - S_{\ell}
+     \qquad \forall \ell \in \mathcal{C},\; \forall t \in \mathcal{T} \\
+   \underline{RAM}_{\ell,t} &= -\overline{F}_\ell - F^{\mathrm{REF}}_{\ell,t} + S_{\ell}
+     \qquad \forall \ell \in \mathcal{C},\; \forall t \in \mathcal{T}
+
+Here :math:`\overline{F}_\ell` is the thermal limit, :math:`F^{\mathrm{REF}}_{\ell,t}` is
+the reference flow (computed from the reference programme), and :math:`S_{\ell}` is the
+flow reliability margin (FRM) / safety slack applied to the line.
 
 N-1 CNECs (security constraints)
 ----------------------------------
