@@ -18,6 +18,53 @@ positions :math:`NP_z^{bc}`:
    = f_b^{bc}
    - \sum_{z \in \mathcal{Z}} zPTDF_{b,z} \cdot NP_z^{bc}
 
+
+The capacity constraint is expressed via the *Remaining Available Margin* (RAM):
+
+.. math::
+
+   \underline{RAM}_{\ell,t} \;\le\; \sum_n z\text{PTDF}_{\ell,n}\, p_{n,t} \;\le\; \overline{RAM}_{\ell,t}
+   \qquad \forall \ell \in \mathcal{C},\; \forall t \in \mathcal{T}
+
+where the upper and lower RAM values are defined as:
+
+.. math::
+
+   \overline{RAM}_{\ell,t}  &= \overline{F}_\ell - F^{\mathrm{REF}}_{\ell,t} - S_{\ell}
+     \qquad \forall \ell \in \mathcal{C},\; \forall t \in \mathcal{T} \\
+   \underline{RAM}_{\ell,t} &= -\overline{F}_\ell - F^{\mathrm{REF}}_{\ell,t} + S_{\ell}
+     \qquad \forall \ell \in \mathcal{C},\; \forall t \in \mathcal{T}
+
+Here :math:`\overline{F}_\ell` is the thermal limit, :math:`F^{\mathrm{REF}}_{\ell,t}` is
+the reference flow (computed from the reference programme), and :math:`S_{\ell}` is the
+flow reliability margin (FRM) / safety slack applied to the line.
+
+N-1 CNECs (security constraints)
+----------------------------------
+
+When :attr:`~fbmc.settings.FBMCConfig.add_security_constraints` is ``True``, the CNEC
+set is extended with N-1 pairs :math:`(\ell, o)` where :math:`\ell` is a monitored branch
+and :math:`o` is an outaged branch. The post-contingency flow is:
+
+.. math::
+
+   f_\ell^{N\text{-}1}(o)
+   = f_\ell^{N\text{-}0} + BODF_{\ell,o} \cdot f_o^{N\text{-}0}
+
+The RAM bounds for N-1 CNECs follow the same structure as N-0, but indexed over
+outage scenarios as well:
+
+.. math::
+
+   \overline{RAM}_{\ell,o,t}  &= \overline{F}_\ell - F^{\mathrm{REF}}_{\ell,o,t} - S_{\ell,o}
+     \qquad \forall (\ell,o) \in \mathcal{C},\; \forall t \in \mathcal{T} \\
+   \underline{RAM}_{\ell,o,t} &= -\overline{F}_\ell - F^{\mathrm{REF}}_{\ell,o,t} + S_{\ell,o}
+     \qquad \forall (\ell,o) \in \mathcal{C},\; \forall t \in \mathcal{T}
+
+Here :math:`F^{\mathrm{REF}}_{\ell,o,t}` is the reference flow on branch :math:`\ell`
+after outage :math:`o`, and :math:`S_{\ell,o}` is the FRM slack for that CNEC pair.
+
+
 The subtraction of the zPTDF term removes the contribution of the base-case net
 positions so that the RAM represents headroom from a *zero net-position* reference point.
 
