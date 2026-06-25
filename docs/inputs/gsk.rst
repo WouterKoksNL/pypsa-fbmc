@@ -76,19 +76,30 @@ pypsa-fbmc supports several methods for computing the GSK, controlled by
 Passing a custom GSK
 --------------------
 
-A user-defined GSK can be passed as a plain Python dict and is automatically converted
-to the required ``xarray.DataArray`` format:
+A user-defined GSK can be passed as a dict of ``pd.DataFrame`` objects and is automatically
+converted to the required ``xarray.DataArray`` format:
 
 .. code-block:: python
 
-   gsk = {
-       "DE": {"Bus_DE_north": 0.5, "Bus_DE_south": 0.3, "Bus_DE_east": 0.2},
-       "FR": {"Bus_FR_1": 0.7, "Bus_FR_2": 0.3},
-   }
+   import pandas as pd
+
+   gsk_df = pd.DataFrame(
+       {
+           "Bus_DE_north": [0.5, 0.0],
+           "Bus_DE_south": [0.3, 0.0],
+           "Bus_DE_east":  [0.2, 0.0],
+           "Bus_FR_1":     [0.0, 0.7],
+           "Bus_FR_2":     [0.0, 0.3],
+       },
+       index=["DE", "FR"],   # rows = zones
+   )                          # columns = buses
+
+   gsk = {snapshot: gsk_df for snapshot in nodal_net.snapshots}
 
    result = run_fbmc(zonal_net, nodal_net, config, gsk=gsk)
 
-Each zone's weights must sum to 1.
+Each DataFrame has zones as its index and buses as its columns.
+Each zone's row must sum to 1, and buses outside the zone must be 0.
 
 Implementation
 --------------

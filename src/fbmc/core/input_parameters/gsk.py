@@ -21,6 +21,8 @@ LOAD_SHEDDING_CARRIER = "load-shedding"
 
 def gsk_dict_to_xarray(gsk: dict) -> xr.DataArray:
     first = gsk[next(iter(gsk))]
+    if not isinstance(first, pd.DataFrame):
+        raise ValueError("GSK must be a dictionary of DataFrames.")
     return xr.DataArray(
         data=list(gsk.values()),
         coords={
@@ -53,7 +55,7 @@ def calculate_gsk(nodal_net: pypsa.Network,
     
     Parameters
     ----------
-    network : pypsa.Network
+    nodal_net : pypsa.Network
         The network object containing generators and buses.
     gsk_strategy : GSKStrategy | str
         The strategy to use for calculating the GSK.
@@ -62,10 +64,9 @@ def calculate_gsk(nodal_net: pypsa.Network,
     
     Returns
     -------
-    pd.DataFrame or dict[pd.Timestamp, pd.DataFrame]
-        - For static GSK methods: A DataFrame containing the GSKs for each bus-zone pair.
-          Index: zones, Columns: buses, Values: share of zone's change allocated to bus
-        - For dynamic GSK methods: A dictionary mapping timestamps to GSK DataFrames.
+    xr.DataArray
+        GSK values with dimensions ['snapshot', 'Zone', 'Bus'].
+        Values represent the share of a zone's net position change allocated to each bus.
     
     Raises
     ------
