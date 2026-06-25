@@ -72,7 +72,7 @@ def run_redispatch(
         add_security_constraints(nodal_net, branch_outages)
     logging.info("Solving redispatch optimization...")
     
-    nodal_net.optimize.solve_model(**solver_kwargs)
+    nodal_net.model.solve(**solver_kwargs)
     cost = get_costs(nodal_net)
 
     if nodal_net.model.termination_condition != 'optimal':
