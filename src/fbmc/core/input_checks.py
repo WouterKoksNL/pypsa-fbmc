@@ -27,7 +27,7 @@ def check_no_lines_or_transformers_in_zonal_net(zonal_net: pypsa.Network):
         logging.warning(f" {len(zonal_net.links.index)} Links found in zonal network. Make sure they represent HVDC connections, not NTCs. Link indices: " + str(zonal_net.links.index))
 
 
-def check_custom_cnecs(cnecs_input):
+def check_custom_cnecs(cnecs_input, add_security_constraints):
     if cnecs_input is None:
         raise ValueError(
             "cnec_setting is CUSTOM but no cnecs were provided. "
@@ -43,10 +43,35 @@ def check_custom_cnecs(cnecs_input):
             "Each element of cnecs must itself be a Sequence (e.g. a tuple). "
             "See fbmc.core.input_parameters.cnec.cnec_subnet_router() for the expected format."
         )
+    if add_security_constraints:
+        if not all(isinstance(cnec[0], tuple | list) for cnec in cnecs_input):
+            raise ValueError(
+                "When add_security_constraints is True, each element of cnecs must be a Sequence of Sequences"
+                "e.g. (('Line', 'line_1'), ('Transformer', 'trafo_1')) can be one of the elements in cnecs_input. "
+            )
+        if not all(isinstance(cnec[0][0], str) and isinstance(cnec[0][1], str) for cnec in cnecs_input):
+            raise ValueError(
+                "When add_security_constraints is True, each element of cnecs must be a Sequence of Sequences"
+                "e.g. (('Line', 'line_1'), ('Transformer', 'trafo_1')) can be one of the elements in cnecs_input. "
+            )
+    else:
+        if not all(isinstance(cnec[0], str) and isinstance(cnec[1], str) for cnec in cnecs_input):
+            raise ValueError(
+                "When add_security_constraints is False, each element of cnecs must be a Sequence of two strings"
+                "e.g. ('Line', 'line_1') can be one of the elements in cnecs_input. "
+            )
 
 
-def do_input_checks(nodal_net, zonal_net, gsk_dict, cnec_strategy=None, cnecs_input=None):
+
+def do_input_checks(nodal_net, zonal_net, gsk_dict, config, cnecs_input=None):
     check_reactance(nodal_net)
     check_no_lines_or_transformers_in_zonal_net(zonal_net)
-    if cnec_strategy == CNECStrategy.CUSTOM:
-        check_custom_cnecs(cnecs_input)
+    if config.cnec_setting == CNECStrategy.CUSTOM:
+        check_custom_cnecs(cnecs_input, config.add_security_constraints)
+    else:
+        if cnecs_input is not None:
+            raise ValueError(
+                "cnec_setting is not CUSTOM but cnecs were provided. "
+                "Set cnec_setting to CUSTOM or remove the cnecs argument."
+            )
+
