@@ -3,13 +3,13 @@ min_ram: 0.0
 
 cnec_setting: ALL
 security_constraint_bodf_size_threshold: 0.2
-security_constraint_bodf_columnwise_matrix_size_limit: 5000000
+security_constraint_bodf_columnwise_matrix_size_limit: 5_000_000
 
 gsk_strategy: P_NOM
 gsk_kwargs:
 
 base_case_strategy: ZERO_FLOWS
-marginal_cost_load_shedding: 100_000.0 # EUR/MWh
+marginal_cost_load_shedding: 5_000.0 # EUR/MWh
 upper_ram_only_flag: false
 
 add_security_constraints: false

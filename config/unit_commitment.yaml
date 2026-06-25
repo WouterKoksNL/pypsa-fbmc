@@ -4,7 +4,7 @@ min_ram: 0.0
 cnec_setting: ALL
 
 security_constraint_bodf_size_threshold: 0.2
-security_constraint_bodf_columnwise_matrix_size_limit: 5000000
+security_constraint_bodf_columnwise_matrix_size_limit: 5_000_000
 
 gsk_strategy: CURRENT_GENERATION
 gsk_kwargs:
@@ -27,7 +27,7 @@ gsk_kwargs:
   BUS_P: {}
 
 base_case_strategy: ZERO_FLOWS
-marginal_cost_load_shedding: 100_000.0 # EUR/MWh
+marginal_cost_load_shedding: 5_000.0 # EUR/MWh
 
 add_security_constraints: false
 advanced_hybrid_coupling_flag: false
