@@ -64,7 +64,7 @@ The CNEC set is controlled by :attr:`~fbmc.settings.FBMCConfig.cnec_setting`:
      - All non-bridge branches (N-0) plus all significant N-1 pairs (when security
        constraints are enabled).
    * - ``CUSTOM``
-     - Only the CNECs listed in :attr:`~fbmc.settings.FBMCConfig.cne_list`.
+     - Only the CNECs directly passed to :attr:`~fbmc.api.run_fbmc()`
 
 Additionally, :attr:`~fbmc.settings.FBMCConfig.line_usage_threshold` (default ``0.2``)
 can be used to filter out lightly loaded branches whose constraints are unlikely to bind.

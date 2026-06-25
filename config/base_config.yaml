@@ -2,7 +2,6 @@ reliability_margin_factor: 0.0
 min_ram: 0.0
 
 cnec_setting: ALL
-cne_list: null
 security_constraint_bodf_size_threshold: 0.2
 security_constraint_bodf_columnwise_matrix_size_limit: 5000000
 

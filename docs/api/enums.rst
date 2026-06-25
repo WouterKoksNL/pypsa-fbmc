@@ -71,5 +71,4 @@ CNECStrategy values
      - Monitor all non-bridge branches in the network (N-0, plus N-1 when
        security constraints are enabled).
    * - ``CUSTOM``
-     - Monitor only the branches listed in
-       :attr:`~fbmc.settings.FBMCConfig.cne_list`.
+     - Monitor only the branches passed explicitly to run_fbmc

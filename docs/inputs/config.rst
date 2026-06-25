@@ -79,10 +79,11 @@ CNEC selection
    * - ``cnec_setting``
      - ``ALL``
      - :class:`~fbmc.enums.CNECStrategy` — ``ALL`` or ``CUSTOM``.
-     - Branches loaded below this fraction of capacity are excluded from the CNEC set.
-   * - ``cne_list``
-     - ``None``
-     - Explicit list of branch names when using ``CNECStrategy.CUSTOM``.
+     - How to select CNECs. 
+     If ``ALL``, select all lines and transformers. In case ``add_security_constraints`` is True, 
+     CNECs are defined as all combinations of branches. 
+     If ``CUSTOM``, CNECs must be explicitly passed (as run_fbmc(cnecs=..))
+     NOTE: 
    * - ``add_security_constraints``
      - ``True``
      - Include N-1 contingency CNECs.
