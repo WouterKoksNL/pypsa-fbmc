@@ -1,5 +1,6 @@
 """Flow-Based Market Coupling (FBMC) extension for PyPSA."""
 
+from . import accessor as accessor  # registers pypsa.Network.fbmc on import
 from .api import run_fbmc
 from .input_network_conversions.network_conversion import nodal_to_zonal
 from .settings import FBMCConfig, merge_config_overrides

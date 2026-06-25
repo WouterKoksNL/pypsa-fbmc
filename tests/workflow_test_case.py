@@ -41,18 +41,17 @@ def run_workflow_test(
 
     Returns the FBMCResult so callers can do additional assertions.
     """
-    from fbmc.api import run_fbmc
-
     config = test_case.config
-    config.gsk_strategy = test_case.gsk_strategy 
+    config.gsk_strategy = test_case.gsk_strategy
     config.base_case_strategy = test_case.base_case_strategy
     config.advanced_hybrid_coupling_flag = test_case.advanced_hybrid_coupling_flag
-    result = run_fbmc(
-        zonal_net=test_case.zonal_net,
-        nodal_net=test_case.nodal_net,
+    test_case.zonal_net.fbmc.create_model(
+        test_case.nodal_net,
         gsk=test_case.gsk,
-        config=test_case.config,
+        config=config,
     )
+    test_case.zonal_net.model.solve(**(config.solver_kwargs or {}))
+    result = test_case.zonal_net.fbmc.results()
 
     redispatch_kwargs = test_case.redispatch_kwargs or {}
     if test_case.run_redispatch_flag:
