@@ -7,69 +7,35 @@ This package adds FBMC capabilities for the pypsa package. It further introduces
 Initial documentation can be found at [pypsa-fbmc.readthedocs.io](https://pypsa-fbmc.readthedocs.io/en/latest/).
 
 
-## Setup Instructions
-
-To run the FBMC module, follow these steps:
-
-1. **Install Python 3.11.x** 
-2. **Clone the repository:**
-
-```bash
-git clone https://github.com/WouterKoksNL/pypsa-fbmc/tree/dev
-cd pypsa-fbmc
-```
-
-3. **Create and activate a virtual environment:**
-
-- On **Windows (Command Prompt)**:
-
-```cmd
-py -3.11 -m venv venv
-venv\Scripts\activate.bat
-```
-
-- On **macOS/Linux**:
-
-```bash
-python3.11 -m venv venv
-source venv/bin/activate
-```
-
-4. **Install dependencies:**
-
-```bash
-.\venv\Scripts\python.exe -m pip install --upgrade pip setuptools wheel
-pip install -r requirements.txt
-```
-
-5. **Activate gurobi (or another solver)**
-
-Package included in dependencies; Instructions for licence and further installation can be found here: https://support.gurobi.com/hc/en-us/articles/14799677517585-Getting-Started-with-Gurobi-Optimizer.
-
-It is also possible to choose another optimiser, but you will have to update the `solver =`to other options in the config. 
-
-6. **Run the code:**
-
-Example: 
-
+## Example
 
 ```python
-from fbmc.settings import FBMCConfig
-from fbmc.api import run_fbmc
-from example_networks.main import create_case, Cases
+import pypsa
+import fbmc
 
+# --- build a simple three-node network ---
+nodal_net = pypsa.Network()
+nodal_net.set_snapshots(["1", "2"])
+nodal_net.add("Bus", ["A1", "B1", "B2"])
 
-config = FBMCConfig.from_base_yaml("config/base_config.yaml")
-case_data = create_case(case=Cases.BASIC_THREE_NODE)
+nodal_net.add("Line", "B1-A1", bus0="B1", bus1="A1", x=1, s_nom=12)
+nodal_net.add("Line", "B1-B2", bus0="B1", bus1="B2", x=1, s_nom=12)
+nodal_net.add("Line", "A1-B2", bus0="A1", bus1="B2", x=1, s_nom=12)
+nodal_net.add("Generator", "gen_A1", bus="A1", p_nom=100, marginal_cost=400)
+nodal_net.add("Generator", "gen_B1", bus="B1", p_nom=100, marginal_cost=100)
+nodal_net.add("Generator", "gen_B2", bus="B2", p_nom=100, marginal_cost=200)
+nodal_net.add("Load", "load_A1", bus="A1", p_set=[15, 15])
 
-fbmc_result = run_fbmc(
-    zonal_net=case_data['zonal_net'],
-    nodal_net=case_data['nodal_net'],
-    config=config,
-)
+# --- set the zone_name attribute to map buses to zones ---
+nodal_net.buses.loc[:, "zone_name"] = ["A", "B", "B"]
+# --- derive the zonal network (one bus per zone) ---
+zonal_net = nodal_net.fbmc.to_zonal(nodal_net.buses["zone_name"])
 
-print(fbmc_result.dispatch_results)
-print(fbmc_result.net_positions)
+# --- create model, solve, extract results ---
+config = fbmc.FBMCConfig.from_base_yaml()
+zonal_net.fbmc.create_model(nodal_net, config)
+zonal_net.model.solve(**config.solver_kwargs)
+result = zonal_net.fbmc.results()
 ```
 
 

@@ -31,8 +31,7 @@ The workflow is:
 .. code-block:: python
 
    import pypsa
-   import fbmc                          # registers pypsa.Network.fbmc
-   from fbmc import FBMCConfig
+   import fbmc
 
    # --- build a nodal network ---
    nodal_net = pypsa.Network()
@@ -51,7 +50,7 @@ The workflow is:
    zonal_net = nodal_net.fbmc.to_zonal(nodal_net.buses["zone_name"])
 
    # --- create model, solve, extract results ---
-   config = FBMCConfig.from_base_yaml()
+   config = fbmc.FBMCConfig.from_base_yaml()
    zonal_net.fbmc.create_model(nodal_net, config)
    zonal_net.model.solve(**config.solver_kwargs)
    result = zonal_net.fbmc.results()
