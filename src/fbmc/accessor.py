@@ -42,4 +42,5 @@ class FBMCAccessor:
 doc = "Accessor for FBMC functionality on pypsa.Network objects. Provides methods to create a zonal network from a nodal network, set up and solve the FBMC model, and extract results. \
     Use `network.fbmc.to_zonal(bus_zone_mapping)` to create a zonal network, `network.fbmc.create_model(nodal_network, gsk, cnecs, config)` to set up the FBMC model, and `network.fbmc.results()` to extract results after solving."
 
-pypsa.Network.fbmc = property(FBMCAccessor)
+pypsa.Network.fbmc = property(FBMCAccessor,
+                              doc=doc)
