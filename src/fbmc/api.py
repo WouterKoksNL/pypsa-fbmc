@@ -3,6 +3,7 @@ import pandas as pd
 import importlib
 from pathlib import Path
 import logging
+from collections.abc import Sequence
 from typing import Any
 
 from fbmc.core.derived_parameters.bridge_branches import find_bridges_network
@@ -28,6 +29,7 @@ def run_fbmc(
         nodal_net: pypsa.Network,
         config: FBMCConfig,
         gsk: dict = None,
+        cnecs: Sequence[Sequence] | None = None,
     ) -> FBMCResult:
     """Run the flow-based market clearing algorithm. Steps:
         Prepare base-case, depending on base case strategy
@@ -39,26 +41,31 @@ def run_fbmc(
         nodal_net (pypsa.Network): _description_
         config (FBMCConfig | None): _description_
         gsk (dict, optional): _description_. Defaults to None.
+        cnecs (Sequence[Sequence] | None, optional): Custom CNECs input, required when
+            config.cnec_setting == CNECStrategy.CUSTOM. See
+            fbmc.core.input_parameters.cnec.cnec_subnet_router() for the expected format.
+            Defaults to None.
 
     Returns:
-        FBMCResult: FBMCResult object containing 
-            Solved zonal net 
+        FBMCResult: FBMCResult object containing
+            Solved zonal net
             Net positions
             Dispatch results (generator dispatch, storage dispatch, link flows, storage levels, water values)
             FBMC parameters (zPTDFs, etc.)
             Base case nodal network
     """
     logger = logging.getLogger(__name__)
-    do_input_checks(nodal_net, zonal_net, gsk)
+    do_input_checks(nodal_net, zonal_net, gsk, cnec_strategy=config.cnec_setting, cnecs_input=cnecs)
 
 
     if nodal_net.sub_networks.empty:
         nodal_net.determine_network_topology()
 
     input_parameters = calc_input_parameters(
-        nodal_net, 
-        gsk,  
-        config
+        nodal_net,
+        gsk,
+        config,
+        cnecs_input=cnecs,
     )
 
     logger.info("Calculating FBMC parameters and setting up FBMC model.")

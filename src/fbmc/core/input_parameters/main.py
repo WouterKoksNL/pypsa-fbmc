@@ -12,7 +12,8 @@ from .cnec import cnec_router
 def calc_input_parameters(
     nodal_net: pypsa.Network,
     gsk: dict | xr.DataArray | None,
-    config: FBMCConfig
+    config: FBMCConfig,
+    cnecs_input=None,
 ) -> InputParameters:
     """
     Call all functions that calculate input parameters for the FBMC workflow.
@@ -21,6 +22,8 @@ def calc_input_parameters(
         nodal_net (pypsa.Network): _description_
         gsk (dict | xr.DataArray | None): _description_
         config (FBMCConfig): _description_
+        cnecs_input: Custom CNECs input passed through to cnec_router when
+            config.cnec_setting == CNECStrategy.CUSTOM. Defaults to None.
 
     Returns:
         InputParameters: _description_
@@ -36,6 +39,11 @@ def calc_input_parameters(
     elif isinstance(gsk, dict):
         gsk = gsk_dict_to_xarray(gsk)
 
-    cnecs_dict = cnec_router(nodal_net, config.cnec_setting, config.add_security_constraints)
+    cnecs = cnec_router(
+        net=nodal_net,
+        cnec_setting=config.cnec_setting,
+        add_security_constraints=config.add_security_constraints,
+        cnecs_input=cnecs_input
+    )
 
-    return InputParameters(gsk=gsk, cnecs=cnecs_dict, base_case=base_case)
+    return InputParameters(gsk=gsk, cnecs=cnecs, base_case=base_case)
