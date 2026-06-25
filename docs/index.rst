@@ -44,5 +44,7 @@ model and adds the FBMC capacity constraints derived from the nodal topology.
    :caption: API reference
 
    api/run_fbmc
+   api/to_zonal
+   api/results
    api/types
    api/enums
