@@ -37,7 +37,7 @@ variables (Zone-p).
 
    config = FBMCConfig()
 
-   zonal_net.fbmc.create_model(nodal_net, config=config)
+   zonal_net.fbmc.create_model(nodal_net, config)
    zonal_net.model.solve(**config.solver_kwargs)
    result = zonal_net.fbmc.results()
 
@@ -53,7 +53,7 @@ The ``gsk`` parameter accepts:
 
    zonal_net.fbmc.create_model(
        nodal_net,
-       config=config,
+       config,
        gsk={"Zone_A": {"Bus1": 0.7, "Bus2": 0.3}},
    )
 

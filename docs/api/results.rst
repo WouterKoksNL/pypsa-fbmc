@@ -16,7 +16,7 @@ solution:
 
    config = FBMCConfig()
 
-   zonal_net.fbmc.create_model(nodal_net, config=config)
+   zonal_net.fbmc.create_model(nodal_net, config)
    zonal_net.model.solve(**config.solver_kwargs)
    result = zonal_net.fbmc.results()
 

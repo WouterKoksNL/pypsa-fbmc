@@ -52,7 +52,7 @@ The workflow is:
 
    # --- create model, solve, extract results ---
    config = FBMCConfig.from_base_yaml()
-   zonal_net.fbmc.create_model(nodal_net, config=config)
+   zonal_net.fbmc.create_model(nodal_net, config)
    zonal_net.model.solve(**config.solver_kwargs)
    result = zonal_net.fbmc.results()
 
@@ -109,6 +109,6 @@ Pass GSK values directly as a ``{zone_name: {bus_name: weight}}`` dict
        "Zone_B": {"Bus_B1": 1.0},
    }
 
-   zonal_net.fbmc.create_model(nodal_net, config=config, gsk=gsk)
+   zonal_net.fbmc.create_model(nodal_net, config, gsk=gsk)
    zonal_net.model.solve(**config.solver_kwargs)
    result = zonal_net.fbmc.results()

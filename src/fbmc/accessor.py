@@ -1,4 +1,5 @@
 import pypsa
+import linopy as lp
 
 from fbmc.input_network_conversions.network_conversion import nodal_to_zonal
 from fbmc.core.input_checks import do_input_checks
@@ -16,7 +17,7 @@ class FBMCAccessor:
     def to_zonal(self, bus_zone_mapping, **kwargs) -> pypsa.Network:
         return nodal_to_zonal(self._n, bus_zone_map=bus_zone_mapping, **kwargs)
 
-    def create_model(self, nodal: pypsa.Network, gsk=None, cnecs=None, config: FBMCConfig = None):
+    def create_model(self, nodal: pypsa.Network, config: FBMCConfig, gsk=None, cnecs=None) -> lp.Model:
         do_input_checks(nodal, self._n, gsk, config, cnecs_input=cnecs)
         if nodal.sub_networks.empty:
             nodal.determine_network_topology()
@@ -38,5 +39,7 @@ class FBMCAccessor:
             base_case=self._n._fbmc_base_case,
         )
 
+doc = "Accessor for FBMC functionality on pypsa.Network objects. Provides methods to create a zonal network from a nodal network, set up and solve the FBMC model, and extract results. \
+    Use `network.fbmc.to_zonal(bus_zone_mapping)` to create a zonal network, `network.fbmc.create_model(nodal_network, gsk, cnecs, config)` to set up the FBMC model, and `network.fbmc.results()` to extract results after solving."
 
 pypsa.Network.fbmc = property(FBMCAccessor)
