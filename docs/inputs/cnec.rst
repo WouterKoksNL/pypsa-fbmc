@@ -34,13 +34,26 @@ N-1 CNECs (security constraints)
 ----------------------------------
 
 When :attr:`~fbmc.settings.FBMCConfig.add_security_constraints` is ``True``, the CNEC
-set is extended with N-1 pairs. For each monitored branch :math:`b` and each outaged
-branch :math:`j \ne b`, the post-contingency flow is:
+set is extended with N-1 pairs :math:`(\ell, o)` where :math:`\ell` is a monitored branch
+and :math:`o` is an outaged branch. The post-contingency flow is:
 
 .. math::
 
-   f_b^{N\text{-}1}(j)
-   = f_b^{N\text{-}0} + BODF_{b,j} \cdot f_j^{N\text{-}0}
+   f_\ell^{N\text{-}1}(o)
+   = f_\ell^{N\text{-}0} + BODF_{\ell,o} \cdot f_o^{N\text{-}0}
+
+The RAM bounds for N-1 CNECs follow the same structure as N-0, but indexed over
+outage scenarios as well:
+
+.. math::
+
+   \overline{RAM}_{\ell,o,t}  &= \overline{F}_\ell - F^{\mathrm{REF}}_{\ell,o,t} - S_{\ell,o}
+     \qquad \forall (\ell,o) \in \mathcal{C},\; \forall t \in \mathcal{T} \\
+   \underline{RAM}_{\ell,o,t} &= -\overline{F}_\ell - F^{\mathrm{REF}}_{\ell,o,t} + S_{\ell,o}
+     \qquad \forall (\ell,o) \in \mathcal{C},\; \forall t \in \mathcal{T}
+
+Here :math:`F^{\mathrm{REF}}_{\ell,o,t}` is the reference flow on branch :math:`\ell`
+after outage :math:`o`, and :math:`S_{\ell,o}` is the FRM slack for that CNEC pair.
 
 Only contingencies with a significant impact are kept — those for which the BODF
 magnitude exceeds :attr:`~fbmc.settings.FBMCConfig.security_constraint_bodf_size_threshold`
