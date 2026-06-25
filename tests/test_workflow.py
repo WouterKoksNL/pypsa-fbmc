@@ -9,7 +9,7 @@ To add a new test:
 import unittest
 from copy import deepcopy
 
-from example_networks.main import Cases
+
 from fbmc.settings import FBMCConfig
 from fbmc.enums import BaseCaseStrategy, CNECStrategy, GSKStrategy
 
@@ -94,7 +94,7 @@ class TestFBMCWorkflow(unittest.TestCase):
     def test_three_node_redispatch(self):
         case_data = create_three_node_redispatch_case()
         test_case = FBMCWorkflowTestCase(
-            case_name=Cases.THREE_NODE_REDISPATCH,
+            case_name="three node redispatch",
             gsk=case_data['gsk_dict'],
             zonal_net=case_data['zonal_net'],
             nodal_net=case_data['nodal_net'],
