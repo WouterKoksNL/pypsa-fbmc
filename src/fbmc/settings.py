@@ -33,7 +33,6 @@ def _default_config_values() -> dict[str, Any]:
         "reliability_margin_factor": 0.0,
         "min_ram": 0.0,
         "cnec_setting": "ALL",
-        "cne_list": None,
         "security_constraint_bodf_size_threshold": 0.2,
         "security_constraint_bodf_columnwise_matrix_size_limit": 5_000_000,
         "gsk_strategy": GSKStrategy.P_NOM,
@@ -156,7 +155,6 @@ def config_to_dict(config: "FBMCConfig") -> dict[str, Any]:
 class FBMCConfig:
     """Configuration parameters for FBMC calculations."""
     cnec_setting: CNECStrategy = CNECStrategy.ALL
-    cne_list: list[str] = None
 
     add_security_constraints: bool = True
     security_constraint_bodf_size_threshold: float = 0.2

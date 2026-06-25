@@ -22,7 +22,6 @@ EXPLICIT_TEST_CONFIG_DEFAULTS = {
     "reliability_margin_factor": 0.0,
     "min_ram": 0.0,
     "cnec_setting": CNECStrategy.ALL,
-    "cne_list": None,
     "security_constraint_bodf_size_threshold": 0.2,
     "security_constraint_bodf_columnwise_matrix_size_limit": 5_000_000,
     "gsk_strategy": "CURRENT_GENERATION",
